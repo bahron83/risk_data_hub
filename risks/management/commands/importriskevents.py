@@ -1,0 +1,144 @@
+import traceback
+import psycopg2
+
+from optparse import make_option
+
+from django.conf import settings
+from django.core.management import call_command
+from django.core.management.base import BaseCommand, CommandError
+
+from risks.models import Region, AdministrativeDivision, Event
+from risks.models import HazardType, RiskApp
+from risks.models import RiskAnalysisDymensionInfoAssociation
+from risks.models import RiskAnalysisAdministrativeDivisionAssociation
+from risks.models import EventAdministrativeDivisionAssociation
+
+import xlrd
+from xlrd.sheet import ctype_text
+
+import dateparser, datetime
+
+
+class Command(BaseCommand):
+    help = 'Import Risk Data: Loss Impact and Impact Analysis Types.'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-c',
+            '--commit',
+            action='store_true',
+            dest='commit',
+            default=True,
+            help='Commits Changes to the storage.')
+        parser.add_argument(
+            '-r',
+            '--region',
+            dest='region',
+            type=str,
+            help='Destination Region.')
+        parser.add_argument(
+            '-x',
+            '--excel-file',
+            dest='excel_file',
+            type=str,
+            help='Input Risk Data Table as XLSX File.')        
+        parser.add_argument(
+            '-a',
+            '--risk-app',
+            dest='risk_app',
+            type=str,
+            # nargs=1,
+            default=RiskApp.APP_DATA_EXTRACTION,
+            help="Name of Risk App, default: {}".format(RiskApp.APP_DATA_EXTRACTION),
+            )
+        return parser
+
+    def handle(self, **options):
+        commit = options.get('commit')
+        region = options.get('region')
+        excel_file = options.get('excel_file')
+        #hazard_type = options.get('hazard_type')        
+        risk_app =  options.get('risk_app')
+        app = RiskApp.objects.get(name=risk_app)
+
+        if region is None:
+            raise CommandError("Input Destination Region '--region' is mandatory")
+
+        #if hazard_type is None:
+            #raise CommandError("Input Hazard Type associated to the File '--hazard_type' is mandatory")
+
+        if not excel_file or len(excel_file) == 0:
+            raise CommandError("Input Risk Data Table '--excel_file' is mandatory")
+
+        #hazard = HazardType.objects.get(mnemonic=hazard_type)
+
+        wb = xlrd.open_workbook(filename=excel_file)
+        region = Region.objects.get(name=region)
+        region_code = region.administrative_divisions.filter(parent=None)[0].code                
+
+        sheet = wb.sheet_by_index(0)
+        row_headers = sheet.row(0)        
+
+        col_num = 0
+        n_events = 0
+        for idx, cell_obj in enumerate(row_headers):
+            col_num += 1
+        if col_num >= 0:  
+            for row_num in range(1, sheet.nrows):  
+                obj = {}                
+                event_id = sheet.cell(row_num, 0).value
+                obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
+                obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
+                obj['nuts3'] = sheet.cell(row_num, 3).value
+                begin_date_raw = sheet.cell(row_num, 6).value
+                end_date_raw = sheet.cell(row_num, 7).value
+                obj['year'] = int(sheet.cell(row_num, 4).value)
+                obj['event_type'] = sheet.cell(row_num, 8).value
+                obj['event_source'] = sheet.cell(row_num, 9).value
+                obj['people_affected'] = int(self.try_parse_float(str(sheet.cell(row_num, 12).value), 0))
+                obj['cause'] = sheet.cell(row_num, 16).value
+                obj['notes'] = sheet.cell(row_num, 17).value
+                obj['sources'] = sheet.cell(row_num, 18).value
+
+                print(obj['people_affected'])
+                try:
+                    obj['begin_date'] = dateparser.parse(begin_date_raw)
+                    obj['end_date'] = dateparser.parse(end_date_raw)
+                except:
+                    obj['begin_date'] = datetime.date(year, 1, 1)
+                    obj['end_date'] = datetime.date(year, 1, 1)
+
+                try:
+                    event = Event.objects.get(event_id=event_id)
+                    for key, value in obj.items():
+                        setattr(event, key, value)                    
+                    event.save()
+                except Event.DoesNotExist:
+                    obj['event_id'] = event_id
+                    event = Event(**obj)
+                    event.save()                                                                               
+                
+                n_events += 1         
+
+                for adm_code in event.nuts3.split(';'):                    
+                    try:
+                        adm_div = AdministrativeDivision.objects.get(region=region, code=adm_code)
+                        adm_link = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=adm_div)                        
+                    except AdministrativeDivision.DoesNotExist:
+                        traceback.print_exc()
+                        #print(adm_code)
+                        pass                    
+                
+        return str(n_events)
+    
+    def try_parse_int(self, s, base=10, default=None):
+        try:
+            return int(s, base)
+        except ValueError:
+            return default
+
+    def try_parse_float(self, s, default=None):
+        try:
+            return float(s)
+        except ValueError:
+            return default
