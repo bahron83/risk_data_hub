@@ -99,7 +99,7 @@ is mandatory")
 '--shape-file' is mandatory")
 
         ds = DataSource(shape_file)
-        print ('Opening Data Source "%s"' % ds.name)
+        print('Opening Data Source "%s"' % ds.name)
 
         print('rebuilding tree')
         AdministrativeDivision.objects.rebuild()
@@ -149,7 +149,7 @@ is mandatory")
                     else:
                         region_obj.administrative_divisions.add(adm_division)
 
-                if adm_level == 1:
+                if adm_level == 1:                                        
                     adm_division_0 = \
                         AdministrativeDivision.objects.get(
                             code=feat.get('HRparent')[:-2])
