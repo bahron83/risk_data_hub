@@ -78,6 +78,9 @@
  *  Font Awesome 4.7.0 by @davegandy - http://fontawesome.io - @fontawesome
  *  License - http://fontawesome.io/license (Font: SIL OFL 1.1, CSS: MIT License)
  */
+  /*#disaster-risk-selector-menu {
+  display: none;
+}*/
   /* Leaflet custom style*/
   /* Slider */
   /* tutorial */
@@ -6378,16 +6381,14 @@ a.disaster .label:focus {
   clip: auto;
 }
 .disaster .container-main {
-  height: calc(100% - 120px);
+  height: calc(100% - 180px);
 }
 .disaster .drc {
   height: calc(100% - 44px);
 }
 .disaster #disaster-overview-list {
-  height: calc(100% - 318px);
-}
-.disaster #disaster-risk-selector-menu {
-  display: none;
+  height: calc(100% - 378px);
+  max-height: calc(100% - 378px);
 }
 .disaster .row,
 .disaster .col,
@@ -6431,11 +6432,12 @@ a.disaster .label:focus {
   width: 15px;
 }
 .disaster .disaster-risk-selector {
-  padding: 20px 10px;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-  -webkit-box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-  -moz-box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-  margin-bottom: 20px;
+  /*padding: 20px 10px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  -webkit-box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  -moz-box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  margin-bottom: 20px;*/
+  padding: 10px 0;
 }
 .disaster .disaster-risk-selector li.disabled > a {
   color: #ddd;
