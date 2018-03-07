@@ -6388,6 +6388,8 @@ a.disaster .label:focus {
 }
 .disaster #disaster-overview-list {
   height: calc(100% - 378px);
+}
+.disaster .disaster-header {
   max-height: calc(100% - 378px);
 }
 .disaster .row,
