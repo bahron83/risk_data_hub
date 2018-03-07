@@ -52,10 +52,10 @@ const StandardRouter = connect((state) => ({
 }))(require('../../MapStore2/web/client/components/app/StandardRouter'));
 
 const appStore = require('../../MapStore2/web/client/stores/StandardStore').bind(null, newInitState, appReducers, {...dEpics, ...rEpics});
-const loc = window.DISASTERRISK && window.DISASTERRISK.app && window.DISASTERRISK.app.region || 'EU';
-const dataPath = window.DISASTERRISK && window.DISASTERRISK.app && `${window.DISASTERRISK.app.href}loc/${loc}/` || '/risks/data_extraction/loc/EU/';
-const geomPath = window.DISASTERRISK && window.DISASTERRISK.app && `${window.DISASTERRISK.app.href}geom/${loc}/` || '/risks/data_extraction/geom/EU/';
-
+const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
+const loc = disasterRisk && disasterRisk.app && disasterRisk.app.region || 'EU';
+const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}loc/${loc}/` || '/risks/data_extraction/loc/EU/';
+const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}geom/${loc}/` || '/risks/data_extraction/geom/EU/';
 
 const initialActions = init ? [() => initState(init)] : [() => getData(dataPath), () => getFeatures(geomPath)];
 const appConfig = {
