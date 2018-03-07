@@ -50,7 +50,7 @@ const Home = React.createClass({
                       params={this.props.params}
                       />
                     <TopBar/>
-                    <div className="container-fluid">
+                    <div className="container-fluid container-main">
                         <div className="row">
                             <RiskDataContainer />
                             {<RisksMapContainer plugins={plugins}/>}

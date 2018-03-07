@@ -101,9 +101,9 @@ is mandatory")
         ds = DataSource(shape_file)
         print('Opening Data Source "%s"' % ds.name)
 
-        print('rebuilding tree')
-        AdministrativeDivision.objects.rebuild()
-        print('rebuilding complete!')                                            
+        #print('rebuilding tree')
+        #AdministrativeDivision.objects.rebuild()
+        #print('rebuilding complete!')                                            
 
         for layer in ds:
             print('Layer "%s": %i %ss' %
@@ -258,6 +258,6 @@ is mandatory")
                 AdministrativeDivision.objects.bulk_create(adm_rows)
                 print('bulk insert complete')
                 # region_obj.administrative_divisions.add(*adm_rows)
-                print('rebuilding tree')
-                AdministrativeDivision.objects.rebuild()
-                print('rebuilding complete!')                                            
+                #print('rebuilding tree')
+                #AdministrativeDivision.objects.rebuild()
+                #print('rebuilding complete!')                                            

@@ -5,11 +5,24 @@
 ----------------------- */
 /* Basics
 ----------------------- */
+html {
+  height: 100%;
+}
 body {
   background: #ffffff;
   font-family: Verdana, Geneva, sans-serif;
   font-size: 14px;
   padding-top: 0;
+  height: 100%;
+}
+.risktools #wrap {
+  height: calc(100% - 113px);
+}
+/*#container {
+  height: calc(100% - 113px);
+}*/
+#container, #container .fill {
+  height: 100%;
 }
 a {
   color: #028baf;
@@ -54,8 +67,11 @@ form input {
 #wrap {
   background: #ffffff;
   padding-bottom: 40px;
-  padding-top: 10px;
+  padding-top: 0;
   width: 100%;
+}
+.home #wrap {
+  margin-top: 0;
 }
 article.tab-pane {
   padding: 20px 0;
@@ -92,11 +108,14 @@ article.tab-pane {
 }
 .banner-flag {
   position: relative;
+  float:left;
   z-index: 100;
   height:130px;
+  padding: 0 20px;
 }
 #banner-title-text {
   position: relative;
+  float:left;
   top: 52px;
   font-size: 2.5rem;
   z-index: 100;
@@ -113,13 +132,13 @@ article.tab-pane {
 }
 .navbar-header {
   display: inline-block;
-  padding-top: 14px;
+  /*padding-top: 11px;*/
 }
-.home .navbar-inverse {
+.navbar-inverse {
   background-color: #333333;
   border-radius: 0;
 }
-.home .navbar-brand {
+.navbar-brand {
   margin-right: 15px;
   font-size: 20px;
   font-weight: bold;
@@ -130,19 +149,133 @@ article.tab-pane {
   width: auto;
   height: auto;
 }
-.home .navbar-nav > li > a {
+.navbar-nav > li > a {
   text-transform: uppercase;
 }
-.drmkc-icon-knowledge:before {
-  content: '\e081';
+
+/*DRMKC FONT*/
+@font-face {
+  font-family: 'drmkc-font';
+  src: url('../fonts/drmkc-font.eot?5601261');
+  src: url('../fonts/drmkc-font.eot?5601261#iefix') format('embedded-opentype'), url('../fonts/drmkc-font.woff2?5601261') format('woff2'), url('../fonts/drmkc-font.woff?5601261') format('woff'), url('../fonts/drmkc-font.ttf?5601261') format('truetype'), url('../fonts/drmkc-font.svg?5601261#drmkc-font') format('svg');
+  font-weight: normal;
+  font-style: normal;
 }
-.home .navbar-right > li > a {
+/* Chrome hack: SVG is rendered more smooth in Windozze. 100% magic, uncomment if you need it. */
+/* Note, that will break hinting! In other OS-es font will be not as sharp as it could be */
+/*
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: 'drmkc-font';
+    src: url('@{drmkc-fonts-path}/drmkc-font.svg?5601261#drmkc-font') format('svg');
+  }
+}
+*/
+.make-drmkc-base-icon::before {
+  font-family: "drmkc-font";
+  font-style: normal;
+  font-weight: normal;
+  speak: none;
+  display: inline-block;
+  text-decoration: inherit;
+  margin-right: .2em;
+  text-align: center;
+  /* opacity: .8; */
+
+  /* For safety - reset parent styles, that can break glyph codes*/
+
+  font-variant: normal;
+  text-transform: none;
+  /* fix buttons height, for twitter bootstrap */
+
+  line-height: 1em;
+  /* Animation center compensation - margins should be symmetric */
+
+  /* remove if not needed */
+
+  margin-left: .2em;
+  /* you can be more comfortable with increased icons size */
+
+  /* font-size: 120%; */
+
+  /* Font smoothing. That was taken from TWBS */
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Uncomment for 3D effect */
+
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+
+}
+[class^="drmkc-icon-"]::before,
+[class*=" drmkc-icon-"]::before {
+  font-family: "drmkc-font";
+  font-style: normal;
+  font-weight: normal;
+  speak: none;
+  display: inline-block;
+  text-decoration: inherit;
+  margin-right: .2em;
+  text-align: center;
+  /* opacity: .8; */
+
+  /* For safety - reset parent styles, that can break glyph codes*/
+
+  font-variant: normal;
+  text-transform: none;
+  /* fix buttons height, for twitter bootstrap */
+
+  line-height: 1em;
+  /* Animation center compensation - margins should be symmetric */
+
+  /* remove if not needed */
+
+  margin-left: .2em;
+  /* you can be more comfortable with increased icons size */
+
+  font-size: 180%;
+
+  /* Font smoothing. That was taken from TWBS */
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Uncomment for 3D effect */
+
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+
+}
+.drmkc-icon-innovation:before {
+  content: '\e800';
+}
+/* 'î €' */
+.drmkc-icon-laboratory:before {
+  content: '\e800';
+}
+/* 'î €' */
+.drmkc-icon-knowledge:before {
+  content: '\e801';
+}
+/* 'î ' */
+.drmkc-icon-overview:before {
+  content: '\e802';
+}
+/* 'î ‚' */
+.drmkc-icon-partnership:before {
+  content: '\e803';
+}
+/* 'î ƒ' */
+.drmkc-icon-partnerships:before {
+  content: '\e803';
+}
+/*END OF DRMKC FONT*/
+
+.navbar-right > li > a {
   padding: 8px 15px;
 }
 .nav-pills a {
   cursor: pointer;
 }
-.home .navbar-collapse {
+.navbar-collapse {
   max-height: none;
 }
 form#search {
@@ -183,8 +316,12 @@ body.groups li#nav_groups a {
 }
 @media (min-width: 1200px) {
   #header-wrap .row {
-    max-width: 1170px;
+    /*max-width: 1170px;*/
     margin: auto;
+  }
+  .risktools footer {
+    position: relative;
+    top: -70px;
   }
 }
 #header-wrap ul li {
@@ -195,6 +332,7 @@ body.groups li#nav_groups a {
   top: 0;
   right: 0;
   text-align: right;
+  padding: 0 20px;
 }
 #path {
   background: #074a8b;
@@ -233,11 +371,12 @@ body.groups li#nav_groups a {
   background: #2c689c;
   color: white;
   padding: 40px 0 60px;
-  text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.4);
+  /*text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.4);*/
+  text-shadow: none;
   margin-top: 50px;
 }
 .home .jumbotron a {
-  color: #9eb343;
+  color: #028baf;
 }
 .home .jumbotron p {
   margin-bottom: 0;
@@ -956,4 +1095,7 @@ footer {
 }
 .table-user-profile-attribute {
   font-weight: bold;
+}
+.risktools .page-header {
+  display: none
 }

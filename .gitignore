@@ -60,7 +60,6 @@ target/
 downloaded/
 geoserver/
 uploaded/
-static/
 static_root/
 development.db
 development.db-journal
