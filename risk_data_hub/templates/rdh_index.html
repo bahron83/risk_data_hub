@@ -144,7 +144,7 @@
 
         function handleClick(e) {
             var adm_code = e.target.feature.properties.HRpcode !== undefined ? e.target.feature.properties.HRpcode : 'EU';             
-            var disasterRisk = {app: {region: adm_code, href: '/risks/data_extraction/loc/' + adm_code, geom: '/risks/data_extraction/geom/' + adm_code}};
+            var disasterRisk = {app: {region: adm_code, href: '/risks/data_extraction/', geom: '/risks/data_extraction/'}};
             localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
             location.href = '/risks/data_extraction/';
         }
