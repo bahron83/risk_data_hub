@@ -81,6 +81,9 @@
   /*#disaster-risk-selector-menu {
   display: none;
 }*/
+  /*.disaster-breadcrumbs {
+  margin: 10px 0;
+}*/
   /* Leaflet custom style*/
   /* Slider */
   /* tutorial */
@@ -6406,9 +6409,6 @@ a.disaster .label:focus {
   left: 0;
   width: 100%;
   height: 100%;
-}
-.disaster .disaster-breadcrumbs {
-  margin: 10px 0;
 }
 .disaster .disaster-breadcrumbs #disaster-navigation .btn {
   color: #2c689c;
