@@ -6384,7 +6384,7 @@ a.disaster .label:focus {
   clip: auto;
 }
 .disaster .container-main {
-  height: calc(100% - 180px);
+  height: calc(100% - 160px);
 }
 .disaster .drc {
   height: calc(100% - 44px);
