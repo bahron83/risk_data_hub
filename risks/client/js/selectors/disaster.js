@@ -129,10 +129,11 @@ const eventTableSelector = createSelector([riskAnalysisDataSel, eventSelector],
         events: JSON.parse(riskAnalysisData.events),        
         riskEvent
     }));
-const sChartSelector = createSelector([riskAnalysisDataSel, eventSelector],
-    (riskAnalysisData, riskEvent) => ({
+const sChartSelector = createSelector([riskAnalysisDataSel, eventSelector, fullContextSel],
+    (riskAnalysisData, riskEvent, fullContext) => ({
         events: JSON.parse(riskAnalysisData.events),        
-        riskEvent
+        riskEvent,
+        fullContext
     }));
 const eventCountryChartSelector = createSelector([riskAnalysisDataSel, fullContextSel],
     (riskAnalysisData, fullContext) => ({

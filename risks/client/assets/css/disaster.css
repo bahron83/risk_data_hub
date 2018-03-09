@@ -6390,10 +6390,10 @@ a.disaster .label:focus {
   height: calc(100% - 44px);
 }
 .disaster #disaster-overview-list {
-  height: calc(100% - 378px);
+  height: calc(100% - 358px);
 }
 .disaster .disaster-header {
-  max-height: calc(100% - 378px);
+  max-height: calc(100% - 358px);
 }
 .disaster .row,
 .disaster .col,
@@ -6877,10 +6877,9 @@ a.disaster .label:focus {
 }
 .disaster #disaster-map-legend {
   position: relative;
-  height: 0;
+  transform: translate(-10%, -130%);
   float: right;
-  bottom: 310px;
-  margin-right: 15px;
+  bottom: 100%;
   z-index: 500;
   background: rgba(255, 255, 255, 0.7);
 }

@@ -2,16 +2,16 @@ const React = require('react');
 const {ScatterChart, Scatter, XAxis, YAxis, Cell, CartesianGrid, Tooltip, Legend} = require('recharts');
 const ChartTooltip = require("./ChartTooltip");
 
-const data = [{x: 100, y: 200, z: 200}, {x: 120, y: 100, z: 260},
-    {x: 170, y: 300, z: 400}, {x: 140, y: 250, z: 280},
-    {x: 150, y: 400, z: 500}, {x: 110, y: 280, z: 200}]
-
 const SChart = React.createClass({
     propTypes: {
         riskEvent: React.PropTypes.object,
-        events: React.PropTypes.array,        
+        events: React.PropTypes.array,
+        fullContext: React.PropTypes.object,
         setEventIdx: React.PropTypes.func, 
         getEventData: React.PropTypes.func
+    },
+    getInitialState: function() {
+        return {selectedEvent: null};
     },
     getDefaultProps() {
         return {
@@ -19,19 +19,17 @@ const SChart = React.createClass({
     },
     getComponentData() {
         const {events} = this.props;                 
-        return events;
-    },   
-    render () {
-        const eventData = this.getComponentData();        
-        const {riskEvent} = this.props;
         const list = [];
-        eventData.forEach(function(obj){
+        events.forEach(function(obj){
             var newObj = obj.fields;
             newObj['event_id'] = obj.pk
             list.push(newObj);
-        }); 
-
-        //console.log(list);
+        });
+        return list;
+    },   
+    render () {
+        const list = this.getComponentData();        
+        const {riskEvent} = this.props;                
 
         return (
           <ScatterChart width={400} height={400} margin={{top: 20, right: 20, bottom: 20, left: 20}}>
@@ -50,8 +48,23 @@ const SChart = React.createClass({
         </ScatterChart>
       );
     },
+    componentDidMount() {               
+        this.componentDidUpdate();
+    },
+    componentDidUpdate() {                
+        /*pre-select most recent event*/
+        const {riskEvent, fullContext} = this.props;        
+        if(this.state.selectedEvent == null && fullContext.adm_level > 0) {
+            const list = this.getComponentData();
+            if(list.length > 0) {
+                const selEvent = list[0];
+                this.setState({selectedEvent: selEvent});
+                this.handleClick(selEvent, 0);
+            }
+        }
+    },
     handleClick(item, index) {
-        //console.log(item);
+        console.log(item);
         const nuts3 = item.nuts3.split(';');
         this.props.setEventIdx('eventid', item.event_id, 'nuts3', nuts3);
         this.props.getEventData('/risks/data_extraction/loc/'+item.iso2+'/ht/'+item.hazard_type+'/evt/'+item.event_id+'/');

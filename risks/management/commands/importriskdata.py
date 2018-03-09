@@ -204,7 +204,7 @@ class Command(BaseCommand):
                                         'adm_code': adm_div.code,
                                         'region': region.name,
                                         'adm_level': adm_div.level,
-                                        'parent_adm_code': None if parent_adm_div is None else parent_adm_div.code,
+                                        'parent_adm_code': '' if parent_adm_div is None else parent_adm_div.code,
                                         'value': value
                                     }
                                     self.insert_db(conn, db_values, rp_idx)

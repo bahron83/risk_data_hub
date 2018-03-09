@@ -640,6 +640,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         #current parameters
         full_context = {
             'app': app.name,
+            'adm_level': loc.level,
             'loc': loc.code,
             'ht': hazard_type.mnemonic,
             'at': atype.name,
@@ -700,7 +701,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             
             #values_group_country = [[f['properties']['adm_code'], f['properties']['dim1_value'], f['properties']['dim2_value'], f['properties']['value']] for f in features_event_group_country['features']]
         
-            events = Event.objects.filter(hazard_type=hazard_type)        
+            events = Event.objects.filter(hazard_type=hazard_type).order_by('-begin_date')    
             if len(loc.code) == 2:
                 if loc.code != 'EU':
                     events = events.filter(iso2=loc.code)
