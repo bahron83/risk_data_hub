@@ -11,7 +11,7 @@ const SChart = React.createClass({
         getEventData: React.PropTypes.func
     },
     getInitialState: function() {
-        return {selectedEvent: null};
+        return {selectedEvent: null, loc: null};
     },
     getDefaultProps() {
         return {
@@ -54,17 +54,17 @@ const SChart = React.createClass({
     componentDidUpdate() {                
         /*pre-select most recent event*/
         const {riskEvent, fullContext} = this.props;        
-        if(this.state.selectedEvent == null && fullContext.adm_level > 0) {
+        if((this.state.selectedEvent == null || this.state.loc != fullContext.loc) && fullContext.adm_level > 0) {
             const list = this.getComponentData();
             if(list.length > 0) {
                 const selEvent = list[0];
-                this.setState({selectedEvent: selEvent});
+                this.setState({selectedEvent: selEvent, loc: fullContext.loc});
                 this.handleClick(selEvent, 0);
             }
         }
     },
     handleClick(item, index) {
-        console.log(item);
+        /*console.log(item);*/
         const nuts3 = item.nuts3.split(';');
         this.props.setEventIdx('eventid', item.event_id, 'nuts3', nuts3);
         this.props.getEventData('/risks/data_extraction/loc/'+item.iso2+'/ht/'+item.hazard_type+'/evt/'+item.event_id+'/');

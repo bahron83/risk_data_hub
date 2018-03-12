@@ -138,7 +138,7 @@ const DataContainer = React.createClass({
                     
                     {full_context.analysis_class == 'event' ? (                        
                         <div>
-                        <Panel className="panel-box">
+                            <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
                                 <EventCountryChart/>
                             </Panel>                            
@@ -152,7 +152,7 @@ const DataContainer = React.createClass({
                             </Panel>
                         </div>
                     ) : (
-                        <div>
+                        <div>                            
                             <Panel className="panel-box">
                             <h4 className="text-center">{'Current ' + data.dimensions[dim.dim1].name + ' Chart'}</h4>
                             <Chart/>
