@@ -1504,13 +1504,30 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         through='EventLayerAssociation',
         related_name='event_layer',
     )'''
-    related_layers = models.ManyToManyField(Layer, blank=True)   
-
+    related_layers = models.ManyToManyField(Layer, blank=True)       
+    
     class Meta:
         """
         """
         ordering = ['iso2']
         db_table = 'risks_event'
+
+    def get_event_plain(self):
+        return {
+            'event_id': self.event_id,
+            'hazard_type': self.hazard_type.mnemonic,
+            'iso2': self.iso2,
+            'nuts3': self.nuts3,
+            'begin_date': self.begin_date,
+            'end_date': self.end_date,
+            'year': self.year,
+            'event_type': self.event_type,
+            'event_source': self.event_source,
+            'people_affected': self.people_affected,
+            'cause': self.cause,
+            'notes': self.notes,
+            'sources': self.sources
+        }
 
     def href(self):
         loc = self.get_location()                

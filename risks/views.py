@@ -708,8 +708,13 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             else:
                 events = events.filter(nuts3__contains=loc.code)
 
+            ev_list = []
+            for e in events:
+                ev_list.append(e.get_event_plain())
+
             out['riskAnalysisData']['data']['grouped_values'] = values_group_country
-            out['riskAnalysisData']['events'] = serializers.serialize("json", events, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+            #out['riskAnalysisData']['events'] = serializers.serialize("json", events, use_natural_foreign_keys=True, use_natural_primary_keys=True)
+            out['riskAnalysisData']['events'] = ev_list
         
         return json_response(out)
 

@@ -19,13 +19,14 @@ const SChart = React.createClass({
     },
     getComponentData() {
         const {events} = this.props;                 
-        const list = [];
+        /*const list = [];
         events.forEach(function(obj){
             var newObj = obj.fields;
             newObj['event_id'] = obj.pk
             list.push(newObj);
         });
-        return list;
+        return list;*/
+        return events;
     },   
     render () {
         const list = this.getComponentData();        
@@ -52,8 +53,8 @@ const SChart = React.createClass({
         this.componentDidUpdate();
     },
     componentDidUpdate() {                
-        /*pre-select most recent event*/
-        const {riskEvent, fullContext} = this.props;        
+        /*pre-select most recent event*/                
+        const {riskEvent, fullContext} = this.props;                
         if((this.state.selectedEvent == null || this.state.loc != fullContext.loc) && fullContext.adm_level > 0) {
             const list = this.getComponentData();
             if(list.length > 0) {
@@ -61,10 +62,9 @@ const SChart = React.createClass({
                 this.setState({selectedEvent: selEvent, loc: fullContext.loc});
                 this.handleClick(selEvent, 0);
             }
-        }
+        }        
     },
-    handleClick(item, index) {
-        /*console.log(item);*/
+    handleClick(item, index) {        
         const nuts3 = item.nuts3.split(';');
         this.props.setEventIdx('eventid', item.event_id, 'nuts3', nuts3);
         this.props.getEventData('/risks/data_extraction/loc/'+item.iso2+'/ht/'+item.hazard_type+'/evt/'+item.event_id+'/');

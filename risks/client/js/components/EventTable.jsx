@@ -23,12 +23,13 @@ const EventTable = React.createClass({
     },
     render() {
         const eventData = this.getEventTableData();                
-        const rows = [];
+        /*const rows = [];
         eventData.map((obj) => {
             var newObj = obj.fields;
             newObj['event_id'] = obj.pk
             rows.push(newObj);
-        });                
+        });*/
+        const rows = eventData;                
 
         const options = {
             onRowClick: this.onRowClick            

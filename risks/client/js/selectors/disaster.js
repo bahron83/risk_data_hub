@@ -126,12 +126,12 @@ const additionalChartSelector = createSelector([riskAnalysisDataSel, additionalC
     }));
 const eventTableSelector = createSelector([riskAnalysisDataSel, eventSelector],
     (riskAnalysisData, riskEvent) => ({
-        events: JSON.parse(riskAnalysisData.events),        
+        events: riskAnalysisData.events,        
         riskEvent
     }));
 const sChartSelector = createSelector([riskAnalysisDataSel, eventSelector, fullContextSel],
     (riskAnalysisData, riskEvent, fullContext) => ({
-        events: JSON.parse(riskAnalysisData.events),        
+        events: riskAnalysisData.events,        
         riskEvent,
         fullContext
     }));
