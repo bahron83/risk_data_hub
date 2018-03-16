@@ -161,7 +161,7 @@ module.exports = {
                     pathRewrite: { "^/static/js": ""}
                 },
                 '/risks/': {
-                    target: "http://localhost:8000/",
+                    target: "http://139.191.10.182/",
                     changeOrigin: true
                 }
             }
