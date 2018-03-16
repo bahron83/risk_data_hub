@@ -16,17 +16,11 @@ const EventCountryChart = React.createClass({
     },
     getChartData() {
         const {values} = this.props;
-//console.log("enter get chart method");
-        //console.log(values);
-        //return values.filter((d) => d[dim.dim1] === val ).map((v) => {return {"name": v[dim.dim2], "value": parseFloat(v[2], 10)}; });
         return values.map((v) => {return {"name": v[0], "value": parseFloat(v[3], 10)}; });        
     },
-    render() {  
-        //console.log("render called");
-        const chartData = this.getChartData();
-        //console.log(chartData !== null);        
-        const dimensionX = 'Country';
-        /*const colors = chromaJs.scale('OrRd').colors(chartData.length);*/
+    render() {          
+        const chartData = this.getChartData();        
+        const dimensionX = 'Country';        
         return (          
             <ResponsiveContainer width="100%" height={200}>
                 <BarChart width={500} height={200} data={chartData} margin={{top: 20, right: 0, left: 0, bottom: 5}}>
@@ -46,8 +40,7 @@ const EventCountryChart = React.createClass({
             </ResponsiveContainer>);
     },
     handleClick(item, index) {
-        const ctx = this.props.full_context;        
-        //console.log(item);
+        const ctx = this.props.full_context;                
         this.props.getAnalysisData('/risks/data_extraction/loc/' + item.name + '/ht/' + ctx.ht + '/at/' + ctx.at + '/an/' + ctx.an + '/');
     },
     formatYTiks(v) {

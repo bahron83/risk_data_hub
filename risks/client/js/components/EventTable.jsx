@@ -22,31 +22,24 @@ const EventTable = React.createClass({
         return row.event_id == riskEvent.eventid ? 'selected' : '';
     },
     render() {
-        const eventData = this.getEventTableData();                
-        /*const rows = [];
-        eventData.map((obj) => {
-            var newObj = obj.fields;
-            newObj['event_id'] = obj.pk
-            rows.push(newObj);
-        });*/
-        const rows = eventData;                
+        const events = this.getEventTableData();                        
 
         const options = {
             onRowClick: this.onRowClick            
         }        
 
         return (                    
-            <BootstrapTable data={rows} options={options} trClassName={this.trClassFormat}>                
-            <TableHeaderColumn isKey dataField='event_id'>Event ID</TableHeaderColumn>
+            <BootstrapTable data={events} options={options} trClassName={this.trClassFormat}>                
+                <TableHeaderColumn dataField='event_id' isKey={true} hidden={true}>Event ID</TableHeaderColumn>
                 <TableHeaderColumn dataField='event_source'>Source</TableHeaderColumn>
                 <TableHeaderColumn dataField='year'>Year</TableHeaderColumn>
                 <TableHeaderColumn dataField='people_affected'>People Affected</TableHeaderColumn>
+                <TableHeaderColumn dataField='sources'>References</TableHeaderColumn>
             </BootstrapTable>
         );
                         
     },
-    onRowClick(row) {
-        //console.log(row);
+    onRowClick(row) {        
         const nuts3 = row.nuts3.split(';');
         this.props.setEventIdx('eventid', row.event_id, 'nuts3', nuts3);
         this.props.getEventData('/risks/data_extraction/loc/'+row.iso2+'/ht/'+row.hazard_type+'/evt/'+row.event_id+'/');        

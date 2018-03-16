@@ -25,7 +25,8 @@ body {
   height: 100%;
 }
 a {
-  color: #028baf;
+  /*color: #028baf;*/
+  color: #0065A2;
 }
 h1,
 h2,
@@ -298,21 +299,27 @@ form#search .fa {
 }
 .home .navbar-active {
   color: white;
+  background-color: #0065A2;
 }
 body.layers li#nav_layers a {
   color: white;
+  background-color: #0065A2;
 }
 body.maps li#nav_maps a {
   color: white;
+  background-color: #0065A2;
 }
 body.documents li#nav_documents a {
   color: white;
+  background-color: #0065A2;
 }
 body.people li#nav_people a {
   color: white;
+  background-color: #0065A2;
 }
 body.groups li#nav_groups a {
   color: white;
+  background-color: #0065A2;
 }
 @media (min-width: 1200px) {
   #header-wrap .row {
@@ -376,7 +383,7 @@ body.groups li#nav_groups a {
   margin-top: 50px;
 }
 .home .jumbotron a {
-  color: #028baf;
+  color: #0065A2;
 }
 .home .jumbotron p {
   margin-bottom: 0;
@@ -1098,4 +1105,7 @@ footer {
 }
 .risktools .page-header {
   display: none
+}
+.slick-prev:before, .slick-next:before {
+  color: #2c689c !important;
 }

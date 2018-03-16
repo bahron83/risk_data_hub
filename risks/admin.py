@@ -37,7 +37,7 @@ from risks.models import RiskApp
 from risks.models import AdditionalData
 from risks.models import Event
 from risks.models import EventImportAttributes
-
+from risks.models import AnalysisClass
 
 from risks.forms import CreateRiskAnalysisForm
 from risks.forms import ImportDataRiskAnalysisForm
@@ -106,9 +106,9 @@ class AdministrativeDivisionAdmin(admin.ModelAdmin):
 class AnalysisTypeAdmin(admin.ModelAdmin):
     model = AnalysisType
     list_display_links = ('name',)
-    list_display = ('name', 'title', 'description', 'app',)
+    list_display = ('name', 'title', 'description', 'analysis_class', 'app',)
     search_fields = ('name', 'title',)
-    list_filter = ('app__name',)
+    list_filter = ('app__name', 'analysis_class__name',)
     inlines = [FurtherResourceInline]
     group_fieldsets = True
 
@@ -265,6 +265,11 @@ class EventImportAttributeDataAdmin(admin.ModelAdmin):
         super(EventImportAttributeDataAdmin, self).__init__(*args, **kwargs)
         self.list_display_links = (None, )
 
+class AnalysisClassAdmin(admin.ModelAdmin):
+    model = AnalysisClass
+    list_display = ('name', 'title',)
+    list_display_links = ('name',)
+
 
 @admin.register(RiskApp)
 class RiskAppAdmin(admin.ModelAdmin):
@@ -286,6 +291,7 @@ admin.site.register(PointOfContact, PointOfContactAdmin)
 admin.site.register(HazardSet, HazardSetAdmin)
 admin.site.register(FurtherResource, FurtherResourceAdmin)
 admin.site.register(Event, EventAdmin)
+admin.site.register(AnalysisClass, AnalysisClassAdmin)
 
 admin.site.register(RiskAnalysisCreate, RiskAnalysisCreateAdmin)
 admin.site.register(RiskAnalysisImportData, RiskAnalysisImportDataAdmin)

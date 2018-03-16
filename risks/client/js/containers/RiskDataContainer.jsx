@@ -43,6 +43,7 @@ const DataContainer = React.createClass({
         className: React.PropTypes.string,
         hazardTitle: React.PropTypes.string,
         analysisType: React.PropTypes.object,
+        analysisTypeE: React.PropTypes.object,
         riskAnalysisData: React.PropTypes.object,
         dim: React.PropTypes.object,
         full_context: React.PropTypes.object,
@@ -55,6 +56,9 @@ const DataContainer = React.createClass({
                 href: React.PropTypes.string
                 }))
         })
+    },
+    getInitialState: function() {
+        return {analysisClass: 'risk'};
     },
     getDefaultProps() {
         return {
@@ -78,18 +82,21 @@ const DataContainer = React.createClass({
         return data.filter((d) => d[nameIdx] === val ).map((v) => {return {"name": v[dim], "value": parseInt(v[2], 10)}; });
     },    
     renderAnalysisData() {        
-        const {dim, full_context} = this.props;
+        const {dim, full_context, analysisType, analysisTypeE} = this.props;
         const {hazardSet, data} = this.props.riskAnalysisData;             
         const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
         const val = data.dimensions[dim.dim1].values[dim.dim1Idx];
         const header = data.dimensions[dim.dim1].name + ': ' + val;
         const description = data.dimensions[dim.dim1].layers && data.dimensions[dim.dim1].layers[val] && data.dimensions[dim.dim1].layers[val].description ? data.dimensions[dim.dim1].layers[val].description : '';
+        let selectedAnalysisType = analysisType;    
+        if(this.state.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name))            
+            selectedAnalysisType = analysisTypeE;
         return (
             <div id="disaster-analysis-data-container" className="container-fluid">
                 <div className="row">
                     <div className="btn-group">
                         <OverlayTrigger placement="bottom" overlay={tooltip}>
-                            <button id="disaster-back-button" onClick={()=> this.props.getData(this.props.analysisType.href, true)} className="btn btn-primary">
+                            <button id="disaster-back-button" onClick={()=> this.props.getData(selectedAnalysisType.href, true)} className="btn btn-primary">
                                 <i className="fa fa-arrow-left"/>
                             </button>
                         </OverlayTrigger>
@@ -181,8 +188,11 @@ const DataContainer = React.createClass({
         );
     },
     renderRiskAnalysis() {
-        const {analysisType = {}, getAnalysis} = this.props;
-        return analysisType.riskAnalysis.map((rs, idx) => {
+        const {analysisType = {}, analysisTypeE = {}, getAnalysis} = this.props;
+        let selectedAnalysisType = analysisType;            
+        if(this.state.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name))            
+            selectedAnalysisType = analysisTypeE;        
+        return selectedAnalysisType.riskAnalysis.map((rs, idx) => {
             const {title, fa_icon: faIcon, abstract} = rs.hazardSet;
             const tooltip = (<Tooltip id={"tooltip-icon-cat-" + idx} className="disaster">{'Analysis Data'}</Tooltip>);
             return (
@@ -205,19 +215,48 @@ const DataContainer = React.createClass({
         });
     },
     renderAnalysisTab() {
-        const {hazardType = {}, analysisType = {}, getData: loadData} = this.props;
+        const {hazardType = {}, analysisType = {}, analysisTypeE = {}, getData: loadData} = this.props;
         return (hazardType.analysisTypes || []).map((type, idx) => {
-            const {href, name, title, faIcon, description} = type;
-            const active = name === analysisType.name;
+            const {href, name, title, faIcon, description, analysisClass} = type;
+            const active = ((name === analysisType.name && analysisClass.name == this.state.analysisClass) || (name === analysisTypeE.name && analysisClass.name == this.state.analysisClass));
             const tooltip = (<Tooltip id={"tooltip-icon-analysis-tab-" + idx} className="disaster">{description}</Tooltip>);
-            return (
-                <OverlayTrigger key={name} placement="bottom" overlay={tooltip}>
-                    <li className={`text-center ${active ? 'active' : ''}`} onClick={() => loadData(href, true)}>
-                        <a href="#" data-toggle="tab"><span> <i className={"fa fa-" + faIcon}></i>&nbsp;{title}</span></a>
-                    </li>
-                </OverlayTrigger>
-            );
+            if(analysisClass.name == this.state.analysisClass) {
+                return (                                
+                    <OverlayTrigger key={name} placement="bottom" overlay={tooltip}>
+                        <li className={`text-center ${active ? 'active' : ''}`} onClick={() => loadData(href, true)}>
+                            <a href="#" data-toggle="tab"><span> <i className={"fa fa-" + faIcon}></i>&nbsp;{title}</span></a>
+                        </li>
+                    </OverlayTrigger>                
+                );
+            }
+            return null;
         });
+    },
+    renderAnalysisClass() {
+        const {hazardType} = this.props;
+        let analysisClasses = [];
+        hazardType.analysisTypes.map((item, idx) => {
+            analysisClasses.push(item.analysisClass);
+        });
+        analysisClasses = analysisClasses.filter((item, idx, self) =>
+            idx === self.findIndex((t) => (
+                t.name === item.name
+            ))
+        );        
+        return(analysisClasses).map((item, idx) => {
+            if(item != undefined && item != null) {
+                const active = item.name == this.state.analysisClass;                     
+                return (
+                    <li className={`text-center ${active ? 'active' : ''}`} onClick={() => this.selectAnalysisClass(item.name)}>
+                        <a href="#" data-toggle="tab"><span>{item.title}</span></a>
+                    </li>
+                );
+            }
+            return null;
+        });
+    },
+    selectAnalysisClass(name) {
+        this.setState({analysisClass: name});
     },
     renderHazard() {
         const {riskAnalysisData} = this.props;
@@ -228,11 +267,17 @@ const DataContainer = React.createClass({
                     <div className="container-fluid">
                         {this.renderAnalysisData()}
                     </div>
-                    ) : (
+                  ) : (
                     <div className="container-fluid">
+                        <ul id="disaster-analysis-class-menu" className="nav nav-pills">
+                            {this.renderAnalysisClass()}
+                        </ul>                                                
+                        
+                        <hr />
                         <ul id="disaster-analysis-menu" className="nav nav-pills">
                             {this.renderAnalysisTab()}
                         </ul>
+                        
                         <hr></hr>
                         <div id="disaster-analysis-container" className="disaster-analysis">
                             <div className="container-fluid">
@@ -240,7 +285,8 @@ const DataContainer = React.createClass({
                             </div>
                         </div>
                     </div>
-                  )}
+                  )
+                  }
                 </div>
             //</div>
         );

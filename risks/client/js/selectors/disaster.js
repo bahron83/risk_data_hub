@@ -5,6 +5,7 @@ const navItemsSel = ({disaster = {}}) => disaster.navItems || [];
 const riskItemsSel = ({disaster = {}}) => disaster.overview || [];
 const hazardTypeSel = ({disaster = {}}) => disaster.hazardType || {};
 const analysisTypeSel = ({disaster = {}}) => disaster.analysisType || {};
+const analysisTypeESel = ({disaster = {}}) => disaster.analysisTypeE || {};
 const sliderSel = ({disaster = {}}) => disaster.sliders || {};
 const notificationsSel = (state) => state.notifications || [];
 const currentAnalysisUrlSel = ({disaster = {}}) => disaster.currentAnalysisUrl || '';
@@ -28,12 +29,13 @@ const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel,
         activeRisk: hazardType.mnemonic || "Overview",
         context
     }));
-const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analysisTypeSel, riskAnalysisDataSel, dimSelector, showChartSel, fullContextSel],
-    (riskItems, hazardType, analysisType, riskAnalysisData, dim, showChart, fullContext) => ({
+const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analysisTypeSel, analysisTypeESel, riskAnalysisDataSel, dimSelector, showChartSel, fullContextSel],
+    (riskItems, hazardType, analysisType, analysisTypeE, riskAnalysisData, dim, showChart, fullContext) => ({
         showHazard: hazardType.mnemonic ? true : false,
         hazardTitle: hazardType.mnemonic ? head(riskItems.filter((hz) => hz.mnemonic === hazardType.mnemonic)).title || '' : '',
         hazardType,
         analysisType,
+        analysisTypeE,
         riskAnalysisData,
         dim,
         showChart,

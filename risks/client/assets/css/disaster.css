@@ -6850,7 +6850,7 @@ a.disaster .label:focus {
   margin: 45px 0 0 15px;
   z-index: 500;
   background: rgba(0, 0, 0, 0.6);
-  max-width: 500px;
+  max-width: 50%;
   color: #CCCCCC;
   overflow-y: scroll;
 }
@@ -6905,6 +6905,15 @@ a.disaster .label:focus {
 }
 .disaster .linkto-layer-details:active {
   color: #ff8f31;
+}
+@media (min-width: 1200px) {
+  .disaster #disaster-overview-list,
+  .disaster .disaster-header {
+    max-width: 600px;
+  }
+}
+.disaster .nav-pills > li > a {
+  background-color: rgba(255, 255, 255, 0.7);
 }
 @font-face {
   font-family: 'thinkhazard';

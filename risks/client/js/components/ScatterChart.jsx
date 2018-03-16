@@ -18,27 +18,20 @@ const SChart = React.createClass({
         };
     },
     getComponentData() {
-        const {events} = this.props;                 
-        /*const list = [];
-        events.forEach(function(obj){
-            var newObj = obj.fields;
-            newObj['event_id'] = obj.pk
-            list.push(newObj);
-        });
-        return list;*/
+        const {events} = this.props;                         
         return events;
     },   
     render () {
-        const list = this.getComponentData();        
+        const events = this.getComponentData();        
         const {riskEvent} = this.props;                
 
         return (
-          <ScatterChart width={400} height={400} margin={{top: 20, right: 20, bottom: 20, left: 20}}>
+          <ScatterChart width={500} height={400} margin={{top: 20, right: 0, bottom: 20, left: 0}}>
             <XAxis domain={[1870, 'auto']} dataKey={'year'} type="number" name='Year' unit=''/>
             <YAxis dataKey={'people_affected'} type="number" name='People Affected' unit=''/>
             <CartesianGrid />
-            <Scatter onClick={this.handleClick} data={list} name='Events'>
-                {list.map((entry, index) => {
+            <Scatter onClick={this.handleClick} data={events} name='Events'>
+                {events.map((entry, index) => {
                     const active = entry.event_id === riskEvent.eventid;
                     return (
                         <Cell cursor="pointer" stroke={active ? '#2c689c' : '#ffffff'} strokeWidth={active ? 2 : 1}fill={active ? '#ff8f31' : '#2c689c'} key={`cell-${index}`}/>);

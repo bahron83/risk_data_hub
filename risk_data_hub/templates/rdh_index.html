@@ -6,6 +6,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css"
         integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
         crossorigin=""/> 
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css"/>
     <style>
         .leaflet-control {
             background-color:rgba(255,255,255,0.6);
@@ -20,25 +22,56 @@
     
     {% block hero %}
     <div class="jumbotron">
-        <div class="container no-padding">
-            <div class="col-sm-4">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        <div class="container no-padding">                        
+            <div class="row">
+                <div class="col-sm-4">                    
+                    <h2>Risk Data Hub</h2>        
+                    <span>The Disaster Risk Management Knowledge Centre (DRMKC) makes available a GIS web-platform – the Risk Data Hub – intended to improve the access and sharing of curated European-wide (EU, EFTA  and IPA  countries) risk data, tools and methodologies for fostering Disaster Risk Managemet (DRM) related actions.</span>                    
+                </div>
+                <div class="col-sm-8">
+                    <div id="mapid" style="height:500px"></div>
+                </div>                
             </div>
-            <div class="col-sm-8">
-                <div id="mapid" style="height:500px"></div>
+            <div class="row">
+                <div class="col">
+                    <span>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</span>
+                </div>
             </div>
         </div>
     </div>
     {% endblock %}
 
     {% block mainbody %}
+        {% block partners %}
+        <div class="container">
+            <h2>Scientific Partners</h2>            
+            <div class="partners-slide">
+                <div class="slick-item">
+                    <img src="{{ STATIC_URL }}img/copernicus.png" />
+                </div>
+                <div class="slick-item">
+                    <img src="{{ STATIC_URL }}img/copernicus.png" />
+                </div>
+                <div class="slick-item">
+                    <img src="{{ STATIC_URL }}img/copernicus.png" />
+                </div>
+                <div class="slick-item">
+                    <img src="{{ STATIC_URL }}img/copernicus.png" />
+                </div>
+            </div>
+        </div>    
+        
+        {% endblock %}
         {% block bigsearch %}        
+            
         {% endblock %}
 
-        {% block datasets %}        
+        {% block datasets %}  
+            
         {% endblock %}
 
         {% block showcase %}  
+            
         {% endblock %}
 
     {% endblock %}
@@ -48,6 +81,8 @@
 {% block extra_script %}
     {{ block.super }}
     <script src="{{ STATIC_URL }}leaflet/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
     <script>
         function getGeoJson(url) {
             let res = '';
@@ -163,7 +198,17 @@
                     style: style,
 		            onEachFeature: onEachFeature
                 }).addTo(map);
-            });                    
+            });  
+            
+        jQuery.noConflict();
+        jQuery(document).ready(function(){
+            jQuery('.partners-slide').slick({
+                arrows: true,
+                centerMode: true,
+                slidesToShow: 3,
+                slidesToScroll: 3
+            });
+        });
         
     </script>
 {% endblock extra_script %}

@@ -24,7 +24,7 @@ from geonode.base.forms import ValuesListField
 from risks.models import (HazardType, AdministrativeDivision,
                                           RiskAnalysisDymensionInfoAssociation,
                                           RiskAnalysis, DymensionInfo, AnalysisType,
-                                          FurtherResource, RiskApp, Event)
+                                          FurtherResource, RiskApp, Event, AnalysisClass)
 
 from risks.datasource import GeoserverDataSource
 from risks.pdf_helpers import generate_pdf
@@ -380,13 +380,24 @@ class HazardTypeView(ContextAware, LocationSource, View):
 
     def get_analysis_type(self, location, hazard_type, **kwargs):
         atypes = hazard_type.get_analysis_types()
+        aclasses = AnalysisClass.objects.all()
+        aclass_risk = aclasses.get(name='risk')
+        aclass_event = aclasses.get(name='event')
         if not atypes.exists():
             return None, None,
+        
+        first_atype = atypes.filter(analysis_class=aclass_risk).first().set_location(location).set_hazard_type(hazard_type)
+        first_atype_e = atypes.filter(analysis_class=aclass_event).first().set_location(location).set_hazard_type(hazard_type)
         if not kwargs.get('at'):
-            atype = atypes.first().set_location(location).set_hazard_type(hazard_type)
+            atype = first_atype
+            atype_e = first_atype_e
+            aclass = None
         else:
-            atype = atypes.get(name=kwargs['at']).set_location(location).set_hazard_type(hazard_type)
-        return atype, atypes,
+            temp = atypes.get(name=kwargs['at']).set_location(location).set_hazard_type(hazard_type)            
+            atype = temp if temp.analysis_class == aclass_risk else first_atype
+            atype_e = temp if temp.analysis_class == aclass_event else first_atype_e
+            aclass = temp.analysis_class
+        return atype, atype_e, atypes, aclass,
 
     def get(self, request, *args, **kwargs):
         locations = self.get_location(**kwargs)
@@ -401,8 +412,8 @@ class HazardTypeView(ContextAware, LocationSource, View):
         if not hazard_type:
             return json_response(errors=['Invalid hazard type'], status=404)
 
-        (atype, atypes,) = self.get_analysis_type(loc, hazard_type, **kwargs)
-        if not atype:
+        (atype, atype_e, atypes, aclass,) = self.get_analysis_type(loc, hazard_type, **kwargs)
+        if not atype and not atype_e:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404)        
 
         out = {
@@ -411,7 +422,8 @@ class HazardTypeView(ContextAware, LocationSource, View):
             'context': self.get_context_url(**kwargs),
             'furtherResources': self.get_further_resources(**kwargs),
             'hazardType': hazard_type.get_hazard_details(),            
-            'analysisType': atype.get_analysis_details()
+            'analysisType': atype.get_analysis_details() if atype else {},
+            'analysisTypeE': atype_e.get_analysis_details() if atype_e else {}
         }
 
         return json_response(out)
@@ -625,11 +637,12 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         if not hazard_type:
             return json_response(errors=['Invalid hazard type'], status=404)
 
-        (atype, atypes,) = self.get_analysis_type(loc, hazard_type, **kwargs)
-        if not atype:
+        (atype, atype_e, atypes, aclass,) = self.get_analysis_type(loc, hazard_type, **kwargs)
+        if not atype and not atype_e:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404)
 
-        risks = atype.get_risk_analysis_list(id=kwargs['an'])
+        current_atype = atype if atype.analysis_class == aclass else atype_e
+        risks = current_atype.get_risk_analysis_list(id=kwargs['an'])
         if not risks:
             return json_response(errors=['No risk analysis found for given parameters'], status=404)
         risk = risks[0]
@@ -643,10 +656,10 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             'adm_level': loc.level,
             'loc': loc.code,
             'ht': hazard_type.mnemonic,
-            'at': atype.name,
+            'at': current_atype.name,
             'an': risk.id,
-            'analysis_class': risk.analysis_class,
-            'full_url': '/risks/' + app.name + '/loc/' + loc.code + '/ht/' + hazard_type.mnemonic + '/at/' + atype.name + '/an/' + str(risk.id) + '/'
+            'analysis_class': risk.analysis_type.analysis_class.name,
+            'full_url': '/risks/' + app.name + '/loc/' + loc.code + '/ht/' + hazard_type.mnemonic + '/at/' + current_atype.name + '/an/' + str(risk.id) + '/'
         }
         
         dymlist = risk.dymension_infos.all().distinct()
@@ -672,11 +685,11 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         out['riskAnalysisData']['additionalLayers'] = [(l.id, l.typename, l.title, ) for l in risk.additional_layers.all()]
         out['furtherResources'] = self.get_further_resources(**kwargs)
         #url(r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/pdf/$', views.pdf_report, name='pdf_report'),
-        out['pdfReport'] = app.url_for('pdf_report', loc.code, hazard_type.mnemonic, atype.name, risk.id)
+        out['pdfReport'] = app.url_for('pdf_report', loc.code, hazard_type.mnemonic, current_atype.name, risk.id)
         out['fullContext'] = full_context
 
 
-        if risk.analysis_class == 'event':
+        if risk.analysis_type.analysis_class.name == 'event':
             #add fields for managing a layer for events
             out['riskAnalysisData']['eventAreaSelected'] = ''
             out['riskAnalysisData']['eventsLayer'] = {}

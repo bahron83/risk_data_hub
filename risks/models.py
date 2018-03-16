@@ -190,6 +190,29 @@ class RiskAnalysisAware(object):
         return self._risk_analysis
 
 
+class AnalysisClassManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+class AnalysisClass(Exportable, models.Model):
+    objects = AnalysisClassManager()
+
+    EXPORT_FIELDS = (('name', 'name',),
+                    ('title', 'title',),)
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=30, null=False, blank=False,
+                            db_index=True)
+    title = models.CharField(max_length=80, null=False, blank=False)
+
+    def natural_key(self):
+        return (self.name)
+    
+    def __unicode__(self):
+        return u"{0}".format(self.name)
+    
+    class Meta:        
+        verbose_name_plural = 'Analysis Classes'
+
 class AnalysisType(RiskAppAware, HazardTypeAware, LocationAware, Exportable, models.Model):
     """
     For Risk Data Extraction it can be, as an instance, 'Loss Impact', 'Impact
@@ -201,13 +224,15 @@ class AnalysisType(RiskAppAware, HazardTypeAware, LocationAware, Exportable, mod
                      ('title', 'title',),
                      ('description', 'description',),
                      ('faIcon', 'fa_icon',),
-                     ('href', 'href',),)
+                     ('href', 'href',),
+                     ('analysisClass', 'get_analysis_class_export',),)
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30, null=False, blank=False,
                             db_index=True)
     title = models.CharField(max_length=80, null=False, blank=False)
     description = models.TextField(default='', null=True, blank=False)
     app = models.ForeignKey(RiskApp)
+    analysis_class = models.ForeignKey(AnalysisClass, null=True)
     fa_icon = models.CharField(max_length=30, null=True, blank=True)
 
     def __unicode__(self):
@@ -240,8 +265,12 @@ class AnalysisType(RiskAppAware, HazardTypeAware, LocationAware, Exportable, mod
     def get_analysis_details(self):
         risk_analysis = self.get_risk_analysis_list()
         out = self.export()
+        #out['analysisClass'] = self.analysis_class.export()
         out['riskAnalysis'] = [ra.export() for ra in risk_analysis]
         return out
+
+    def get_analysis_class_export(self):
+        return self.analysis_class.export()
 
 
 class HazardTypeManager(models.Manager):
@@ -375,7 +404,7 @@ class RiskAnalysis(RiskAppAware, Schedulable, LocationAware, HazardTypeAware, An
     data_file = models.FileField(upload_to='metadata_files', max_length=255)
     metadata_file = models.FileField(upload_to='metadata_files', max_length=255)
 
-    analysis_class = models.CharField(max_length=50, null=True, blank=True)   
+    #analysis_class = models.CharField(max_length=50, null=True, blank=True)   
 
     # Relationships
     analysis_type = models.ForeignKey(
