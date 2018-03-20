@@ -1109,3 +1109,11 @@ footer {
 .slick-prev:before, .slick-next:before {
   color: #2c689c !important;
 }
+.slick-slide {
+  margin: 0 10px;
+  border: 2px solid #2c689c;
+}
+.section {
+  margin-top:20px;
+  margin-bottom: 20px;
+}

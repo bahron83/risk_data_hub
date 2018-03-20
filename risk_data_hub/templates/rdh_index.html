@@ -43,22 +43,55 @@
 
     {% block mainbody %}
         {% block partners %}
-        <div class="container">
+        <div class="container section">            
             <h2>Scientific Partners</h2>            
             <div class="partners-slide">
                 <div class="slick-item">
-                    <img src="{{ STATIC_URL }}img/copernicus.png" />
+                    <a href="http://www.copernicus.eu" target="_blank">
+                        <img src="{{ STATIC_URL }}img/copernicus.png" />
+                    </a>                    
                 </div>
                 <div class="slick-item">
-                    <img src="{{ STATIC_URL }}img/copernicus.png" />
+                    <a href="http://edo.jrc.ec.europa.eu" target="_blank">
+                        <img src="{{ STATIC_URL }}img/edo.png" />
+                    </a>                    
                 </div>
                 <div class="slick-item">
-                    <img src="{{ STATIC_URL }}img/copernicus.png" />
+                    <a href="https://www.efas.eu" target="_blank">
+                        <img src="{{ STATIC_URL }}img/efas.png" />
+                    </a>                    
                 </div>
                 <div class="slick-item">
-                    <img src="{{ STATIC_URL }}img/copernicus.png" />
+                    <a href="http://effis.jrc.ec.europa.eu" target="_blank">
+                        <img src="{{ STATIC_URL }}img/effis.png" />
+                    </a>                    
                 </div>
-            </div>
+                <div class="slick-item">
+                    <a href="http://ghsl.jrc.ec.europa.eu" target="_blank">
+                        <img src="{{ STATIC_URL }}img/ghsl.png" />
+                    </a>                    
+                </div>
+                <div class="slick-item">
+                    <a href="https://esdac.jrc.ec.europa.eu" target="_blank">
+                        <img src="{{ STATIC_URL }}img/esdac.png" />
+                    </a>                    
+                </div>
+                <div class="slick-item">
+                    <a href="http://www.gdacs.org" target="_blank">
+                        <img src="{{ STATIC_URL }}img/gdacs.png" />
+                    </a>                    
+                </div>
+                <div class="slick-item">
+                    <a href="http://data.jrc.ec.europa.eu/collection/LISCOAST" target="_blank">
+                        <img src="{{ STATIC_URL }}img/liscoast.png" />
+                    </a>                    
+                </div>
+                <div class="slick-item">
+                    <a href="http://www.share-eu.org/" target="_blank">
+                        <img src="{{ STATIC_URL }}img/share.png" />
+                    </a>                    
+                </div>
+            </div>                      
         </div>    
         
         {% endblock %}
@@ -204,7 +237,8 @@
         jQuery(document).ready(function(){
             jQuery('.partners-slide').slick({
                 arrows: true,
-                centerMode: true,
+                centerMode: true,                
+                variableWidth: true,
                 slidesToShow: 3,
                 slidesToScroll: 3
             });

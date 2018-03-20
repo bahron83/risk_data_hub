@@ -58,7 +58,7 @@ const DataContainer = React.createClass({
         })
     },
     getInitialState: function() {
-        return {analysisClass: 'risk'};
+        return {analysisClass: ''};
     },
     getDefaultProps() {
         return {
@@ -188,34 +188,56 @@ const DataContainer = React.createClass({
         );
     },
     renderRiskAnalysis() {
-        const {analysisType = {}, analysisTypeE = {}, getAnalysis} = this.props;
+        const {analysisType = {}, analysisTypeE = {}, getAnalysis} = this.props;        
         let selectedAnalysisType = analysisType;            
-        if(this.state.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name))            
-            selectedAnalysisType = analysisTypeE;        
-        return selectedAnalysisType.riskAnalysis.map((rs, idx) => {
+        if(this.state.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name) || (this.state.analysisClass == '' && analysisType == {}))            
+            selectedAnalysisType = analysisTypeE;         
+        return (selectedAnalysisType.riskAnalysis || []).map((rs, idx) => {
             const {title, fa_icon: faIcon, abstract} = rs.hazardSet;
             const tooltip = (<Tooltip id={"tooltip-icon-cat-" + idx} className="disaster">{'Analysis Data'}</Tooltip>);
             return (
-              <div key={idx} className="row">
-                  <div className="col-xs-1 text-center">
-                      <OverlayTrigger placement="bottom" overlay={tooltip}>
+                <div key={idx} className="row">
+                    <div className="col-xs-1 text-center">
+                        <OverlayTrigger placement="bottom" overlay={tooltip}>
                         <i className={'disaster-category fa ' + faIcon} onClick={()=> getAnalysis(rs.href)}></i>
-                      </OverlayTrigger>
-                  </div>
-                  <div className="col-xs-11">
+                        </OverlayTrigger>
+                    </div>
+                    <div className="col-xs-11">
                     <Panel collapsible header={this.renderRiskAnalysisHeader(title, getAnalysis, rs, idx)}>
                         {abstract}
                         <br/>
                         <GetAnalysisBtn onClick={()=> getAnalysis(rs.href)}
                         iconClass="fa fa-bar-chart" label="Analysis Data"/>
                     </Panel>
-                  </div>
-              </div>
+                    </div>
+                </div>
             );
-        });
+        });        
     },
     renderAnalysisTab() {
         const {hazardType = {}, analysisType = {}, analysisTypeE = {}, getData: loadData} = this.props;
+        let count = 0;
+        if(analysisType.name == undefined)
+            count += 1;
+        if(analysisTypeE.name == undefined)
+            count += 2;
+        switch(count) {
+            case 0:
+                if(this.state.analysisClass == '')
+                    this.selectAnalysisClass('risk')
+                break;
+            case 1:
+                if(this.state.analysisClass != 'event')
+                    this.selectAnalysisClass('event')
+                break;
+            case 2:
+                if(this.state.analysisClass != 'risk')
+                    this.selectAnalysisClass('risk')
+                break;
+            case 3:
+                return null;
+                break;
+        }        
         return (hazardType.analysisTypes || []).map((type, idx) => {
             const {href, name, title, faIcon, description, analysisClass} = type;
             const active = ((name === analysisType.name && analysisClass.name == this.state.analysisClass) || (name === analysisTypeE.name && analysisClass.name == this.state.analysisClass));

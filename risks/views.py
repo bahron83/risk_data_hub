@@ -384,20 +384,28 @@ class HazardTypeView(ContextAware, LocationSource, View):
         aclass_risk = aclasses.get(name='risk')
         aclass_event = aclasses.get(name='event')
         if not atypes.exists():
-            return None, None,
+            return None, None, None, None
         
-        first_atype = atypes.filter(analysis_class=aclass_risk).first().set_location(location).set_hazard_type(hazard_type)
-        first_atype_e = atypes.filter(analysis_class=aclass_event).first().set_location(location).set_hazard_type(hazard_type)
+        first_atype = atypes.filter(analysis_class=aclass_risk).first()
+        if first_atype is not None:
+            first_atype = first_atype.set_location(location).set_hazard_type(hazard_type)
+        first_atype_e = atypes.filter(analysis_class=aclass_event).first()
+        if first_atype_e is not None:
+            first_atype_e = first_atype_e.set_location(location).set_hazard_type(hazard_type)
         if not kwargs.get('at'):
-            atype = first_atype
+            atype_r = first_atype
             atype_e = first_atype_e
             aclass = None
         else:
-            temp = atypes.get(name=kwargs['at']).set_location(location).set_hazard_type(hazard_type)            
-            atype = temp if temp.analysis_class == aclass_risk else first_atype
-            atype_e = temp if temp.analysis_class == aclass_event else first_atype_e
-            aclass = temp.analysis_class
-        return atype, atype_e, atypes, aclass,
+            atype = atypes.filter(name=kwargs['at']).first()
+            if atype is None:
+                return None, None, atypes, None
+            else:
+                atype = atype.set_location(location).set_hazard_type(hazard_type)            
+                atype_r = atype if atype.analysis_class == aclass_risk else first_atype
+                atype_e = atype if atype.analysis_class == aclass_event else first_atype_e
+                aclass = atype.analysis_class
+        return atype_r, atype_e, atypes, aclass,
 
     def get(self, request, *args, **kwargs):
         locations = self.get_location(**kwargs)
@@ -412,8 +420,8 @@ class HazardTypeView(ContextAware, LocationSource, View):
         if not hazard_type:
             return json_response(errors=['Invalid hazard type'], status=404)
 
-        (atype, atype_e, atypes, aclass,) = self.get_analysis_type(loc, hazard_type, **kwargs)
-        if not atype and not atype_e:
+        (atype_r, atype_e, atypes, aclass,) = self.get_analysis_type(loc, hazard_type, **kwargs)
+        if not atype_r and not atype_e:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404)        
 
         out = {
@@ -422,7 +430,7 @@ class HazardTypeView(ContextAware, LocationSource, View):
             'context': self.get_context_url(**kwargs),
             'furtherResources': self.get_further_resources(**kwargs),
             'hazardType': hazard_type.get_hazard_details(),            
-            'analysisType': atype.get_analysis_details() if atype else {},
+            'analysisType': atype_r.get_analysis_details() if atype_r else {},
             'analysisTypeE': atype_e.get_analysis_details() if atype_e else {}
         }
 
@@ -637,11 +645,11 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         if not hazard_type:
             return json_response(errors=['Invalid hazard type'], status=404)
 
-        (atype, atype_e, atypes, aclass,) = self.get_analysis_type(loc, hazard_type, **kwargs)
-        if not atype and not atype_e:
+        (atype_r, atype_e, atypes, aclass,) = self.get_analysis_type(loc, hazard_type, **kwargs)
+        if not atype_r and not atype_e:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404)
 
-        current_atype = atype if atype.analysis_class == aclass else atype_e
+        current_atype = atype_r if atype_r.analysis_class == aclass else atype_e
         risks = current_atype.get_risk_analysis_list(id=kwargs['an'])
         if not risks:
             return json_response(errors=['No risk analysis found for given parameters'], status=404)
