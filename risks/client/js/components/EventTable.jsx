@@ -7,7 +7,9 @@ const EventTable = React.createClass({
         riskEvent: React.PropTypes.object,
         events: React.PropTypes.array,        
         setEventIdx: React.PropTypes.func, 
-        getEventData: React.PropTypes.func
+        getEventData: React.PropTypes.func,
+        fullContext: React.PropTypes.object,
+        zoomInOut: React.PropTypes.func
     },
     getDefaultProps() {
         return {
@@ -19,13 +21,13 @@ const EventTable = React.createClass({
     },
     trClassFormat(row, index) {
         const {riskEvent} = this.props;
-        return row.event_id == riskEvent.eventid ? 'selected' : '';
+        return row.event_id == riskEvent.event_id ? 'selected' : '';
     },
     render() {
         const events = this.getEventTableData();                        
 
         const options = {
-            onRowClick: this.onRowClick            
+            onRowClick: this.handleClick            
         }        
 
         return (                    
@@ -39,10 +41,17 @@ const EventTable = React.createClass({
         );
                         
     },
-    onRowClick(row) {        
-        const nuts3 = row.nuts3.split(';');
-        this.props.setEventIdx('eventid', row.event_id, 'nuts3', nuts3);
-        this.props.getEventData('/risks/data_extraction/loc/'+row.iso2+'/ht/'+row.hazard_type+'/evt/'+row.event_id+'/');        
+    handleClick(item) {
+        const {fullContext} = this.props;              
+        if(fullContext.adm_level == 0) {
+            const dataHref = '/risks/data_extraction/loc/' + item.iso2 + '/';
+            const geomHref = '/risks/data_extraction/geom/' + item.iso2 + '/';
+            this.props.zoomInOut(dataHref, geomHref);            
+        } 
+        else {
+            this.props.setEventIdx(item);
+            this.props.getEventData('/risks/data_extraction/loc/'+item.iso2+'/ht/'+item.hazard_type+'/evt/'+item.event_id+'/');        
+        }                       
     }
 });
 

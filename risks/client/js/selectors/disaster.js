@@ -13,13 +13,13 @@ const additionalChartsSel = ({disaster = {}}) => disaster.additionalCharts || {}
 const riskAnalysisDataSel = ({disaster = {}}) => disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData || {};
 const fullContextSel = ({disaster = {}}) => disaster.riskAnalysis && disaster.riskAnalysis.fullContext || {};
 const dimInit = {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0};
-const eventInit = {eventid: '', nuts3: ''};
 const dimSelector = ({disaster = {}}) => disaster.dim || dimInit;
-const eventSelector = ({disaster = {}}) => disaster.riskEvent || eventInit;
+const eventSelector = ({disaster = {}}) => disaster.riskEvent || {};
 const chartValues = ({disaster = {}}) => disaster.cValues || [];
 const showChartSel = ({disaster = {}}) => disaster.showChart || false;
 const contextSel = ({disaster = {}}) => disaster.context && !isNull(disaster.context) && disaster.context || '';
 const riskAnalysisContextSelector = ({disaster = {}}) => disaster.riskAnalysis && disaster.riskAnalysis.context;
+const zoomJustCalledSel = ({disaster = {}}) => disaster.zoomJustCalled;
 const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel, contextSel],
      (navItems, riskItems, hazardType, context) => ({
         navItems,
@@ -39,7 +39,7 @@ const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analy
         riskAnalysisData,
         dim,
         showChart,
-        'full_context': fullContext
+        full_context: fullContext
     }));
 const drillUpSelector = createSelector([navItemsSel],
      (navItems) => ({
@@ -126,16 +126,18 @@ const additionalChartSelector = createSelector([riskAnalysisDataSel, additionalC
         currentSection: additionalCharts.currentSection,
         currentTable: additionalCharts.currentTable
     }));
-const eventTableSelector = createSelector([riskAnalysisDataSel, eventSelector],
-    (riskAnalysisData, riskEvent) => ({
-        events: riskAnalysisData.events,        
-        riskEvent
-    }));
-const sChartSelector = createSelector([riskAnalysisDataSel, eventSelector, fullContextSel],
+const eventTableSelector = createSelector([riskAnalysisDataSel, eventSelector, fullContextSel],
     (riskAnalysisData, riskEvent, fullContext) => ({
         events: riskAnalysisData.events,        
         riskEvent,
         fullContext
+    }));
+const sChartSelector = createSelector([riskAnalysisDataSel, eventSelector, fullContextSel, zoomJustCalledSel],
+    (riskAnalysisData, riskEvent, fullContext, zoomJustCalled) => ({
+        events: riskAnalysisData.events,        
+        riskEvent,
+        fullContext,
+        zoomJustCalled
     }));
 const eventCountryChartSelector = createSelector([riskAnalysisDataSel, fullContextSel],
     (riskAnalysisData, fullContext) => ({

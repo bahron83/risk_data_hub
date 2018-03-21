@@ -9,12 +9,12 @@ const React = require('react');
 const {connect} = require('react-redux');
 const {dataContainerSelector, chartSelector, eventTableSelector, sChartSelector, eventCountryChartSelector} = require('../selectors/disaster');
 
-const {getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, getSFurtherResourceData} = require('../actions/disaster');
+const {getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, getSFurtherResourceData, zoomInOut} = require('../actions/disaster');
 const Chart = connect(chartSelector, {setDimIdx, getAnalysisData})(require('../components/Chart'));
-const EventCountryChart = connect(eventCountryChartSelector, {getAnalysisData})(require('../components/EventCountryChart'));
-const EventTable = connect(eventTableSelector, {setEventIdx, getEventData})(require('../components/EventTable'));
+const EventCountryChart = connect(eventCountryChartSelector, {zoomInOut})(require('../components/EventCountryChart'));
+const EventTable = connect(eventTableSelector, {setEventIdx, getEventData, zoomInOut})(require('../components/EventTable'));
 const SummaryChart = connect(chartSelector)(require('../components/SummaryChart'));
-const ScatterChart = connect(sChartSelector, {setEventIdx, getEventData})(require('../components/ScatterChart'));
+const ScatterChart = connect(sChartSelector, {setEventIdx, getEventData, zoomInOut})(require('../components/ScatterChart'));
 const GetAnalysisBtn = connect(({disaster}) => ({loading: disaster.loading || false}))(require('../components/LoadingBtn'));
 
 const DownloadData = require('../components/DownloadData');

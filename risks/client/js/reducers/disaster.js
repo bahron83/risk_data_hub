@@ -20,7 +20,8 @@ const {
     GET_EVENT_DATA,
     SET_CHART_SLIDER_INDEX,
     SET_ADDITIONAL_CHART_INDEX,
-    TOGGLE_SWITCH_CHART
+    TOGGLE_SWITCH_CHART,
+    ZOOM_IN_OUT
 } = require('../actions/disaster');
 
 function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, action) {
@@ -30,10 +31,10 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
                 loading: true
             });
         case DATA_LOADED: {
-            return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, event: state.event, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app}, action.data);
+            return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, riskEvent: state.riskEvent, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app}, action.data);
         }
         case ANALYSIS_DATA_LOADED: {
-            return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values});
+            return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values, zoomJustCalled: false});
         }
         case EVENT_DATA_LOADED: {            
             return assign({}, state, { loading: false, error: null, eventAnalysis: action.data, cValues: action.data.eventValues });
@@ -47,11 +48,11 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
         }
         case SET_DIM_IDX: {
             const newDim = assign({dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}, state.dim, {[action.dim]: action.idx});
-            const newEvent = {eventid: '', nuts3: []};
+            const newEvent = {};
             return assign({}, state, {dim: newDim, riskEvent: newEvent});
         }
         case SET_EVENT_IDX: {
-            const newEvent = assign({eventid: ''}, state.riskEvent, {[action.eventKey]: action.eventValue, [action.eventNuts3Key]: action.eventNuts3Value});            
+            const newEvent = assign({}, state.riskEvent, action.event);            
             return assign({}, state, {riskEvent: newEvent});
         }
         case DATA_ERROR:
@@ -81,6 +82,9 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
         case TOGGLE_SWITCH_CHART: {
             return assign({}, state, {showChart: !state.showChart});
         }
+        case ZOOM_IN_OUT: {
+            return assign({}, state, {riskEvent: {}, zoomJustCalled: true});
+        }            
         default:
             return state;
     }

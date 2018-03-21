@@ -7,7 +7,7 @@ const ChartTooltip = require("./ChartTooltip");
 const EventCountryChart = React.createClass({
     propTypes: {
         values: React.PropTypes.array,
-        getAnalysisData: React.PropTypes.func,
+        zoomInOut: React.PropTypes.func,
         full_context: React.PropTypes.object      
     },
     getDefaultProps() {
@@ -28,7 +28,7 @@ const EventCountryChart = React.createClass({
                     <XAxis dataKey="name"/>
                     <YAxis/> 
                     <Tooltip/>                
-                    <Bar dataKey="value">                    
+                    <Bar dataKey="value" onClick={this.handleClick}>                    
                         {chartData.map((entry,index) => {
                             const ctx = this.props.full_context;
                             const active = entry.name === ctx.loc;
@@ -40,8 +40,9 @@ const EventCountryChart = React.createClass({
             </ResponsiveContainer>);
     },
     handleClick(item, index) {
-        const ctx = this.props.full_context;                
-        this.props.getAnalysisData('/risks/data_extraction/loc/' + item.name + '/ht/' + ctx.ht + '/at/' + ctx.at + '/an/' + ctx.an + '/');
+        const dataHref = '/risks/data_extraction/loc/' + item.name + '/';
+        const geomHref = '/risks/data_extraction/geom/' + item.name + '/';
+        this.props.zoomInOut(dataHref, geomHref);
     },
     formatYTiks(v) {
         return v.toLocaleString();

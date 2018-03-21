@@ -65,7 +65,7 @@ function getViewParam({dim, showSubUnit, riskAnalysis, app, riskEvent, eventAnal
     //console.log('riskEvent : '+riskEvent);
     if(app !== 'costs') {
         if(riskEvent !== undefined)
-            return (riskEvent != {} && riskEvent.eventid != "") ? getViewParamEvents(eventAnalysis) : getViewParamRisks(dim, showSubUnit, riskAnalysis);
+            return (riskEvent.event_id != undefined) ? getViewParamEvents(eventAnalysis) : getViewParamRisks(dim, showSubUnit, riskAnalysis);
         return getViewParamRisks(dim, showSubUnit, riskAnalysis);
     }
     return getViewParamCosts(dim, riskAnalysis);
@@ -100,7 +100,7 @@ function getLayerNameEvents(eventAnalysis) {
 }
 function getLayerName({riskAnalysis, app, riskEvent, eventAnalysis}) {
     if(app !== 'costs') {
-        return (riskEvent != {} && riskEvent.eventid != "") ? getLayerNameEvents(eventAnalysis) : getLayerNameRisks(riskAnalysis);
+        return (riskEvent.event_id != undefined) ? getLayerNameEvents(eventAnalysis) : getLayerNameRisks(riskAnalysis);
     }
     return getLayerNameCosts(riskAnalysis);
 }
@@ -121,7 +121,7 @@ function getStyleEvents(eventAnalysis) {
 }
 function getStyle({riskAnalysis, app, riskEvent, eventAnalysis}) {
     if(app !== 'costs') {
-        return (riskEvent != {} && riskEvent.eventid != "") ? getStyleEvents(eventAnalysis) : getStyleRisks(riskAnalysis);
+        return (riskEvent.event_id != undefined) ? getStyleEvents(eventAnalysis) : getStyleRisks(riskAnalysis);
     } 
     return getStyleCosts(riskAnalysis);
 }

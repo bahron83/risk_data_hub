@@ -188,13 +188,10 @@ function toggleSwitchChart() {
     };
 }
 
-function setEventIdx(eventKey, eventValue, eventNuts3Key, eventNuts3Value) {
+function setEventIdx(event) {
     return {
         type: SET_EVENT_IDX,
-        eventKey,
-        eventValue, 
-        eventNuts3Key,
-        eventNuts3Value
+        event
     };    
 }
 
