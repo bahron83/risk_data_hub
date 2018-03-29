@@ -35,7 +35,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app, analysisClass: state.analysisClass}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, riskEvent: state.riskEvent, analysisClass: state.analysisClass, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app}, action.data);
         }
         case ANALYSIS_DATA_LOADED: {
-            return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values, zoomJustCalled: false});
+            return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values, zoomJustCalled: 2});
         }
         case EVENT_DATA_LOADED: {            
             return assign({}, state, { loading: false, error: null, eventAnalysis: action.data, cValues: action.data.eventValues });
@@ -84,7 +84,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             return assign({}, state, {showChart: !state.showChart});
         }
         case ZOOM_IN_OUT: {
-            return assign({}, state, {riskEvent: {}, zoomJustCalled: true});
+            return assign({}, state, {riskEvent: {}, zoomJustCalled: 1});
         }  
         case SET_ANALYSIS_CLASS: {
             return assign({}, state, { analysisClass: action.value });

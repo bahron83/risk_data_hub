@@ -10,7 +10,8 @@ const SChart = React.createClass({
         fullContext: React.PropTypes.object,
         setEventIdx: React.PropTypes.func, 
         getEventData: React.PropTypes.func,
-        zoomInOut: React.PropTypes.func       
+        zoomInOut: React.PropTypes.func,
+        zoomJustCalled: React.PropTypes.number     
     },
     getInitialState: function() {
         return {selectedEvent: null, loc: null};
@@ -43,8 +44,9 @@ const SChart = React.createClass({
         this.componentDidUpdate();
     },
     componentDidUpdate() {                        
-        const { riskEvent, fullContext, data } = this.props;         
-        if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 /*&& zoomJustCalled == false*/) {            
+        const { riskEvent, fullContext, data, zoomJustCalled } = this.props;      
+        console.log('zoom just called: ', zoomJustCalled);
+        if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 && zoomJustCalled == 2) {            
             if(data.length > 0) {                
                 this.handleClick(data[0]);
             }

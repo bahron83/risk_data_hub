@@ -20,7 +20,7 @@ const showChartSel = ({disaster = {}}) => disaster.showChart || false;
 const contextSel = ({disaster = {}}) => disaster.context && !isNull(disaster.context) && disaster.context || '';
 const riskAnalysisContextSelector = ({disaster = {}}) => disaster.riskAnalysis && disaster.riskAnalysis.context;
 const analysisClassSelector = ({disaster = {}}) => disaster.analysisClass || '';
-//const zoomJustCalledSel = ({disaster = {}}) => disaster.zoomJustCalled;
+const zoomJustCalledSel = ({disaster = {}}) => disaster.zoomJustCalled || 0;
 const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel, contextSel],
      (navItems, riskItems, hazardType, context) => ({
         navItems,
@@ -135,12 +135,13 @@ const eventTableSelector = createSelector([riskAnalysisDataSel, eventSelector, f
         riskEvent,
         fullContext
     }));
-const sChartSelector = createSelector([riskAnalysisDataSel, eventSelector, fullContextSel],
-    (riskAnalysisData, riskEvent, fullContext) => ({
+const sChartSelector = createSelector([riskAnalysisDataSel, eventSelector, fullContextSel, zoomJustCalledSel],
+    (riskAnalysisData, riskEvent, fullContext, zoomJustCalled) => ({
         events: riskAnalysisData.events,        
         values: riskAnalysisData.data.event_values,
         riskEvent,
-        fullContext        
+        fullContext,
+        zoomJustCalled        
     }));
 const eventCountryChartSelector = createSelector([riskAnalysisDataSel, fullContextSel],
     (riskAnalysisData, fullContext) => ({
