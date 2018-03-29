@@ -29,6 +29,7 @@ const CHART_SLIDER_UPDATE = 'CHART_SLIDER_UPDATE';
 const SET_ADDITIONAL_CHART_INDEX = 'SET_ADDITIONAL_CHART_INDEX';
 const TOGGLE_SWITCH_CHART = 'TOGGLE_SWITCH_CHART';
 const SET_EVENT_IDX = 'SET_EVENT_IDX';
+const SET_ANALYSIS_CLASS = 'SET_ANALYSIS_CLASS';
 
 function initState({href, geomHref, gc, ac}) {
     return {
@@ -195,6 +196,13 @@ function setEventIdx(event) {
     };    
 }
 
+function setAnalysisClass(value) {
+    return {
+        type: SET_ANALYSIS_CLASS,
+        value
+    };    
+}
+
 module.exports = {
     DATA_LOADING,
     DATA_LOADED,
@@ -216,7 +224,8 @@ module.exports = {
     CHART_SLIDER_UPDATE,
     SET_ADDITIONAL_CHART_INDEX,
     TOGGLE_SWITCH_CHART,
-    SET_EVENT_IDX,    
+    SET_EVENT_IDX,  
+    SET_ANALYSIS_CLASS,  
     featuresLoaded,
     featuresLoading,
     featuresError,
@@ -240,5 +249,6 @@ module.exports = {
     chartSliderUpdate,
     setAdditionalChartIndex,
     toggleSwitchChart,
-    setEventIdx    
+    setEventIdx,
+    setAnalysisClass 
 };

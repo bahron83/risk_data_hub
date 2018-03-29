@@ -21,7 +21,8 @@ const {
     SET_CHART_SLIDER_INDEX,
     SET_ADDITIONAL_CHART_INDEX,
     TOGGLE_SWITCH_CHART,
-    ZOOM_IN_OUT
+    ZOOM_IN_OUT,
+    SET_ANALYSIS_CLASS
 } = require('../actions/disaster');
 
 function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, action) {
@@ -31,7 +32,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
                 loading: true
             });
         case DATA_LOADED: {
-            return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, riskEvent: state.riskEvent, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app}, action.data);
+            return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app, analysisClass: state.analysisClass}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, riskEvent: state.riskEvent, analysisClass: state.analysisClass, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app}, action.data);
         }
         case ANALYSIS_DATA_LOADED: {
             return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values, zoomJustCalled: false});
@@ -84,7 +85,10 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
         }
         case ZOOM_IN_OUT: {
             return assign({}, state, {riskEvent: {}, zoomJustCalled: true});
-        }            
+        }  
+        case SET_ANALYSIS_CLASS: {
+            return assign({}, state, { analysisClass: action.value });
+        }          
         default:
             return state;
     }

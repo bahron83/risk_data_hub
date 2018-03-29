@@ -1,12 +1,11 @@
 const React = require('react');
 const {BarChart, Bar, XAxis, Cell, YAxis, Tooltip, CartesianGrid, ResponsiveContainer} = require('recharts');
 const ChartTooltip = require("./ChartTooltip");
-
-
+const _ = require('lodash');
 
 const EventCountryChart = React.createClass({
     propTypes: {
-        values: React.PropTypes.array,
+        values: React.PropTypes.object,
         zoomInOut: React.PropTypes.func,
         full_context: React.PropTypes.object      
     },
@@ -15,8 +14,19 @@ const EventCountryChart = React.createClass({
         };
     },
     getChartData() {
-        const {values} = this.props;
-        return values.map((v) => {return {"name": v[0], "value": parseFloat(v[3], 10)}; });        
+        const { values } = this.props;
+        let dataGrouped = [];        
+        
+        Object.entries(values).map(([k, v]) => {            
+            const index = dataGrouped.findIndex(e => e.name == v[0]);
+            const value = parseFloat(v[3], 10);
+            if(index > -1)
+            dataGrouped[index]['value'] += value;
+            else
+            dataGrouped.push({"name": v[0], "value": value});            
+        });
+        dataGrouped = _.orderBy(dataGrouped, 'value', 'desc');        
+        return dataGrouped;        
     },
     render() {          
         const chartData = this.getChartData();        

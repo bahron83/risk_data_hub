@@ -97,11 +97,11 @@ class Command(BaseCommand):
         people_affected = 0
         try:
             for row_num in range(1, sheet.nrows):
-                event_id = sheet.cell(row_num, 0).value
-                iso2 = sheet.cell(row_num, 1).value
-                dim1 = sheet.cell(row_num, 2).value
-                dim2 = sheet.cell(row_num, 3).value
-                attribute_value = sheet.cell(row_num, 4).value
+                event_id = str(sheet.cell(row_num, 0).value).strip()
+                iso2 = str(sheet.cell(row_num, 1).value).strip()
+                dim1 = str(sheet.cell(row_num, 2).value).strip()
+                dim2 = str(sheet.cell(row_num, 3).value).strip()
+                attribute_value = str(sheet.cell(row_num, 4).value).strip()
                                                 
                 adm_div = AdministrativeDivision.objects.get(code=iso2)                
                 try:
@@ -118,7 +118,7 @@ class Command(BaseCommand):
 
                 
                 
-                if str(attribute_value) != '' and any(x.value == dim1 for x in axis_x) and any(y.value == dim2 for y in axis_y):                    
+                if attribute_value != '' and any(x.value == dim1 for x in axis_x) and any(y.value == dim2 for y in axis_y):                    
                     x = axis_x.get(value=dim1)
                     y = axis_y.get(value=dim2)                                        
 

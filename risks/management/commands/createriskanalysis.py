@@ -159,7 +159,7 @@ Loss Impact and Impact Analysis Types.'
 
         Config.read(descriptor_file)
         risk_name = Config.get('DEFAULT', 'name')
-        analysis_class = Config.get('DEFAULT', 'analysis_class')
+        #analysis_class = Config.get('DEFAULT', 'analysis_class')
         analysis_type_name = Config.get('DEFAULT', 'analysis_type')
         hazard_type_name = Config.get('DEFAULT', 'hazard_type')
         layer_name = Config.get('DEFAULT', 'layer')
@@ -193,7 +193,7 @@ Loss Impact and Impact Analysis Types.'
         risk, created = RiskAnalysis.objects.update_or_create(
             name=risk_name,
             app=app,
-            analysis_class = analysis_class,
+            #analysis_class = analysis_class,
             analysis_type = analysis,
             hazard_type = hazard,
             layer = layer

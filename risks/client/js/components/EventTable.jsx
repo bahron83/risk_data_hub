@@ -5,11 +5,12 @@ var TableHeaderColumn = ReactBsTable.TableHeaderColumn;
 const EventTable = React.createClass({
     propTypes: {
         riskEvent: React.PropTypes.object,
-        events: React.PropTypes.array,        
+        events: React.PropTypes.array,    
+        values: React.PropTypes.object,    
         setEventIdx: React.PropTypes.func, 
         getEventData: React.PropTypes.func,
         fullContext: React.PropTypes.object,
-        zoomInOut: React.PropTypes.func
+        zoomInOut: React.PropTypes.func        
     },
     getDefaultProps() {
         return {
@@ -22,20 +23,21 @@ const EventTable = React.createClass({
     trClassFormat(row, index) {
         const {riskEvent} = this.props;
         return row.event_id == riskEvent.event_id ? 'selected' : '';
-    },
-    render() {
-        const events = this.getEventTableData();                        
-
+    },    
+    render() {        
+        const { data } = this.props;        
+        const dataKey = data[0]['dataKey'];        
+        const dataKeyVerbose = dataKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
         const options = {
             onRowClick: this.handleClick            
         }        
 
         return (                    
-            <BootstrapTable data={events} options={options} trClassName={this.trClassFormat}>                
+            <BootstrapTable data={data} options={options} trClassName={this.trClassFormat}>                
                 <TableHeaderColumn dataField='event_id' isKey={true} hidden={true}>Event ID</TableHeaderColumn>
                 <TableHeaderColumn dataField='event_source'>Source</TableHeaderColumn>
                 <TableHeaderColumn dataField='year'>Year</TableHeaderColumn>
-                <TableHeaderColumn dataField='people_affected'>People Affected</TableHeaderColumn>
+                <TableHeaderColumn dataField={dataKey}>{dataKeyVerbose}</TableHeaderColumn>
                 <TableHeaderColumn dataField='sources'>References</TableHeaderColumn>
             </BootstrapTable>
         );

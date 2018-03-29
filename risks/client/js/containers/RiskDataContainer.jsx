@@ -9,7 +9,7 @@ const React = require('react');
 const {connect} = require('react-redux');
 const {dataContainerSelector, chartSelector, eventTableSelector, sChartSelector, eventCountryChartSelector} = require('../selectors/disaster');
 
-const {getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, getSFurtherResourceData, zoomInOut} = require('../actions/disaster');
+const {getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass} = require('../actions/disaster');
 const Chart = connect(chartSelector, {setDimIdx, getAnalysisData})(require('../components/Chart'));
 const EventCountryChart = connect(eventCountryChartSelector, {zoomInOut})(require('../components/EventCountryChart'));
 const EventTable = connect(eventTableSelector, {setEventIdx, getEventData, zoomInOut})(require('../components/EventTable'));
@@ -33,12 +33,14 @@ const DownloadBtn = connect(({disaster, report}) => {
     };
 }, {downloadAction: generateReport})(require('../components/DownloadBtn'));
 
+
 const DataContainer = React.createClass({
     propTypes: {
         getData: React.PropTypes.func,
         getAnalysis: React.PropTypes.func,
         setDimIdx: React.PropTypes.func,
         setEventIdx: React.PropTypes.func,
+        setAnalysisClass: React.PropTypes.func,
         showHazard: React.PropTypes.bool,
         className: React.PropTypes.string,
         hazardTitle: React.PropTypes.string,
@@ -46,7 +48,8 @@ const DataContainer = React.createClass({
         analysisTypeE: React.PropTypes.object,
         riskAnalysisData: React.PropTypes.object,
         dim: React.PropTypes.object,
-        full_context: React.PropTypes.object,
+        fullContext: React.PropTypes.object,        
+        analysisClass: React.PropTypes.string,        
         hazardType: React.PropTypes.shape({
             mnemonic: React.PropTypes.string,
             description: React.PropTypes.string,
@@ -56,10 +59,7 @@ const DataContainer = React.createClass({
                 href: React.PropTypes.string
                 }))
         })
-    },
-    getInitialState: function() {
-        return {analysisClass: ''};
-    },
+    },    
     getDefaultProps() {
         return {
             showHazard: false,
@@ -80,16 +80,41 @@ const DataContainer = React.createClass({
         const {dim} = this.props;
         const nameIdx = dim === 0 ? 1 : 0;
         return data.filter((d) => d[nameIdx] === val ).map((v) => {return {"name": v[dim], "value": parseInt(v[2], 10)}; });
-    },    
+    },
+    getEventData() {
+        const { events } = this.props.riskAnalysisData || null;
+        const { event_values: values } = this.props.riskAnalysisData.data || null;
+        if(events && values) {
+            const dataKey = Object.entries(values)[0][1][1];  
+            return(
+                events.map(v => {
+                    let newObj = v;
+                    const valueArr = values[v['event_id']];                            
+                    newObj[dataKey] = valueArr != undefined ? parseFloat(valueArr[3]) : null;
+                    newObj['dataKey'] = dataKey;
+                    return newObj;              
+                })  
+            );
+        }
+        return null;
+    },
+    filterByLoc(data) {        
+        const ctx = this.props.fullContext;
+        if(ctx.adm_level > 0 && data != null)
+            return data.filter(e => e.iso2 == ctx.loc);
+        return data;
+    },
     renderAnalysisData() {        
-        const {dim, full_context, analysisType, analysisTypeE} = this.props;
+        const {dim, fullContext, analysisType, analysisTypeE} = this.props;
         const {hazardSet, data} = this.props.riskAnalysisData;             
         const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
         const val = data.dimensions[dim.dim1].values[dim.dim1Idx];
         const header = data.dimensions[dim.dim1].name + ': ' + val;
         const description = data.dimensions[dim.dim1].layers && data.dimensions[dim.dim1].layers[val] && data.dimensions[dim.dim1].layers[val].description ? data.dimensions[dim.dim1].layers[val].description : '';
+        const eventData = this.getEventData();
+        const eventDataFiltered = this.filterByLoc(eventData);        
         let selectedAnalysisType = analysisType;    
-        if(this.state.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name))            
+        if(this.props.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name))            
             selectedAnalysisType = analysisTypeE;
         return (
             <div id="disaster-analysis-data-container" className="container-fluid">
@@ -143,19 +168,19 @@ const DataContainer = React.createClass({
                     </div>
                     )}
                     
-                    {full_context.analysis_class == 'event' ? (                        
+                    {fullContext.analysis_class == 'event' ? (                        
                         <div>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <EventCountryChart/>
+                                <EventCountryChart data={eventData}/>
                             </Panel>                            
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <ScatterChart/>
+                                <ScatterChart data={eventDataFiltered}/>
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Resume'}</h4>
-                                <EventTable/>
+                                <EventTable data={eventDataFiltered}/>
                             </Panel>
                         </div>
                     ) : (
@@ -190,7 +215,7 @@ const DataContainer = React.createClass({
     renderRiskAnalysis() {
         const {analysisType = {}, analysisTypeE = {}, getAnalysis} = this.props;        
         let selectedAnalysisType = analysisType;            
-        if(this.state.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name) || (this.state.analysisClass == '' && analysisType == {}))            
+        if(this.props.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name) || (this.props.analysisClass == '' && analysisType == {}))            
             selectedAnalysisType = analysisTypeE;         
         return (selectedAnalysisType.riskAnalysis || []).map((rs, idx) => {
             const {title, fa_icon: faIcon, abstract} = rs.hazardSet;
@@ -216,36 +241,15 @@ const DataContainer = React.createClass({
     },
     renderAnalysisTab() {
         const {hazardType = {}, analysisType = {}, analysisTypeE = {}, getData: loadData} = this.props;
-        let count = 0;
-        if(analysisType.name == undefined)
-            count += 1;
-        if(analysisTypeE.name == undefined)
-            count += 2;
-        switch(count) {
-            case 0:
-                if(this.state.analysisClass == '')
-                    this.selectAnalysisClass('risk')
-                break;
-            case 1:
-                if(this.state.analysisClass != 'event')
-                    this.selectAnalysisClass('event')
-                break;
-            case 2:
-                if(this.state.analysisClass != 'risk')
-                    this.selectAnalysisClass('risk')
-                break;
-            case 3:
-                return null;
-                break;
-        }        
+                        
         return (hazardType.analysisTypes || []).map((type, idx) => {
             const {href, name, title, faIcon, description, analysisClass} = type;
-            const active = ((name === analysisType.name && analysisClass.name == this.state.analysisClass) || (name === analysisTypeE.name && analysisClass.name == this.state.analysisClass));
+            const active = ((name === analysisType.name && analysisClass.name == this.props.analysisClass) || (name === analysisTypeE.name && analysisClass.name == this.props.analysisClass));
             const tooltip = (<Tooltip id={"tooltip-icon-analysis-tab-" + idx} className="disaster">{description}</Tooltip>);
-            if(analysisClass.name == this.state.analysisClass) {
+            if(analysisClass.name == this.props.analysisClass) {                                
                 return (                                
                     <OverlayTrigger key={name} placement="bottom" overlay={tooltip}>
-                        <li className={`text-center ${active ? 'active' : ''}`} onClick={() => loadData(href, true)}>
+                        <li key={name} className={`text-center ${active ? 'active' : ''}`} onClick={() => loadData(href, true)}>
                             <a href="#" data-toggle="tab"><span> <i className={"fa fa-" + faIcon}></i>&nbsp;{title}</span></a>
                         </li>
                     </OverlayTrigger>                
@@ -254,7 +258,7 @@ const DataContainer = React.createClass({
             return null;
         });
     },
-    renderAnalysisClass() {
+    renderAnalysisClass() {        
         const {hazardType} = this.props;
         let analysisClasses = [];
         hazardType.analysisTypes.map((item, idx) => {
@@ -267,19 +271,16 @@ const DataContainer = React.createClass({
         );        
         return(analysisClasses).map((item, idx) => {
             if(item != undefined && item != null) {
-                const active = item.name == this.state.analysisClass;                     
+                const active = item.name == this.props.analysisClass;                                 
                 return (
-                    <li className={`text-center ${active ? 'active' : ''}`} onClick={() => this.selectAnalysisClass(item.name)}>
+                    <li key={item.name} className={`text-center ${active ? 'active' : ''}`} onClick={() => this.props.setAnalysisClass(item.name)}>
                         <a href="#" data-toggle="tab"><span>{item.title}</span></a>
                     </li>
                 );
             }
             return null;
         });
-    },
-    selectAnalysisClass(name) {
-        this.setState({analysisClass: name});
-    },
+    },       
     renderHazard() {
         const {riskAnalysisData} = this.props;
 
@@ -316,7 +317,45 @@ const DataContainer = React.createClass({
     render() {
         const {showHazard, getData: loadData} = this.props;
         return showHazard ? this.renderHazard() : (<Overview className={this.props.className} getData={loadData}/>);
+    },
+    componentDidMount() {
+        this.componentDidUpdate();
+    },
+    componentDidUpdate() {
+        const {hazardType = {}, analysisType = {}, analysisTypeE = {}, getData: loadData} = this.props;
+        let count = 0;
+        if(analysisType.name == undefined)
+            count += 1;
+        if(analysisTypeE.name == undefined)
+            count += 2;
+                
+        switch(count) {
+            case 0:
+                if(this.props.analysisClass == '')
+                    this.props.setAnalysisClass('risk')
+                break;
+            case 1:
+                if(this.props.analysisClass != 'event')
+                    this.props.setAnalysisClass('event')
+                break;
+            case 2:
+                if(this.props.analysisClass != 'risk')
+                    this.props.setAnalysisClass('risk')
+                break;
+            case 3:
+                return null;
+                break;
+        } 
+        
+        /*console.log('href = '+atypeHref);
+        const {getData: loadData} = this.props;
+        const atypeHref = this.getAtypeHref();
+        console.log('href = '+atypeHref);
+        if(atypeHref != '') {
+            loadData(atypeHref, true);
+            this.setAtypeHref('');
+        }*/
     }
 });
 
-module.exports = connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, setEventIdx})(DataContainer);
+module.exports = connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, setEventIdx, setAnalysisClass})(DataContainer);

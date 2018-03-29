@@ -421,6 +421,7 @@ class HazardTypeView(ContextAware, LocationSource, View):
             return json_response(errors=['Invalid hazard type'], status=404)
 
         (atype_r, atype_e, atypes, aclass,) = self.get_analysis_type(loc, hazard_type, **kwargs)
+                
         if not atype_r and not atype_e:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404)        
 
@@ -646,10 +647,23 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             return json_response(errors=['Invalid hazard type'], status=404)
 
         (atype_r, atype_e, atypes, aclass,) = self.get_analysis_type(loc, hazard_type, **kwargs)
-        if not atype_r and not atype_e:
-            return json_response(errors=['No analysis type available for location/hazard type'], status=404)
-
-        current_atype = atype_r if atype_r.analysis_class == aclass else atype_e
+        
+        current_atype = None
+        risks = None
+        if not atype_r:
+            if atype_e:
+                if atype_e.analysis_class == aclass:
+                    current_atype = atype_e
+        else:
+            if atype_r.analysis_class == aclass:
+                current_atype = atype_r
+            if atype_e: 
+                if atype_e.analysis_class == aclass:
+                    current_atype = atype_e
+        
+        if not current_atype:
+            return json_response(errors=['No analysis type available for location/hazard type'], status=404) 
+        
         risks = current_atype.get_risk_analysis_list(id=kwargs['an'])
         if not risks:
             return json_response(errors=['No risk analysis found for given parameters'], status=404)
@@ -711,14 +725,14 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             out['riskAnalysisData']['eventsLayer']['layerTitle'] = '{}_events'.format(out['riskAnalysisData']['layer']['layerTitle'])
 
             # retrieve values for events aggregated by country
-            field_list = ['adm_code', 'dim1_value', 'dim2_value', 'value']
-            features_event_group_country = self.get_features_base('geonode:risk_analysis_event_group', field_list, **feat_kwargs)        
-            values_group_country = []
-            for f in features_event_group_country['features']:
-                temp = []
+            field_list = ['adm_code', 'dim1_value', 'dim2_value', 'value', 'event_id']
+            features_event_values = self.get_features_base('geonode:risk_analysis_event_details', field_list, **feat_kwargs)        
+            values_events = {}
+            for f in features_event_values['features']:
+                temp = []                
                 for l in field_list:
                     temp.append(f['properties'][l])
-                values_group_country.append(temp)
+                values_events[temp[field_list.index('event_id')]] = temp
             
             #values_group_country = [[f['properties']['adm_code'], f['properties']['dim1_value'], f['properties']['dim2_value'], f['properties']['value']] for f in features_event_group_country['features']]
         
@@ -733,7 +747,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             for e in events:
                 ev_list.append(e.get_event_plain())
 
-            out['riskAnalysisData']['data']['grouped_values'] = values_group_country
+            out['riskAnalysisData']['data']['event_values'] = values_events
             #out['riskAnalysisData']['events'] = serializers.serialize("json", events, use_natural_foreign_keys=True, use_natural_primary_keys=True)
             out['riskAnalysisData']['events'] = ev_list
         

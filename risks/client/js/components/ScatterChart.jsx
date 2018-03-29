@@ -6,11 +6,11 @@ const SChart = React.createClass({
     propTypes: {
         riskEvent: React.PropTypes.object,
         events: React.PropTypes.array,
+        values: React.PropTypes.object,
         fullContext: React.PropTypes.object,
         setEventIdx: React.PropTypes.func, 
         getEventData: React.PropTypes.func,
-        zoomInOut: React.PropTypes.func,
-        zoomJustCalled: React.PropTypes.boolean
+        zoomInOut: React.PropTypes.func       
     },
     getInitialState: function() {
         return {selectedEvent: null, loc: null};
@@ -18,22 +18,17 @@ const SChart = React.createClass({
     getDefaultProps() {
         return {
         };
-    },
-    getComponentData() {
-        const {events} = this.props;                         
-        return events;
-    },   
-    render () {
-        const events = this.getComponentData();        
-        const {riskEvent} = this.props;                
-        //console.log(riskEvent);
+    },       
+    render () {        
+        const { riskEvent, data } = this.props;                
+        const dataKey = data[0]['dataKey'];
         return (
           <ScatterChart width={500} height={400} margin={{top: 20, right: 0, bottom: 20, left: 0}}>
             <XAxis domain={[1870, 'auto']} dataKey={'year'} type="number" name='Year' unit=''/>
-            <YAxis dataKey={'people_affected'} type="number" name='People Affected' unit=''/>
+            <YAxis dataKey={dataKey} type="number" name={dataKey} unit=''/>
             <CartesianGrid />
-            <Scatter onClick={this.handleClick} data={events} name='Events'>
-                {events.map((entry, index) => {
+            <Scatter onClick={this.handleClick} data={data} name='Events'>
+                {data.map((entry, index) => {
                     const active = entry.event_id === riskEvent.event_id;
                     return (
                         <Cell cursor="pointer" stroke={active ? '#2c689c' : '#ffffff'} strokeWidth={active ? 2 : 1}fill={active ? '#ff8f31' : '#2c689c'} key={`cell-${index}`}/>);
@@ -47,16 +42,11 @@ const SChart = React.createClass({
     componentDidMount() {               
         this.componentDidUpdate();
     },
-    componentDidUpdate() {                
-        /*pre-select most recent event*/                
-        const {riskEvent, fullContext, zoomJustCalled} = this.props; 
-        /*console.log(fullContext);
-        console.log(riskEvent);
-        console.log(zoomJustCalled);*/
-        if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 && zoomJustCalled == false) {
-            const list = this.getComponentData();
-            if(list.length > 0) {                
-                this.handleClick(list[0]);
+    componentDidUpdate() {                        
+        const { riskEvent, fullContext, data } = this.props;         
+        if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 /*&& zoomJustCalled == false*/) {            
+            if(data.length > 0) {                
+                this.handleClick(data[0]);
             }
         }        
     },
