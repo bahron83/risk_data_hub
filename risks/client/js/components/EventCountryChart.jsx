@@ -7,7 +7,7 @@ const EventCountryChart = React.createClass({
     propTypes: {
         values: React.PropTypes.object,
         zoomInOut: React.PropTypes.func,
-        full_context: React.PropTypes.object      
+        fullContext: React.PropTypes.object      
     },
     getDefaultProps() {
         return {
@@ -17,14 +17,16 @@ const EventCountryChart = React.createClass({
         const { values } = this.props;
         let dataGrouped = [];        
         
-        Object.entries(values).map(([k, v]) => {            
+        //Object.entries(values).map(([k, v]) => 
+        _.map(values, v => {
             const index = dataGrouped.findIndex(e => e.name == v[0]);
             const value = parseFloat(v[3], 10);
             if(index > -1)
             dataGrouped[index]['value'] += value;
             else
-            dataGrouped.push({"name": v[0], "value": value});            
+            dataGrouped.push({"name": v[0], "value": value});
         });
+        
         dataGrouped = _.orderBy(dataGrouped, 'value', 'desc');        
         return dataGrouped;        
     },
@@ -40,7 +42,7 @@ const EventCountryChart = React.createClass({
                     <Tooltip/>                
                     <Bar dataKey="value" onClick={this.handleClick}>                    
                         {chartData.map((entry,index) => {
-                            const ctx = this.props.full_context;
+                            const ctx = this.props.fullContext;
                             const active = entry.name === ctx.loc;
                             return(
                                 <Cell cursor="pointer" stroke={"#ff8f31"} strokeWidth={active ? 2 : 0}fill={active ? '#ff8f31' : '#2c689c'} key={`cell-${index}`}/>);                            

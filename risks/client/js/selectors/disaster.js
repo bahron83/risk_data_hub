@@ -146,7 +146,7 @@ const sChartSelector = createSelector([riskAnalysisDataSel, eventSelector, fullC
 const eventCountryChartSelector = createSelector([riskAnalysisDataSel, fullContextSel],
     (riskAnalysisData, fullContext) => ({
         values: riskAnalysisData.data.event_values,
-        full_context: fullContext                
+        fullContext                
     }));
 module.exports = {
     dimSelector,

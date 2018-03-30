@@ -173,7 +173,7 @@ const DataContainer = React.createClass({
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
                                 <EventCountryChart data={eventData}/>
-                            </Panel>                            
+                            </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
                                 <ScatterChart data={eventDataFiltered}/>

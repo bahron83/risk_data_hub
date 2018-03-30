@@ -44,8 +44,7 @@ const SChart = React.createClass({
         this.componentDidUpdate();
     },
     componentDidUpdate() {                        
-        const { riskEvent, fullContext, data, zoomJustCalled } = this.props;      
-        console.log('zoom just called: ', zoomJustCalled);
+        const { riskEvent, fullContext, data, zoomJustCalled } = this.props;              
         if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 && zoomJustCalled == 2) {            
             if(data.length > 0) {                
                 this.handleClick(data[0]);
@@ -58,11 +57,9 @@ const SChart = React.createClass({
             const dataHref = '/risks/data_extraction/loc/' + item.iso2 + '/';
             const geomHref = '/risks/data_extraction/geom/' + item.iso2 + '/';
             this.props.zoomInOut(dataHref, geomHref);            
-        }
-        else {
-            this.props.setEventIdx(item);
-            this.props.getEventData('/risks/data_extraction/loc/'+item.iso2+'/ht/'+item.hazard_type+'/evt/'+item.event_id+'/');
         }        
+        this.props.setEventIdx(item);
+        this.props.getEventData('/risks/data_extraction/loc/'+item.iso2+'/ht/'+item.hazard_type+'/evt/'+item.event_id+'/');        
     }
 });
 
