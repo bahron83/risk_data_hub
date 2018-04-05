@@ -6915,6 +6915,10 @@ a.disaster .label:focus {
 .disaster .nav-pills > li > a {
   background-color: rgba(255, 255, 255, 0.7);
 }
+.disaster .react-bs-table table td:hover,
+.disaster .react-bs-table table th:hover {
+  white-space: normal;
+}
 @font-face {
   font-family: 'thinkhazard';
   src: url('../fonts/thinkhazard/thinkhazard.eot?-xr90r9');

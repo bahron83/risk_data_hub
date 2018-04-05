@@ -58,6 +58,13 @@ class Command(BaseCommand):
             default=RiskApp.APP_DATA_EXTRACTION,
             help="Name of Risk App, default: {}".format(RiskApp.APP_DATA_EXTRACTION),
             )
+        parser.add_argument(
+            '-n',
+            '--allow-nulls',
+            dest='allow_null_values',            
+            default=False,
+            help="Allow null values: if no, rows with null values will be skipped",
+            )
         return parser
 
     def handle(self, **options):
@@ -66,6 +73,7 @@ class Command(BaseCommand):
         excel_file = options.get('excel_file')
         risk_analysis = options.get('risk_analysis')        
         risk_app =  options.get('risk_app')
+        allow_null_values = options.get('allow_null_values')
         app = RiskApp.objects.get(name=risk_app)
 
         if region is None:
@@ -118,7 +126,7 @@ class Command(BaseCommand):
 
                 
                 
-                if attribute_value != '' and any(x.value == dim1 for x in axis_x) and any(y.value == dim2 for y in axis_y):                    
+                if (attribute_value != '' or allow_null_values) and any(x.value == dim1 for x in axis_x) and any(y.value == dim2 for y in axis_y):                    
                     x = axis_x.get(value=dim1)
                     y = axis_y.get(value=dim2)                                        
 

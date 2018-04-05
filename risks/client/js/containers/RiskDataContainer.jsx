@@ -1,31 +1,23 @@
-/**
- * Copyright 2017, GeoSolutions Sas.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
- */
-const React = require('react');
-const {connect} = require('react-redux');
-const {dataContainerSelector, chartSelector, eventTableSelector, sChartSelector, eventCountryChartSelector} = require('../selectors/disaster');
-
-const {getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass} = require('../actions/disaster');
-const Chart = connect(chartSelector, {setDimIdx, getAnalysisData})(require('../components/Chart'));
-const EventCountryChart = connect(eventCountryChartSelector, {zoomInOut})(require('../components/EventCountryChart'));
-const EventTable = connect(eventTableSelector, {setEventIdx, getEventData, zoomInOut})(require('../components/EventTable'));
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { dataContainerSelector, chartSelector, eventTableSelector, sChartSelector, eventCountryChartSelector } from '../selectors/disaster';
+import { getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass } from '../actions/disaster';
+import Chart from '../components/Chart';
+import EventCountryChart from '../components/EventCountryChart';
+import SChart from '../components/ScatterChart';
+import EventTable from '../components/EventTable';
 const SummaryChart = connect(chartSelector)(require('../components/SummaryChart'));
-const ScatterChart = connect(sChartSelector, {setEventIdx, getEventData, zoomInOut})(require('../components/ScatterChart'));
 const GetAnalysisBtn = connect(({disaster}) => ({loading: disaster.loading || false}))(require('../components/LoadingBtn'));
 
-const DownloadData = require('../components/DownloadData');
-const MoreInfo = require('../components/MoreInfo');
+import DownloadData from '../components/DownloadData';
+import MoreInfo from '../components/MoreInfo';
 const Overview = connect(({disaster = {}}) => ({riskItems: disaster.overview || [] }) )(require('../components/Overview'));
-const {Panel, Tooltip, OverlayTrigger} = require('react-bootstrap');
-const Nouislider = require('react-nouislider');
-const {show, hide} = require('react-notification-system-redux');
-const {labelSelector} = require('../selectors/disaster');
+import { Panel, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import Nouislider from 'react-nouislider';
+import { show, hide } from 'react-notification-system-redux';
+import { labelSelector } from '../selectors/disaster';
 const LabelResource = connect(labelSelector, { show, hide, getData: getSFurtherResourceData })(require('../components/LabelResource'));
-const {generateReport} = require('../actions/report');
+import { generateReport } from '../actions/report';
 const DownloadBtn = connect(({disaster, report}) => {
     return {
         active: disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData && true || false,
@@ -34,40 +26,7 @@ const DownloadBtn = connect(({disaster, report}) => {
 }, {downloadAction: generateReport})(require('../components/DownloadBtn'));
 
 
-const DataContainer = React.createClass({
-    propTypes: {
-        getData: React.PropTypes.func,
-        getAnalysis: React.PropTypes.func,
-        setDimIdx: React.PropTypes.func,
-        setEventIdx: React.PropTypes.func,
-        setAnalysisClass: React.PropTypes.func,
-        showHazard: React.PropTypes.bool,
-        className: React.PropTypes.string,
-        hazardTitle: React.PropTypes.string,
-        analysisType: React.PropTypes.object,
-        analysisTypeE: React.PropTypes.object,
-        riskAnalysisData: React.PropTypes.object,
-        dim: React.PropTypes.object,
-        fullContext: React.PropTypes.object,        
-        analysisClass: React.PropTypes.string,        
-        hazardType: React.PropTypes.shape({
-            mnemonic: React.PropTypes.string,
-            description: React.PropTypes.string,
-            analysisTypes: React.PropTypes.arrayOf(React.PropTypes.shape({
-                name: React.PropTypes.string,
-                title: React.PropTypes.string,
-                href: React.PropTypes.string
-                }))
-        })
-    },    
-    getDefaultProps() {
-        return {
-            showHazard: false,
-            getData: () => {},
-            getAnalysis: () => {},
-            className: "col-sm-6"
-        };
-    },
+class DataContainer extends Component {    
     getRandomColor() {
         const letters = '0123456789ABCDEF';
         let color = '#';
@@ -75,13 +34,15 @@ const DataContainer = React.createClass({
             color += letters[Math.floor(Math.random() * 16)];
         }
         return color;
-    },
+    }
+
     getChartData(data, val) {
         const {dim} = this.props;
         const nameIdx = dim === 0 ? 1 : 0;
         return data.filter((d) => d[nameIdx] === val ).map((v) => {return {"name": v[dim], "value": parseInt(v[2], 10)}; });
-    },
-    getEventData() {
+    }
+
+    prepareEventData() {
         const { events } = this.props.riskAnalysisData || null;
         const { event_values: values } = this.props.riskAnalysisData.data || null;
         if(events && values) {
@@ -90,29 +51,49 @@ const DataContainer = React.createClass({
                 events.map(v => {
                     let newObj = v;
                     const valueArr = values[v['event_id']];                            
-                    newObj[dataKey] = valueArr != undefined ? parseFloat(valueArr[3]) : null;
+                    newObj[dataKey] = (valueArr != undefined && String(valueArr[3]) != '') ? parseFloat(valueArr[3]) : null;
                     newObj['dataKey'] = dataKey;
                     return newObj;              
                 })  
             );
         }
         return null;
-    },
+    }
+
     filterByLoc(data) {        
         const ctx = this.props.fullContext;
         if(ctx.adm_level > 0 && data != null)
             return data.filter(e => e.iso2 == ctx.loc);
         return data;
-    },
+    }
+
+    selectEvent(e) {         
+        const { fullContext, zoomInOut, setEventIdx, getEventData } = this.props;              
+        if(fullContext.adm_level == 0) {
+            const dataHref = '/risks/data_extraction/loc/' + e.iso2 + '/';
+            const geomHref = '/risks/data_extraction/geom/' + e.iso2 + '/';
+            zoomInOut(dataHref, geomHref);            
+        }        
+        setEventIdx(e);
+        getEventData('/risks/data_extraction/loc/'+e.iso2+'/ht/'+e.hazard_type+'/evt/'+e.event_id+'/'); 
+    }
+
+    selectRP(item, index) {
+        const { fullContext, setDimIdx, getAnalysis } = this.props;
+        setDimIdx('dim2Idx', index);
+        getAnalysis(fullContext.full_url);
+    }
+
     renderAnalysisData() {        
-        const {dim, fullContext, analysisType, analysisTypeE} = this.props;
-        const {hazardSet, data} = this.props.riskAnalysisData;             
+        const { dim, fullContext, analysisType, analysisTypeE, riskEvent, cValues, zoomInOut } = this.props;
+        const { hazardSet, data } = this.props.riskAnalysisData;             
+        const { unitOfMeasure } = this.props.riskAnalysisData || 'Values';
         const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
         const val = data.dimensions[dim.dim1].values[dim.dim1Idx];
         const header = data.dimensions[dim.dim1].name + ': ' + val;
         const description = data.dimensions[dim.dim1].layers && data.dimensions[dim.dim1].layers[val] && data.dimensions[dim.dim1].layers[val].description ? data.dimensions[dim.dim1].layers[val].description : '';
-        const eventData = this.getEventData();
-        const eventDataFiltered = this.filterByLoc(eventData);        
+        const eventData = this.prepareEventData();
+        const { event_group_country: eventDataGroup, dimensions: dimension } = this.props.riskAnalysisData && this.props.riskAnalysisData.data;
         let selectedAnalysisType = analysisType;    
         if(this.props.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name))            
             selectedAnalysisType = analysisTypeE;
@@ -172,22 +153,22 @@ const DataContainer = React.createClass({
                         <div>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <EventCountryChart data={eventData}/>
+                                <EventCountryChart data={eventDataGroup} loc={fullContext.loc} zoomInOut={zoomInOut}/>
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <ScatterChart data={eventDataFiltered}/>
+                                <SChart data={eventData} selectEvent={this.selectEvent} riskEvent={riskEvent}/>
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Resume'}</h4>
-                                <EventTable data={eventDataFiltered}/>
+                                <EventTable data={eventData} selectEvent={this.selectEvent} riskEvent={riskEvent}/>
                             </Panel>
                         </div>
                     ) : (
                         <div>                            
                             <Panel className="panel-box">
                             <h4 className="text-center">{'Current ' + data.dimensions[dim.dim1].name + ' Chart'}</h4>
-                            <Chart/>
+                            <Chart dim={dim} values={cValues} val={val} dimension={dimension} uOm={unitOfMeasure} selectRP={this.selectRP}/>
                             </Panel>                                        
                             <SummaryChart/>
                         </div>
@@ -196,7 +177,8 @@ const DataContainer = React.createClass({
                 </div>
             </div>
         );
-    },
+    }
+
     renderRiskAnalysisHeader(title, getAnalysis, rs, idx) {
         const tooltip = (<Tooltip id={"tooltip-abstract-" + idx} className="disaster">{'Show Abstract'}</Tooltip>);
         return (
@@ -211,7 +193,8 @@ const DataContainer = React.createClass({
           </div>
           </OverlayTrigger>
         );
-    },
+    }
+
     renderRiskAnalysis() {
         const {analysisType = {}, analysisTypeE = {}, getAnalysis} = this.props;        
         let selectedAnalysisType = analysisType;            
@@ -238,7 +221,8 @@ const DataContainer = React.createClass({
                 </div>
             );
         });        
-    },
+    }
+
     renderAnalysisTab() {
         const {hazardType = {}, analysisType = {}, analysisTypeE = {}, getData: loadData} = this.props;
                         
@@ -257,7 +241,8 @@ const DataContainer = React.createClass({
             }
             return null;
         });
-    },
+    }
+
     renderAnalysisClass() {        
         const {hazardType} = this.props;
         let analysisClasses = [];
@@ -280,7 +265,8 @@ const DataContainer = React.createClass({
             }
             return null;
         });
-    },       
+    } 
+
     renderHazard() {
         const {riskAnalysisData} = this.props;
 
@@ -313,16 +299,20 @@ const DataContainer = React.createClass({
                 </div>
             //</div>
         );
-    },
+    }
+
     render() {
         const {showHazard, getData: loadData} = this.props;
         return showHazard ? this.renderHazard() : (<Overview className={this.props.className} getData={loadData}/>);
-    },
+    }
+
     componentDidMount() {
         this.componentDidUpdate();
-    },
+    }
+
     componentDidUpdate() {
-        const {hazardType = {}, analysisType = {}, analysisTypeE = {}, getData: loadData} = this.props;
+        const { analysisType = {}, analysisTypeE = {}, riskEvent, fullContext, zoomJustCalled, analysisClass, setAnalysisClass } = this.props;        
+
         let count = 0;
         if(analysisType.name == undefined)
             count += 1;
@@ -331,31 +321,30 @@ const DataContainer = React.createClass({
                 
         switch(count) {
             case 0:
-                if(this.props.analysisClass == '')
-                    this.props.setAnalysisClass('risk')
+                if(analysisClass == '')
+                    setAnalysisClass('risk')
                 break;
             case 1:
-                if(this.props.analysisClass != 'event')
-                    this.props.setAnalysisClass('event')
+                if(analysisClass != 'event')
+                    setAnalysisClass('event')
                 break;
             case 2:
-                if(this.props.analysisClass != 'risk')
-                    this.props.setAnalysisClass('risk')
+                if(analysisClass != 'risk')
+                    setAnalysisClass('risk')
                 break;
             case 3:
                 return null;
                 break;
         } 
         
-        /*console.log('href = '+atypeHref);
-        const {getData: loadData} = this.props;
-        const atypeHref = this.getAtypeHref();
-        console.log('href = '+atypeHref);
-        if(atypeHref != '') {
-            loadData(atypeHref, true);
-            this.setAtypeHref('');
-        }*/
+        if(riskEvent != undefined) {
+            if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
+                const eventData = this.prepareEventData();
+                if(eventData.length > 0)                                 
+                    this.selectEvent(eventData[0]);            
+            }
+        }                        
     }
-});
+};
 
-module.exports = connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, setEventIdx, setAnalysisClass})(DataContainer);
+export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, zoomInOut, setAnalysisClass})(DataContainer);

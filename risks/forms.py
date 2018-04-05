@@ -139,7 +139,7 @@ class ImportDataEventAttributeForm(models.ModelForm):
         """
         """
         model = EventImportAttributes
-        fields = ('riskapp', 'region', 'riskanalysis', "data_file",)
+        fields = ('riskapp', 'region', 'riskanalysis', 'allow_null_values', "data_file",)
 
     def clean_data_file(self):
         file_xlsx = self.cleaned_data['data_file']
@@ -149,7 +149,8 @@ class ImportDataEventAttributeForm(models.ModelForm):
 
         risk_app = self.cleaned_data['riskapp']
         region = self.cleaned_data['region']  
-        risk = self.cleaned_data['riskanalysis']     
-        import_event_attributes(tmp_file, risk_app, risk, region, file_xlsx)
+        risk = self.cleaned_data['riskanalysis']
+        allow_null_values = self.cleaned_data['allow_null_values']
+        import_event_attributes(tmp_file, risk_app, risk, region, allow_null_values, file_xlsx)
 
         return file_xlsx

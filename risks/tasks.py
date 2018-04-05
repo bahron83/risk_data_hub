@@ -158,17 +158,18 @@ def _import_event_data(input_file, risk_app_name, region_name, final_name):
             error_message = "Sorry, the input file is not valid: {}".format(e)            
             raise ValueError(error_message)
 
-def import_event_attributes(input_file, risk_app, risk_analysis, region, final_name):    
-    _import_event_attributes.apply_async(args=(input_file, risk_app.name, risk_analysis.name, region.name, final_name,))
+def import_event_attributes(input_file, risk_app, risk_analysis, region, allow_null_values, final_name):    
+    _import_event_attributes.apply_async(args=(input_file, risk_app.name, risk_analysis.name, region.name, allow_null_values, final_name,))
 
 @task(name='risks.tasks.import_event_attributes')
-def _import_event_attributes(input_file, risk_app_name, risk_analysis_name, region_name, final_name):
+def _import_event_attributes(input_file, risk_app_name, risk_analysis_name, region_name, allow_null_values, final_name):
         out = StringIO.StringIO()        
         try:            
             call_command('import_event_attributes',
                          commit=False,
                          risk_app=risk_app_name,                         
                          region=region_name,
+                         allow_null_values=allow_null_values,
                          excel_file=input_file,
                          risk_analysis=risk_analysis_name,                        
                          stdout=out)            

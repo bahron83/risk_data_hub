@@ -726,6 +726,8 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
 
             # retrieve values for events aggregated by country
             field_list = ['adm_code', 'dim1_value', 'dim2_value', 'value', 'event_id']
+            field_list_group = ['adm_code', 'dim1_value', 'dim2_value', 'value']
+            features_event_group_country = self.get_features_base('geonode:risk_analysis_event_group', field_list_group, **feat_kwargs)
             features_event_values = self.get_features_base('geonode:risk_analysis_event_details', field_list, **feat_kwargs)        
             values_events = {}
             for f in features_event_values['features']:
@@ -734,7 +736,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                     temp.append(f['properties'][l])
                 values_events[temp[field_list.index('event_id')]] = temp
             
-            #values_group_country = [[f['properties']['adm_code'], f['properties']['dim1_value'], f['properties']['dim2_value'], f['properties']['value']] for f in features_event_group_country['features']]
+            event_group_country = [[f['properties']['adm_code'], f['properties']['dim1_value'], f['properties']['dim2_value'], f['properties']['value']] for f in features_event_group_country['features']]
         
             events = Event.objects.filter(hazard_type=hazard_type).order_by('-begin_date')    
             if len(loc.code) == 2:
@@ -748,6 +750,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 ev_list.append(e.get_event_plain())
 
             out['riskAnalysisData']['data']['event_values'] = values_events
+            out['riskAnalysisData']['data']['event_group_country'] = event_group_country
             #out['riskAnalysisData']['events'] = serializers.serialize("json", events, use_natural_foreign_keys=True, use_natural_primary_keys=True)
             out['riskAnalysisData']['events'] = ev_list
         

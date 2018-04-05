@@ -30,7 +30,13 @@ class DbUtils:
         curs = conn.cursor()        
         
         insert_template = """INSERT INTO risk_dimensions (adm_fid, dim1_id, dim2_id, risk_analysis_id, value, event_id)
-            select rfid.fid as adm_fid, dim1_id, dim2_id, {risk_analysis_id} as risk_analysis_id, sum(value::float) as value, '' as event_id
+            select 
+                rfid.fid as adm_fid, 
+                dim1_id, 
+                dim2_id, 
+                {risk_analysis_id} as risk_analysis_id, 
+                sum(case when value = '' then 0 else value::float end) as value, 
+                '' as event_id
             from risk_dimensions rd
             join dimensions d on d.dim_id = rd.dim1_id
             join dimensions d2 on d2.dim_id = rd.dim2_id

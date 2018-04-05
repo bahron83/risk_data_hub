@@ -1687,6 +1687,8 @@ class EventImportAttributes(models.Model):
         unique=False,
     )
 
+    allow_null_values = models.BooleanField(default=False)
+
     def file_link(self):
         if self.data_file:
             return "<a href='%s'>download</a>" % (self.data_file.url,)

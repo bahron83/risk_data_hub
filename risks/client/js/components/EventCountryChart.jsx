@@ -1,35 +1,17 @@
-const React = require('react');
-const {BarChart, Bar, XAxis, Cell, YAxis, Tooltip, CartesianGrid, ResponsiveContainer} = require('recharts');
-const ChartTooltip = require("./ChartTooltip");
-const _ = require('lodash');
+import React, { Component } from 'react';
+import { BarChart, Bar, XAxis, Cell, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
+import ChartTooltip from "./ChartTooltip";
 
-const EventCountryChart = React.createClass({
-    propTypes: {
-        values: React.PropTypes.object,
-        zoomInOut: React.PropTypes.func,
-        fullContext: React.PropTypes.object      
-    },
-    getDefaultProps() {
-        return {
-        };
-    },
-    getChartData() {
-        const { values } = this.props;
-        let dataGrouped = [];        
-        
-        //Object.entries(values).map(([k, v]) => 
-        _.map(values, v => {
-            const index = dataGrouped.findIndex(e => e.name == v[0]);
-            const value = parseFloat(v[3], 10);
-            if(index > -1)
-            dataGrouped[index]['value'] += value;
-            else
-            dataGrouped.push({"name": v[0], "value": value});
-        });
-        
-        dataGrouped = _.orderBy(dataGrouped, 'value', 'desc');        
-        return dataGrouped;        
-    },
+class EventCountryChart extends Component {    
+    getChartData() {         
+        const { data } = this.props;                
+        return (
+            data.map(v => {
+                return {'name': v[0], 'value': parseFloat(v[3], 10)}
+            })
+        );     
+    }
+
     render() {          
         const chartData = this.getChartData();        
         const dimensionX = 'Country';        
@@ -40,28 +22,31 @@ const EventCountryChart = React.createClass({
                     <XAxis dataKey="name"/>
                     <YAxis/> 
                     <Tooltip/>                
-                    <Bar dataKey="value" onClick={this.handleClick}>                    
-                        {chartData.map((entry,index) => {
-                            const ctx = this.props.fullContext;
-                            const active = entry.name === ctx.loc;
+                    <Bar dataKey="value" onClick={this.handleClick.bind(this)}>                    
+                        {chartData.map((entry,index) => {                            
+                            const active = entry.name === this.props.loc;
                             return(
-                                <Cell cursor="pointer" stroke={"#ff8f31"} strokeWidth={active ? 2 : 0}fill={active ? '#ff8f31' : '#2c689c'} key={`cell-${index}`}/>);                            
+                                <Cell cursor="pointer" stroke={"#ff8f31"} strokeWidth={active ? 2 : 0} fill={active ? '#ff8f31' : '#2c689c'} key={`cell-${index}`}/>);                            
                         })}
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>);
-    },
-    handleClick(item, index) {
+    }
+
+    handleClick(item, index) {        
+        const { zoomInOut } = this.props;
         const dataHref = '/risks/data_extraction/loc/' + item.name + '/';
         const geomHref = '/risks/data_extraction/geom/' + item.name + '/';
-        this.props.zoomInOut(dataHref, geomHref);
-    },
+        zoomInOut(dataHref, geomHref);
+    }
+
     formatYTiks(v) {
         return v.toLocaleString();
-    },
+    }
+
     formatXTiks(v) {
         return !isNaN(v) && parseFloat(v).toLocaleString() || v;
     }
-});
+}
 
-module.exports = EventCountryChart;
+export default EventCountryChart;

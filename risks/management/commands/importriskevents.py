@@ -105,8 +105,8 @@ class Command(BaseCommand):
                     obj['begin_date'] = dateparser.parse(begin_date_raw)
                     obj['end_date'] = dateparser.parse(end_date_raw)
                 except:
-                    obj['begin_date'] = datetime.date(year, 1, 1)
-                    obj['end_date'] = datetime.date(year, 1, 1)
+                    obj['begin_date'] = datetime.date(obj['year'], 1, 1)
+                    obj['end_date'] = datetime.date(obj['year'], 1, 1)
 
                 try:
                     event = Event.objects.get(event_id=event_id)
