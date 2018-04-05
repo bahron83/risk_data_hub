@@ -89,18 +89,20 @@ class Command(BaseCommand):
                 event_id = sheet.cell(row_num, 0).value
                 obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
                 obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
-                obj['nuts3'] = sheet.cell(row_num, 3).value
-                begin_date_raw = sheet.cell(row_num, 6).value
-                end_date_raw = sheet.cell(row_num, 7).value
+                obj['nuts3'] = sheet.cell(row_num, 3).value                
                 obj['year'] = int(sheet.cell(row_num, 4).value)
+                
+                default_date_string = '{}-01-01'.format(obj['year'])
+                begin_date_raw = str(sheet.cell(row_num, 6).value) if str(sheet.cell(row_num, 6).value) != '' else default_date_string
+                end_date_raw = str(sheet.cell(row_num, 7).value) if str(sheet.cell(row_num, 7).value) != '' else default_date_string
+                
                 obj['event_type'] = sheet.cell(row_num, 8).value
                 obj['event_source'] = sheet.cell(row_num, 9).value
                 obj['people_affected'] = int(self.try_parse_float(str(sheet.cell(row_num, 12).value), 0))
                 obj['cause'] = sheet.cell(row_num, 16).value
                 obj['notes'] = sheet.cell(row_num, 17).value
-                obj['sources'] = sheet.cell(row_num, 18).value
-
-                print(obj['people_affected'])
+                obj['sources'] = sheet.cell(row_num, 18).value                                
+                
                 try:
                     obj['begin_date'] = dateparser.parse(begin_date_raw)
                     obj['end_date'] = dateparser.parse(end_date_raw)
