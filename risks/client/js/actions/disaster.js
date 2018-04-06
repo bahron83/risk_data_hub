@@ -204,17 +204,10 @@ function setAnalysisClass(value) {
     };    
 }
 
-function selectEvent(e) {
-    const dataHref = '/risks/data_extraction/loc/' + e.iso2 + '/';
-    const geomHref = '/risks/data_extraction/geom/' + e.iso2 + '/';
-    const eventHref = '/risks/data_extraction/loc/'+e.iso2+'/ht/'+e.hazard_type+'/evt/'+e.event_id+'/';
-         
+function selectEvent(event) {             
     return {
         type: SELECT_EVENT,  
-        dataHref,
-        geomHref,
-        eventHref,              
-        e
+        event
     };                
 }
 

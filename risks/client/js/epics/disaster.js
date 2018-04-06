@@ -168,11 +168,15 @@ const zoomInOutEpic = (action$, store) =>
 const selectEventEpic = (action$, store) =>
     action$.ofType(SELECT_EVENT)        
         .map(action => {            
-            const { riskAnalysis } = (store.getState()).disaster;            
+            const { app, riskAnalysis } = (store.getState()).disaster;            
             const fullContext = riskAnalysis && riskAnalysis.fullContext;
+            const e = action.event;
+            const dataHref = `/${app}/data_extraction/loc/${e.iso2}/`;
+            const geomHref = `/${app}/data_extraction/geom/${e.iso2}/`;
+            const eventHref = `${dataHref}ht/${e.hazard_type}/evt/${e.event_id}/`;
             if(fullContext.adm_level == 0)           
-                return [zoomInOut(action.dataHref, action.geomHref), setEventIdx(action.e), getEventData(action.eventHref)];
-            return [setEventIdx(action.e), getEventData(action.eventHref)];
+                return [zoomInOut(dataHref, geomHref), setEventIdx(e), getEventData(eventHref)];
+            return [setEventIdx(e), getEventData(eventHref)];
         })
         .mergeAll();
 

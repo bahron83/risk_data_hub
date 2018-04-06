@@ -139,7 +139,7 @@ class ImportDataEventAttributeForm(models.ModelForm):
         """
         """
         model = EventImportAttributes
-        fields = ('riskapp', 'region', 'riskanalysis', 'allow_null_values', "data_file",)
+        fields = ('riskapp', 'region', 'riskanalysis', "data_file",) #allow_null_values checkbox not shown
 
     def clean_data_file(self):
         file_xlsx = self.cleaned_data['data_file']

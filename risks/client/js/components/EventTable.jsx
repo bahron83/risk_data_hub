@@ -7,12 +7,13 @@ class EventTable  extends Component {
         return row.event_id == riskEvent.event_id ? 'selected' : '';
     }
 
-    render() {        
-        const { data } = this.props;           
-        const dataKey = data[0]['dataKey'];        
+    render() {                
+        const { data, selectEvent } = this.props;           
+        console.log(data);
+        const dataKey = data[0]['data_key'];        
         const dataKeyVerbose = dataKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
         const options = {
-            onRowClick: this.handleClick.bind(this)
+            onRowClick: selectEvent
         }        
 
         return (                    
@@ -23,14 +24,8 @@ class EventTable  extends Component {
                 <TableHeaderColumn dataField={dataKey} dataSort>{dataKeyVerbose}</TableHeaderColumn>
                 <TableHeaderColumn dataField='sources'>References</TableHeaderColumn>
             </BootstrapTable>
-        );
-                        
-    } 
-    
-    handleClick(e) {        
-        const { selectEvent } = this.props;                
-        selectEvent(e);
-    }
+        );                        
+    }         
 }
 
 export default EventTable;

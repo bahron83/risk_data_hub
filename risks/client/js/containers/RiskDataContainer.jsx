@@ -44,21 +44,22 @@ class DataContainer extends Component {
     }
 
     prepareEventData() {
-        const { events } = this.props.riskAnalysisData || null;
-        const { event_values: values } = this.props.riskAnalysisData.data || null;
+        const { events } = this.props.riskAnalysisData || [];
+        /*const { event_values: values } = this.props.riskAnalysisData.data || null;
         if(events && values) {
             const dataKey = Object.entries(values)[0][1][1];  
             return(
                 events.map(v => {
                     let newObj = v;
                     const valueArr = values[v['event_id']];                            
-                    newObj[dataKey] = (valueArr != undefined && String(valueArr[3]) != '') ? parseFloat(valueArr[3]) : null;
-                    newObj['dataKey'] = dataKey;
+                    newObj[dataKey] = (valueArr && valueArr[3]) ? !isNaN(parseFloat(valueArr[3])) ? parseFloat(valueArr[3]) : null : null;
+                    newObj['data_key'] = dataKey;
                     return newObj;              
                 })  
             );
         }
-        return null;
+        return [];*/
+        return events;
     }
 
     filterByLoc(data) {        
@@ -82,7 +83,7 @@ class DataContainer extends Component {
         const val = data.dimensions[dim.dim1].values[dim.dim1Idx];
         const header = data.dimensions[dim.dim1].name + ': ' + val;
         const description = data.dimensions[dim.dim1].layers && data.dimensions[dim.dim1].layers[val] && data.dimensions[dim.dim1].layers[val].description ? data.dimensions[dim.dim1].layers[val].description : '';
-        const eventData = this.prepareEventData();
+        const eventData = this.prepareEventData();        
         const { event_group_country: eventDataGroup, dimensions: dimension } = this.props.riskAnalysisData && this.props.riskAnalysisData.data;
         let selectedAnalysisType = analysisType;    
         if(this.props.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name))            
@@ -321,10 +322,7 @@ class DataContainer extends Component {
             case 2:
                 if(analysisClass != 'risk')
                     setAnalysisClass('risk')
-                break;
-            case 3:
-                return null;
-                break;
+                break;            
         } 
                 
         if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
