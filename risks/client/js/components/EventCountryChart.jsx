@@ -12,6 +12,13 @@ class EventCountryChart extends Component {
         );     
     }
 
+    shouldComponentUpdate(nextProps, nextState) {
+        if(this.props.loc !== nextProps.loc)
+            return true;
+
+        return false;
+    }  
+
     render() {          
         const chartData = this.getChartData();        
         const dimensionX = 'Country';        

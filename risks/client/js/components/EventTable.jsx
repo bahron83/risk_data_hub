@@ -7,9 +7,18 @@ class EventTable  extends Component {
         return row.event_id == riskEvent.event_id ? 'selected' : '';
     }
 
+    shouldComponentUpdate(nextProps, nextState) {
+        const { riskEvent: ev, loc } = this.props;
+        const { riskEvent: nextEv, loc: nextLoc } = nextProps;
+        
+        if(ev.event_id !== nextEv.event_id || loc !== nextLoc)
+            return true;
+
+        return false;
+    }
+
     render() {                
-        const { data, selectEvent } = this.props;           
-        console.log(data);
+        const { data, selectEvent } = this.props;                   
         const dataKey = data[0]['data_key'];        
         const dataKeyVerbose = dataKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
         const options = {

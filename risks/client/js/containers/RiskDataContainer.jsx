@@ -148,11 +148,11 @@ class DataContainer extends Component {
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <SChart data={eventData} selectEvent={selectEvent} riskEvent={riskEvent}/>
+                                <SChart data={eventData} selectEvent={selectEvent} riskEvent={riskEvent} loc={fullContext.loc}/>
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Resume'}</h4>
-                                <EventTable data={eventData} selectEvent={selectEvent} riskEvent={riskEvent}/>
+                                <EventTable data={eventData} selectEvent={selectEvent} riskEvent={riskEvent} loc={fullContext.loc}/>
                             </Panel>
                         </div>
                     ) : (

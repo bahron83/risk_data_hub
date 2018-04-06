@@ -3,6 +3,16 @@ import { ScatterChart, Scatter, XAxis, YAxis, Cell, CartesianGrid, Tooltip, Lege
 import ChartTooltip from './ChartTooltip';
 
 class SChart extends Component {           
+    shouldComponentUpdate(nextProps, nextState) {
+        const { riskEvent: ev, loc } = this.props;
+        const { riskEvent: nextEv, loc: nextLoc } = nextProps;
+        
+        if(ev.event_id !== nextEv.event_id || loc !== nextLoc)
+            return true;
+
+        return false;
+    } 
+    
     render () {        
         const { riskEvent, data, selectEvent } = this.props;                
         const dataKey = data[0]['data_key'];
