@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { dataContainerSelector, chartSelector, eventTableSelector, sChartSelector, eventCountryChartSelector } from '../selectors/disaster';
-import { getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass } from '../actions/disaster';
+import { getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent } from '../actions/disaster';
 import Chart from '../components/Chart';
 import EventCountryChart from '../components/EventCountryChart';
 import SChart from '../components/ScatterChart';
@@ -26,7 +26,8 @@ const DownloadBtn = connect(({disaster, report}) => {
 }, {downloadAction: generateReport})(require('../components/DownloadBtn'));
 
 
-class DataContainer extends Component {    
+class DataContainer extends Component {        
+    
     getRandomColor() {
         const letters = '0123456789ABCDEF';
         let color = '#';
@@ -66,18 +67,7 @@ class DataContainer extends Component {
             return data.filter(e => e.iso2 == ctx.loc);
         return data;
     }
-
-    selectEvent(e) {         
-        const { fullContext, zoomInOut, setEventIdx, getEventData } = this.props;              
-        if(fullContext.adm_level == 0) {
-            const dataHref = '/risks/data_extraction/loc/' + e.iso2 + '/';
-            const geomHref = '/risks/data_extraction/geom/' + e.iso2 + '/';
-            zoomInOut(dataHref, geomHref);            
-        }        
-        setEventIdx(e);
-        getEventData('/risks/data_extraction/loc/'+e.iso2+'/ht/'+e.hazard_type+'/evt/'+e.event_id+'/'); 
-    }
-
+    
     selectRP(item, index) {
         const { fullContext, setDimIdx, getAnalysis } = this.props;
         setDimIdx('dim2Idx', index);
@@ -85,7 +75,7 @@ class DataContainer extends Component {
     }
 
     renderAnalysisData() {        
-        const { dim, fullContext, analysisType, analysisTypeE, riskEvent, cValues, zoomInOut } = this.props;
+        const { dim, fullContext, analysisType, analysisTypeE, riskEvent, cValues, zoomInOut, selectEvent } = this.props;
         const { hazardSet, data } = this.props.riskAnalysisData;             
         const { unitOfMeasure } = this.props.riskAnalysisData || 'Values';
         const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
@@ -157,11 +147,11 @@ class DataContainer extends Component {
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <SChart data={eventData} selectEvent={this.selectEvent} riskEvent={riskEvent}/>
+                                <SChart data={eventData} selectEvent={selectEvent} riskEvent={riskEvent}/>
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Resume'}</h4>
-                                <EventTable data={eventData} selectEvent={this.selectEvent} riskEvent={riskEvent}/>
+                                <EventTable data={eventData} selectEvent={selectEvent} riskEvent={riskEvent}/>
                             </Panel>
                         </div>
                     ) : (
@@ -311,7 +301,7 @@ class DataContainer extends Component {
     }
 
     componentDidUpdate() {
-        const { analysisType = {}, analysisTypeE = {}, riskEvent, fullContext, zoomJustCalled, analysisClass, setAnalysisClass } = this.props;        
+        const { analysisType = {}, analysisTypeE = {}, riskEvent, fullContext, zoomJustCalled, analysisClass, setAnalysisClass, selectEvent } = this.props;        
 
         let count = 0;
         if(analysisType.name == undefined)
@@ -336,15 +326,13 @@ class DataContainer extends Component {
                 return null;
                 break;
         } 
-        
-        if(riskEvent != undefined) {
-            if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
-                const eventData = this.prepareEventData();
-                if(eventData.length > 0)                                 
-                    this.selectEvent(eventData[0]);            
-            }
-        }                        
+                
+        if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
+            const eventData = this.prepareEventData();
+            if(eventData.length > 0)                                 
+                selectEvent(eventData[0]);            
+        }
     }
 };
 
-export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, zoomInOut, setAnalysisClass})(DataContainer);
+export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, setEventIdx, selectEvent, getEventData, zoomInOut, setAnalysisClass})(DataContainer);

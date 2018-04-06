@@ -22,7 +22,8 @@ const {
     LOAD_RISK_MAP_CONFIG,
     GET_RISK_FEATURES,
     GET_ANALYSIS_DATA,
-    GET_EVENT_DATA,
+    GET_EVENT_DATA,    
+    SELECT_EVENT,
     INIT_RISK_APP,
     DATA_LOADED,
     ANALYSIS_DATA_LOADED,
@@ -43,7 +44,9 @@ const {
     analysisDataLoaded,
     eventDataLoaded,
     getData,
-    setChartSliderIndex
+    setChartSliderIndex,
+    zoomInOut,
+    setEventIdx    
 } = require('../actions/disaster');
 const {configureMap, configureError} = require('../../MapStore2/web/client/actions/config');
 const getRiskDataEpic = (action$, store) =>
@@ -151,16 +154,28 @@ const getEventEpic = (action$, store) =>
            
     
 const zoomInOutEpic = (action$, store) =>
-        action$.ofType("ZOOM_IN_OUT").switchMap( action => {
-            const {riskAnalysis, context} = (store.getState()).disaster;
-            const analysisHref = riskAnalysis && `${action.dataHref}${riskAnalysis.context}`;
-            return Rx.Observable.defer(() => Api.getData(`${action.dataHref}${context || ''}`))
-                .retry(1).
-                map(data => [dataLoaded(data), getFeatures(action.geomHref)].concat(analysisHref && getAnalysisData(analysisHref) || []))
-                .mergeAll()
-                .startWith(dataLoading(true))
-                .catch( () => Rx.Observable.of(info({title: "Info", message: "Analysis not available at requested zoom level", position: 'tc', autoDismiss: 3})));
-        });
+    action$.ofType("ZOOM_IN_OUT").switchMap( action => {
+        const {riskAnalysis, context} = (store.getState()).disaster;
+        const analysisHref = riskAnalysis && `${action.dataHref}${riskAnalysis.context}`;
+        return Rx.Observable.defer(() => Api.getData(`${action.dataHref}${context || ''}`))
+            .retry(1).
+            map(data => [dataLoaded(data), getFeatures(action.geomHref)].concat(analysisHref && getAnalysisData(analysisHref) || []))
+            .mergeAll()
+            .startWith(dataLoading(true))
+            .catch( () => Rx.Observable.of(info({title: "Info", message: "Analysis not available at requested zoom level", position: 'tc', autoDismiss: 3})));
+    });       
+
+const selectEventEpic = (action$, store) =>
+    action$.ofType(SELECT_EVENT)        
+        .map(action => {            
+            const { riskAnalysis } = (store.getState()).disaster;            
+            const fullContext = riskAnalysis && riskAnalysis.fullContext;
+            if(fullContext.adm_level == 0)           
+                return [zoomInOut(action.dataHref, action.geomHref), setEventIdx(action.e), getEventData(action.eventHref)];
+            return [setEventIdx(action.e), getEventData(action.eventHref)];
+        })
+        .mergeAll();
+
 const initStateEpic = action$ =>
     action$.ofType(INIT_RISK_APP) // Wait untile map config is loaded
         .audit( () => action$.ofType('MAP_CONFIG_LOADED'))
@@ -214,4 +229,4 @@ const chartSliderUpdateEpic = action$ =>
 
     );
 
-module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, getAnalysisEpic, getEventEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost};
+module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, getAnalysisEpic, getEventEpic, selectEventEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost};

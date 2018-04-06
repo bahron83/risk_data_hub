@@ -30,6 +30,7 @@ const SET_ADDITIONAL_CHART_INDEX = 'SET_ADDITIONAL_CHART_INDEX';
 const TOGGLE_SWITCH_CHART = 'TOGGLE_SWITCH_CHART';
 const SET_EVENT_IDX = 'SET_EVENT_IDX';
 const SET_ANALYSIS_CLASS = 'SET_ANALYSIS_CLASS';
+const SELECT_EVENT = 'SELECT_EVENT';
 
 function initState({href, geomHref, gc, ac}) {
     return {
@@ -203,6 +204,20 @@ function setAnalysisClass(value) {
     };    
 }
 
+function selectEvent(e) {
+    const dataHref = '/risks/data_extraction/loc/' + e.iso2 + '/';
+    const geomHref = '/risks/data_extraction/geom/' + e.iso2 + '/';
+    const eventHref = '/risks/data_extraction/loc/'+e.iso2+'/ht/'+e.hazard_type+'/evt/'+e.event_id+'/';
+         
+    return {
+        type: SELECT_EVENT,  
+        dataHref,
+        geomHref,
+        eventHref,              
+        e
+    };                
+}
+
 module.exports = {
     DATA_LOADING,
     DATA_LOADED,
@@ -225,7 +240,8 @@ module.exports = {
     SET_ADDITIONAL_CHART_INDEX,
     TOGGLE_SWITCH_CHART,
     SET_EVENT_IDX,  
-    SET_ANALYSIS_CLASS,  
+    SET_ANALYSIS_CLASS,     
+    SELECT_EVENT, 
     featuresLoaded,
     featuresLoading,
     featuresError,
@@ -250,5 +266,6 @@ module.exports = {
     setAdditionalChartIndex,
     toggleSwitchChart,
     setEventIdx,
-    setAnalysisClass 
+    setAnalysisClass,    
+    selectEvent
 };

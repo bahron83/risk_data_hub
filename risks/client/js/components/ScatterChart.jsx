@@ -4,14 +4,14 @@ import ChartTooltip from './ChartTooltip';
 
 class SChart extends Component {           
     render () {        
-        const { riskEvent, data, selectEvent } = this.props;                
+        const { riskEvent, data } = this.props;                
         const dataKey = data[0]['dataKey'];
         return (
           <ScatterChart width={500} height={400} margin={{top: 20, right: 0, bottom: 20, left: 0}}>
             <XAxis domain={[1870, 'auto']} dataKey={'year'} type="number" name='Year' unit=''/>
             <YAxis dataKey={dataKey} type="number" name={dataKey} unit=''/>
             <CartesianGrid />
-            <Scatter onClick={selectEvent} data={data} name='Events'>
+            <Scatter onClick={this.handleClick.bind(this)} data={data} name='Events'>
                 {data.map((entry, index) => {
                     const active = entry.event_id === riskEvent.event_id;
                     return (
@@ -22,6 +22,11 @@ class SChart extends Component {
             <Tooltip cursor={{strokeDasharray: '3 3'}}/>
         </ScatterChart>
       );
+    }
+
+    handleClick(e) {
+        const { selectEvent } = this.props;                
+        selectEvent(e);
     }
 }
 

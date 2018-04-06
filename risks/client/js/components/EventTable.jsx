@@ -8,11 +8,11 @@ class EventTable  extends Component {
     }
 
     render() {        
-        const { data, selectEvent } = this.props;        
+        const { data } = this.props;           
         const dataKey = data[0]['dataKey'];        
         const dataKeyVerbose = dataKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
         const options = {
-            onRowClick: selectEvent            
+            onRowClick: this.handleClick.bind(this)
         }        
 
         return (                    
@@ -25,7 +25,12 @@ class EventTable  extends Component {
             </BootstrapTable>
         );
                         
-    }    
+    } 
+    
+    handleClick(e) {        
+        const { selectEvent } = this.props;                
+        selectEvent(e);
+    }
 }
 
 export default EventTable;

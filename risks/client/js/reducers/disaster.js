@@ -88,7 +88,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
         }  
         case SET_ANALYSIS_CLASS: {
             return assign({}, state, { analysisClass: action.value });
-        }          
+        }         
         default:
             return state;
     }

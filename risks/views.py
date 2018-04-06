@@ -737,7 +737,8 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 values_events[temp[field_list.index('event_id')]] = temp
             
             event_group_country = [[f['properties']['adm_code'], f['properties']['dim1_value'], f['properties']['dim2_value'], f['properties']['value']] for f in features_event_group_country['features']]
-        
+            #event_group_country = []     
+
             events = Event.objects.filter(hazard_type=hazard_type).order_by('-begin_date')    
             if len(loc.code) == 2:
                 if loc.code != 'EU':
