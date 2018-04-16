@@ -6,6 +6,7 @@ import Chart from '../components/Chart';
 import EventCountryChart from '../components/EventCountryChart';
 import SChart from '../components/ScatterChart';
 import EventTable from '../components/EventTable';
+import Paginator from '../components/Paginator';
 const SummaryChart = connect(chartSelector)(require('../components/SummaryChart'));
 const GetAnalysisBtn = connect(({disaster}) => ({loading: disaster.loading || false}))(require('../components/LoadingBtn'));
 
@@ -41,8 +42,8 @@ class DataContainer extends Component {
         const {dim} = this.props;
         const nameIdx = dim === 0 ? 1 : 0;
         return data.filter((d) => d[nameIdx] === val ).map((v) => {return {"name": v[dim], "value": parseInt(v[2], 10)}; });
-    }
-
+    }    
+    
     prepareEventData() {
         const { events } = this.props.riskAnalysisData || [];
         /*const { event_values: values } = this.props.riskAnalysisData.data || null;
@@ -76,14 +77,14 @@ class DataContainer extends Component {
     }
 
     renderAnalysisData() {        
-        const { dim, fullContext, analysisType, analysisTypeE, riskEvent, cValues, zoomInOut, selectEvent } = this.props;
+        const { dim, loading, fullContext, analysisType, analysisTypeE, riskEvent, cValues, zoomInOut, selectEvent, getAnalysis } = this.props;        
         const { hazardSet, data } = this.props.riskAnalysisData;             
         const { unitOfMeasure } = this.props.riskAnalysisData || 'Values';
         const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
         const val = data.dimensions[dim.dim1].values[dim.dim1Idx];
         const header = data.dimensions[dim.dim1].name + ': ' + val;
         const description = data.dimensions[dim.dim1].layers && data.dimensions[dim.dim1].layers[val] && data.dimensions[dim.dim1].layers[val].description ? data.dimensions[dim.dim1].layers[val].description : '';
-        const eventData = this.prepareEventData();        
+        const eventData = this.prepareEventData();               
         const { event_group_country: eventDataGroup, dimensions: dimension } = this.props.riskAnalysisData && this.props.riskAnalysisData.data;
         let selectedAnalysisType = analysisType;    
         if(this.props.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name))            
@@ -148,18 +149,20 @@ class DataContainer extends Component {
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <SChart data={eventData} selectEvent={selectEvent} riskEvent={riskEvent} loc={fullContext.loc}/>
+                                <SChart data={eventData} selectEvent={selectEvent} riskEvent={riskEvent} fullContext={fullContext}/>  
+                                <Paginator total={data.total_events} showing={eventData.length} fullContext={fullContext} getAnalysisData={getAnalysis} loading={loading}/>                               
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Resume'}</h4>
-                                <EventTable data={eventData} selectEvent={selectEvent} riskEvent={riskEvent} loc={fullContext.loc}/>
+                                <EventTable data={eventData} selectEvent={selectEvent} riskEvent={riskEvent} fullContext={fullContext}/>
+                                <Paginator total={data.total_events} showing={eventData.length} fullContext={fullContext} getAnalysisData={getAnalysis} loading={loading}/>
                             </Panel>
                         </div>
                     ) : (
                         <div>                            
                             <Panel className="panel-box">
                             <h4 className="text-center">{'Current ' + data.dimensions[dim.dim1].name + ' Chart'}</h4>
-                            <Chart dim={dim} values={cValues} val={val} dimension={dimension} uOm={unitOfMeasure} selectRP={this.selectRP}/>
+                            <Chart dim={dim} values={cValues} val={val} dimension={dimension} uOm={unitOfMeasure} selectRP={this.selectRP.bind(this)}/>
                             </Panel>                                        
                             <SummaryChart/>
                         </div>
@@ -328,7 +331,7 @@ class DataContainer extends Component {
         if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
             const eventData = this.prepareEventData();
             if(eventData.length > 0)                                 
-                selectEvent(eventData[0]);            
+                selectEvent(eventData[0], fullContext.adm_level);            
         }
     }
 };

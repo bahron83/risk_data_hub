@@ -170,13 +170,16 @@ const selectEventEpic = (action$, store) =>
         .map(action => {            
             const { app, riskAnalysis } = (store.getState()).disaster;            
             const fullContext = riskAnalysis && riskAnalysis.fullContext;
-            const e = action.event;
-            const dataHref = `/${app}/data_extraction/loc/${e.iso2}/`;
-            const geomHref = `/${app}/data_extraction/geom/${e.iso2}/`;
-            const eventHref = `${dataHref}ht/${e.hazard_type}/evt/${e.event_id}/`;
-            if(fullContext.adm_level == 0)           
-                return [zoomInOut(dataHref, geomHref), setEventIdx(e), getEventData(eventHref)];
-            return [setEventIdx(e), getEventData(eventHref)];
+            const { event, adm_level, shouldZoom } = action;
+            //determine level of zoom
+            const zoomLevel = (event.nuts3.split(";").length > 1) ? "iso2" : "nuts3";
+            const dataHrefEvent = `/${app}/data_extraction/loc/${event[zoomLevel]}/`;
+            const dataHref = `/${app}/data_extraction/loc/${event.iso2}/`;
+            const geomHref = `/${app}/data_extraction/geom/${event.iso2}/`;
+            const eventHref = `${dataHrefEvent}lvl/${adm_level}/ht/${event.hazard_type}/evt/${event.event_id}/`;
+            if(fullContext.adm_level == 0 || shouldZoom)            
+                return [zoomInOut(dataHref, geomHref), setEventIdx(event), getEventData(eventHref)];
+            return [setEventIdx(event), getEventData(eventHref)];
         })
         .mergeAll();
 

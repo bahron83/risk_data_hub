@@ -444,7 +444,10 @@ class EventView(FeaturesSource, HazardTypeView):
             event = Event.objects.get(event_id=kwargs['evt'])
         except Event.DoesNotExist:
             return
-        return event    
+        return event   
+
+    def get_current_adm_level(self, **kwargs):
+        return kwargs['lvl']
 
     def get(self, request, *args, **kwargs):
         locations = self.get_location(**kwargs)
@@ -457,12 +460,14 @@ class EventView(FeaturesSource, HazardTypeView):
 
         event = self.get_event(**kwargs)
 
+        adm_level = self.get_current_adm_level(**kwargs)
+
         if not hazard_type:
             return json_response(errors=['Invalid hazard type'], status=404)
         
         wms_events = {
             'style': None,
-            'viewparams': self.get_viewparams(hazard_type, loc, event),
+            'viewparams': self.get_viewparams(adm_level, loc, event),
             'baseurl': settings.OGC_SERVER['default']['PUBLIC_LOCATION']            
         }
 
@@ -495,12 +500,12 @@ class EventView(FeaturesSource, HazardTypeView):
 
         return json_response(out)
 
-    def get_viewparams(self, htype, loc, event):
+    def get_viewparams(self, adm_level, loc, event):
         adm_codes_list = []         
         for adm in event.administrative_divisions.all():
             adm_codes_list.append(adm.code)
         adm_codes = "__".join(adm_codes_list)
-        return 'hazard_type:{};region:{};adm_code:{}'.format(htype.mnemonic, loc.region.name, adm_codes)
+        return 'adm_level:{};region:{};adm_code:{};event_id:{}'.format(adm_level, loc.region.name, adm_codes, event.event_id)
 
 
 class DataExtractionView(FeaturesSource, HazardTypeView):
@@ -736,16 +741,18 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                     temp.append(f['properties'][l])
                 values_events[temp[field_list.index('event_id')]] = temp
             
-            event_group_country = [[f['properties']['adm_code'], f['properties']['dim1_value'], f['properties']['dim2_value'], f['properties']['value']] for f in features_event_group_country['features']]
-            #event_group_country = []     
-
-            events = Event.objects.filter(hazard_type=hazard_type).order_by('-begin_date')    
-            if len(loc.code) == 2:
-                if loc.code != 'EU':
-                    events = events.filter(iso2=loc.code)
-            else:
+            event_group_country = [[f['properties']['adm_code'], f['properties']['dim1_value'], f['properties']['dim2_value'], f['properties']['value']] for f in features_event_group_country['features']]            
+            
+            events = Event.objects.filter(hazard_type=hazard_type)
+            if loc.level == 1:
+                events = events.filter(iso2=loc.code)
+            elif loc.level == 2:
                 events = events.filter(nuts3__contains=loc.code)
-
+            events = events.order_by('-begin_date')
+            total = events.count()
+            
+            if events and 'load' not in kwargs and total > 50:
+                events = events[:50]
             ev_list = []
             data_key = values_events.values()[0][1]
             for event in events:
@@ -758,11 +765,11 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 e['data_key'] = data_key                
                 ev_list.append(e)
             
-
-            #out['riskAnalysisData']['data']['event_values'] = values_events
+            
             out['riskAnalysisData']['data']['event_group_country'] = event_group_country
+            out['riskAnalysisData']['data']['total_events'] = total
             #out['riskAnalysisData']['events'] = serializers.serialize("json", events, use_natural_foreign_keys=True, use_natural_primary_keys=True)
-            out['riskAnalysisData']['events'] = ev_list
+            out['riskAnalysisData']['events'] = ev_list            
         
         return json_response(out)
 

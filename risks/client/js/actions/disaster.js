@@ -204,10 +204,12 @@ function setAnalysisClass(value) {
     };    
 }
 
-function selectEvent(event) {             
+function selectEvent(event, adm_level, shouldZoom = false) {             
     return {
         type: SELECT_EVENT,  
-        event
+        event,
+        adm_level,
+        shouldZoom
     };                
 }
 

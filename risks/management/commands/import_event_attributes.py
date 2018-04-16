@@ -69,14 +69,14 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         commit = options.get('commit')
-        region = options.get('region')
+        region_name = options.get('region')
         excel_file = options.get('excel_file')
         risk_analysis = options.get('risk_analysis')        
         risk_app =  options.get('risk_app')
         allow_null_values = options.get('allow_null_values')
         app = RiskApp.objects.get(name=risk_app)
 
-        if region is None:
+        if region_name is None:
             raise CommandError("Input Destination Region '--region' is mandatory")
 
         if risk_analysis is None:
@@ -88,8 +88,7 @@ class Command(BaseCommand):
         risk = RiskAnalysis.objects.get(name=risk_analysis, app=app)
 
         wb = xlrd.open_workbook(filename=excel_file)
-        region = Region.objects.get(name=region)
-        region_code = region.administrative_divisions.filter(parent=None)[0].code                
+        region = Region.objects.get(name=region_name)        
 
         axis_x = RiskAnalysisDymensionInfoAssociation.objects.filter(riskanalysis=risk, axis='x')
         axis_y = RiskAnalysisDymensionInfoAssociation.objects.filter(riskanalysis=risk, axis='y')
@@ -110,8 +109,7 @@ class Command(BaseCommand):
                 dim1 = str(sheet.cell(row_num, 2).value).strip()
                 dim2 = str(sheet.cell(row_num, 3).value).strip()
                 attribute_value = str(sheet.cell(row_num, 4).value).strip()
-                                                
-                adm_div = AdministrativeDivision.objects.get(code=iso2)                
+                                                                
                 try:
                     event = Event.objects.get(event_id=event_id)
                     event_adm_sub_units = event.nuts3.split(';')
@@ -122,45 +120,22 @@ class Command(BaseCommand):
                         setattr(event, 'people_affected', up_people_affected + attribute_value)
                         event.save()'''
                 except Event.DoesNotExist:                        
-                    raise ValueError('Incorrect Event ID: {}'.format(event_id))      
-
-                
+                    raise ValueError('Incorrect Event ID: {}'.format(event_id))                      
                 
                 if (attribute_value != '' or allow_null_values) and any(x.value == dim1 for x in axis_x) and any(y.value == dim2 for y in axis_y):                    
                     x = axis_x.get(value=dim1)
                     y = axis_y.get(value=dim2)                                        
-
-                    #for adm_div in adm_sub_units:
-                    db_values = {
-                        #'table': table_name,  # From rp.layer
-                        'the_geom': geos.fromstr(adm_div.geom, srid=adm_div.srid),
-                        'dim1': x.value,
-                        'dim1_order': x.order,
-                        'dim2': y.value,
-                        'dim2_order': y.order,
-                        'dim3': None,
-                        'dim4': None,
-                        'dim5': None,
-                        'risk_analysis_id': risk.id,
-                        'risk_analysis': risk_analysis,
-                        'hazard_type': risk.hazard_type.mnemonic,
-                        'adm_name': adm_div.name.encode('utf-8').replace("'", "''"),
-                        'adm_code': adm_div.code,
-                        'region': region.name,
-                        'adm_level': adm_div.level,
-                        'parent_adm_code': adm_div.parent.code,
-                        'event_id': event.event_id,
-                        'value': attribute_value                            
-                    }
-                    db.insert_db(conn, db_values, first_call)
-                    risk_adm = RiskAnalysisAdministrativeDivisionAssociation.\
-                        objects.\
-                        filter(riskanalysis=risk, administrativedivision=adm_div)
-                    if len(risk_adm) == 0:
-                        RiskAnalysisAdministrativeDivisionAssociation.\
-                            objects.\
-                            create(riskanalysis=risk, administrativedivision=adm_div)
-                    first_call = False                    
+                    adm_div = AdministrativeDivision.objects.get(code=event.iso2)                
+                    params = { 'adm_div': adm_div, 'event': event, 'risk': risk, 'region': region, 'attribute_value': attribute_value, 'x': x , 'y': y, 'first_call': first_call, 'conn': conn }
+                    self.handle_row(params)
+                    first_call = False
+                    if len(event.nuts3.split(';')) == 1:
+                        try:
+                            adm_div = AdministrativeDivision.objects.get(code=event.nuts3)
+                            params['adm_div'] = adm_div
+                            self.handle_row(params)
+                        except AdministrativeDivision.DoesNotExist:
+                            pass
             #calculate aggregate values for Region (eg. Europe)
             params = { 'region': region.name, 'risk_analysis_id': risk.id }
             db.insert_aggregate_values(conn, params)
@@ -182,5 +157,39 @@ class Command(BaseCommand):
 
             traceback.print_exc()
         finally:
-            conn.close()
+            conn.close()   
+
+    
+    def handle_row(self, params):         
+        #for adm_div in adm_sub_units:
+        db_values = {
+            #'table': table_name,  # From rp.layer
+            'the_geom': geos.fromstr(params['adm_div'].geom, srid=params['adm_div'].srid),
+            'dim1': params['x'].value,
+            'dim1_order': params['x'].order,
+            'dim2': params['y'].value,
+            'dim2_order': params['y'].order,
+            'dim3': None,
+            'dim4': None,
+            'dim5': None,
+            'risk_analysis_id': params['risk'].id,
+            'risk_analysis': params['risk'].name,
+            'hazard_type': params['risk'].hazard_type.mnemonic,
+            'adm_name': params['adm_div'].name.encode('utf-8').replace("'", "''"),
+            'adm_code': params['adm_div'].code,
+            'region': params['region'].name,
+            'adm_level': params['adm_div'].level,
+            'parent_adm_code': params['adm_div'].parent.code,
+            'event_id': params['event'].event_id,
+            'value': params['attribute_value']
+        }
+        db = DbUtils()
+        db.insert_db(params['conn'], db_values, params['first_call'])
+        risk_adm = RiskAnalysisAdministrativeDivisionAssociation.\
+            objects.\
+            filter(riskanalysis=params['risk'], administrativedivision=params['adm_div'])
+        if len(risk_adm) == 0:
+            RiskAnalysisAdministrativeDivisionAssociation.\
+                objects.\
+                create(riskanalysis=params['risk'], administrativedivision=params['adm_div'])
     

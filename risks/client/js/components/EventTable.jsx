@@ -8,7 +8,8 @@ class EventTable  extends Component {
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        const { riskEvent: ev, loc } = this.props;
+        const { riskEvent: ev, fullContext } = this.props;
+        const { loc } = fullContext;
         const { riskEvent: nextEv, loc: nextLoc } = nextProps;
         
         if(ev.event_id !== nextEv.event_id || loc !== nextLoc)
@@ -18,11 +19,11 @@ class EventTable  extends Component {
     }
 
     render() {                
-        const { data, selectEvent } = this.props;                   
+        const { data } = this.props;                   
         const dataKey = data[0]['data_key'];        
         const dataKeyVerbose = dataKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
         const options = {
-            onRowClick: selectEvent
+            onRowClick: this.handleClick.bind(this)
         }        
 
         return (                    
@@ -34,7 +35,12 @@ class EventTable  extends Component {
                 <TableHeaderColumn dataField='sources'>References</TableHeaderColumn>
             </BootstrapTable>
         );                        
-    }         
+    }
+    
+    handleClick(event) {
+        const { selectEvent, fullContext } = this.props;
+        selectEvent(event, fullContext.adm_level);
+    }
 }
 
 export default EventTable;

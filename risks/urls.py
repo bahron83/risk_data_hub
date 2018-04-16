@@ -30,9 +30,10 @@ _urls = (
     (r'^geom/(?P<adm_code>[\w\-]+)/$', geometry_views.administrative_division_view, 'geometry',),
     (r'loc/(?P<loc>[\w\-]+)/$', views.location_view, 'location',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/$', views.hazard_type_view, 'hazard_type',),
-    (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/evt/(?P<evt>[\w\-]+)/$', views.event_view, 'event',),
+    (r'loc/(?P<loc>[\w\-]+)/lvl/(?P<lvl>[\w\-]+)/ht/(?P<ht>[\w\-]+)/evt/(?P<evt>[\w\-]+)/$', views.event_view, 'event',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/$', views.hazard_type_view, 'analysis_type',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/$', views.data_extraction, 'analysis',),
+    (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/load/(?P<load>[\w\-]+)/$', views.data_extraction, 'analysis_all',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/dym/(?P<dym>[\w\-]+)$', views.data_extraction, 'analysis_dym',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/pdf/$', views.pdf_report, 'pdf_report',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/pdf/(?P<pdf_part>({}))/$'\
