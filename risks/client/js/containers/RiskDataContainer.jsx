@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { dataContainerSelector, chartSelector, eventTableSelector, sChartSelector, eventCountryChartSelector } from '../selectors/disaster';
-import { getAnalysisData, getData, setDimIdx, setEventIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent } from '../actions/disaster';
+import { getAnalysisData, getData, setDimIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent } from '../actions/disaster';
 import Chart from '../components/Chart';
 import EventCountryChart from '../components/EventCountryChart';
 import SChart from '../components/ScatterChart';
 import EventTable from '../components/EventTable';
 import Paginator from '../components/Paginator';
+import DatePickerRange from '../components/DatePickerRange';
 const SummaryChart = connect(chartSelector)(require('../components/SummaryChart'));
 const GetAnalysisBtn = connect(({disaster}) => ({loading: disaster.loading || false}))(require('../components/LoadingBtn'));
 
@@ -27,7 +28,7 @@ const DownloadBtn = connect(({disaster, report}) => {
 }, {downloadAction: generateReport})(require('../components/DownloadBtn'));
 
 
-class DataContainer extends Component {        
+class DataContainer extends Component {            
     
     getRandomColor() {
         const letters = '0123456789ABCDEF';
@@ -44,7 +45,7 @@ class DataContainer extends Component {
         return data.filter((d) => d[nameIdx] === val ).map((v) => {return {"name": v[dim], "value": parseInt(v[2], 10)}; });
     }    
     
-    prepareEventData() {
+    prepareEventData() {        
         const { events } = this.props.riskAnalysisData || [];
         /*const { event_values: values } = this.props.riskAnalysisData.data || null;
         if(events && values) {
@@ -69,15 +70,22 @@ class DataContainer extends Component {
             return data.filter(e => e.iso2 == ctx.loc);
         return data;
     }
+
+    filterByDate(begin, end) {
+        const { events } = this.props.riskAnalysisData;
+        if(events) {
+
+        }
+    }
     
     selectRP(item, index) {
         const { fullContext, setDimIdx, getAnalysis } = this.props;
         setDimIdx('dim2Idx', index);
         getAnalysis(fullContext.full_url);
-    }
+    }    
 
     renderAnalysisData() {        
-        const { dim, loading, fullContext, analysisType, analysisTypeE, riskEvent, cValues, zoomInOut, selectEvent, getAnalysis } = this.props;        
+        const { dim, loading, fullContext, analysisType, analysisTypeE, selectedEventIds, cValues, zoomInOut, selectEvent, getAnalysis } = this.props;        
         const { hazardSet, data } = this.props.riskAnalysisData;             
         const { unitOfMeasure } = this.props.riskAnalysisData || 'Values';
         const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
@@ -85,7 +93,7 @@ class DataContainer extends Component {
         const header = data.dimensions[dim.dim1].name + ': ' + val;
         const description = data.dimensions[dim.dim1].layers && data.dimensions[dim.dim1].layers[val] && data.dimensions[dim.dim1].layers[val].description ? data.dimensions[dim.dim1].layers[val].description : '';
         const eventData = this.prepareEventData();               
-        const { event_group_country: eventDataGroup, dimensions: dimension } = this.props.riskAnalysisData && this.props.riskAnalysisData.data;
+        const { event_group_country: eventDataGroup, dimensions: dimension } = this.props.riskAnalysisData && this.props.riskAnalysisData.data;        
         let selectedAnalysisType = analysisType;    
         if(this.props.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name))            
             selectedAnalysisType = analysisTypeE;
@@ -148,13 +156,17 @@ class DataContainer extends Component {
                                 <EventCountryChart data={eventDataGroup} loc={fullContext.loc} zoomInOut={zoomInOut}/>
                             </Panel>
                             <Panel className="panel-box">
+                                <h4>Filter by date</h4>                                
+                                <DatePickerRange getAnalysisData={getAnalysis} fullContext={fullContext}/>
+                            </Panel>
+                            <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <SChart data={eventData} selectEvent={selectEvent} riskEvent={riskEvent} fullContext={fullContext}/>  
+                                <SChart data={eventData} selectEvent={selectEvent} selectedEventIds={selectedEventIds} fullContext={fullContext}/>  
                                 <Paginator total={data.total_events} showing={eventData.length} fullContext={fullContext} getAnalysisData={getAnalysis} loading={loading}/>                               
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Resume'}</h4>
-                                <EventTable data={eventData} selectEvent={selectEvent} riskEvent={riskEvent} fullContext={fullContext}/>
+                                <EventTable data={eventData} selectEvent={selectEvent} selectedEventIds={selectedEventIds} fullContext={fullContext}/>
                                 <Paginator total={data.total_events} showing={eventData.length} fullContext={fullContext} getAnalysisData={getAnalysis} loading={loading}/>
                             </Panel>
                         </div>
@@ -305,7 +317,7 @@ class DataContainer extends Component {
     }
 
     componentDidUpdate() {
-        const { analysisType = {}, analysisTypeE = {}, riskEvent, fullContext, zoomJustCalled, analysisClass, setAnalysisClass, selectEvent } = this.props;        
+        const { analysisType = {}, analysisTypeE = {}, selectedEventIds = [], fullContext, zoomJustCalled, analysisClass, setAnalysisClass, selectEvent } = this.props;        
 
         let count = 0;
         if(analysisType.name == undefined)
@@ -327,13 +339,13 @@ class DataContainer extends Component {
                     setAnalysisClass('risk')
                 break;            
         } 
-                
-        if(Object.keys(riskEvent).length === 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
-            const eventData = this.prepareEventData();
+                        
+        if(selectedEventIds.length == 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
+            const eventData = this.prepareEventData();            
             if(eventData.length > 0)                                 
-                selectEvent(eventData[0], fullContext.adm_level);            
+                selectEvent([eventData[0].event_id], true, fullContext.loc);
         }
     }
-};
+}
 
-export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, setEventIdx, selectEvent, getEventData, zoomInOut, setAnalysisClass})(DataContainer);
+export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, selectEvent, getEventData, zoomInOut, setAnalysisClass})(DataContainer);

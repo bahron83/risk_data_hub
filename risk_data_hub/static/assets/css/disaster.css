@@ -6852,7 +6852,7 @@ a.disaster .label:focus {
   background: rgba(0, 0, 0, 0.6);
   max-width: 50%;
   color: #CCCCCC;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 .disaster #disaster-overview-list .level-data:hover {
   color: white;

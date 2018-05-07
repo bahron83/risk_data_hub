@@ -55,17 +55,14 @@ function getViewParamRisks(dim, showSubUnit, riskAnalysis) {
     }
     return {viewparams};
 }
-function getViewParamEvents(eventAnalysis) { 
-    //console.log('eventAnalysis');    
-    //console.log(eventAnalysis);  
-    let viewparams = eventAnalysis.wms.viewparams;
-    return {viewparams};
+function getViewParamEvents(eventAnalysis) {     
+    const viewparams = eventAnalysis.wms.viewparams;
+    return { viewparams };
 }
-function getViewParam({dim, showSubUnit, riskAnalysis, app, riskEvent, eventAnalysis} = {}) {    
-    //console.log('riskEvent : '+riskEvent);
+function getViewParam({dim, showSubUnit, riskAnalysis, app, selectedEventIds, eventAnalysis} = {}) {        
     if(app !== 'costs') {
-        if(riskEvent !== undefined)
-            return (riskEvent.event_id != undefined) ? getViewParamEvents(eventAnalysis) : getViewParamRisks(dim, showSubUnit, riskAnalysis);
+        if(selectedEventIds !== undefined && selectedEventIds.length > 0)
+            return getViewParamEvents(eventAnalysis);
         return getViewParamRisks(dim, showSubUnit, riskAnalysis);
     }
     return getViewParamCosts(dim, riskAnalysis);
@@ -98,9 +95,9 @@ function getLayerNameEvents(eventAnalysis) {
     const {layer} = eventAnalysis;
     return layer && layer.layerName;
 }
-function getLayerName({riskAnalysis, app, riskEvent, eventAnalysis}) {
+function getLayerName({riskAnalysis, app, selectedEventIds, eventAnalysis}) {
     if(app !== 'costs') {
-        return (riskEvent.event_id != undefined) ? getLayerNameEvents(eventAnalysis) : getLayerNameRisks(riskAnalysis);
+        return (selectedEventIds !== undefined && selectedEventIds.length > 0) ? getLayerNameEvents(eventAnalysis) : getLayerNameRisks(riskAnalysis);
     }
     return getLayerNameCosts(riskAnalysis);
 }
@@ -119,9 +116,9 @@ function getStyleEvents(eventAnalysis) {
     const {layer} = eventAnalysis;
     return layer.layerStyle && layer.layerStyle.name;
 }
-function getStyle({riskAnalysis, app, riskEvent, eventAnalysis}) {
+function getStyle({riskAnalysis, app, selectedEventIds, eventAnalysis}) {
     if(app !== 'costs') {
-        return (riskEvent.event_id != undefined) ? getStyleEvents(eventAnalysis) : getStyleRisks(riskAnalysis);
+        return (selectedEventIds !== undefined && selectedEventIds.length > 0) ? getStyleEvents(eventAnalysis) : getStyleRisks(riskAnalysis);
     } 
     return getStyleCosts(riskAnalysis);
 }

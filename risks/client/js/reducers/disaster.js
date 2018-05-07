@@ -13,8 +13,7 @@ const {
     TOGGLE_DIM,
     ANALYSIS_DATA_LOADED,
     EVENT_DATA_LOADED,
-    SET_DIM_IDX,
-    SET_EVENT_IDX,
+    SET_DIM_IDX,    
     TOGGLE_ADMIN_UNITS,
     GET_ANALYSIS_DATA,
     GET_EVENT_DATA,
@@ -22,7 +21,8 @@ const {
     SET_ADDITIONAL_CHART_INDEX,
     TOGGLE_SWITCH_CHART,
     ZOOM_IN_OUT,
-    SET_ANALYSIS_CLASS
+    SET_ANALYSIS_CLASS,  
+    SELECT_EVENT    
 } = require('../actions/disaster');
 
 function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, action) {
@@ -32,7 +32,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
                 loading: true
             });
         case DATA_LOADED: {
-            return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app, analysisClass: state.analysisClass}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, riskEvent: state.riskEvent, analysisClass: state.analysisClass, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app}, action.data);
+            return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app, analysisClass: state.analysisClass}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, selectedEventIds: state.selectedEventIds, analysisClass: state.analysisClass, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app}, action.data);
         }
         case ANALYSIS_DATA_LOADED: {
             return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values, zoomJustCalled: 2});
@@ -48,14 +48,9 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             return assign({}, state, {showSubUnit: !state.showSubUnit});
         }
         case SET_DIM_IDX: {
-            const newDim = assign({dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}, state.dim, {[action.dim]: action.idx});
-            const newEvent = {};
-            return assign({}, state, {dim: newDim, riskEvent: newEvent});
-        }
-        case SET_EVENT_IDX: {
-            const newEvent = assign({}, state.riskEvent, action.event);            
-            return assign({}, state, {riskEvent: newEvent});
-        }
+            const newDim = assign({dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}, state.dim, {[action.dim]: action.idx});            
+            return assign({}, state, {dim: newDim});
+        }        
         case DATA_ERROR:
             return assign({}, state, {
                 error: action.error,
@@ -84,11 +79,26 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             return assign({}, state, {showChart: !state.showChart});
         }
         case ZOOM_IN_OUT: {
-            return assign({}, state, {riskEvent: {}, zoomJustCalled: 1});
+            return assign({}, state, {selectedEventIds: [], zoomJustCalled: 1});
         }  
         case SET_ANALYSIS_CLASS: {
             return assign({}, state, { analysisClass: action.value });
-        }         
+        }          
+        case SELECT_EVENT: {            
+            const { events, isSelected } = action;            
+            console.log("update sel event arrived to reducer: ", events);
+            let ids = state && state.selectedEventIds || [];            
+            //set the array of ids             
+            if(typeof events !== undefined && events.length > 1) {
+                ids = isSelected ? events : [];                    
+            }
+            else if(events.length > 0) {                
+                ids = isSelected ? [...ids, events[0]] : ids.filter(item => item !== events[0]);
+            }                        
+            ids = ids.filter((v, i, a) => a.indexOf(v) === i);            
+            console.log(ids);
+            return assign({}, state, { selectedEventIds: ids, zoomJustCalled: 1 });
+        }              
         default:
             return state;
     }

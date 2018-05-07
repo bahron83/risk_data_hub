@@ -12,7 +12,7 @@ const assign = require('object-assign');
 const {reducer} = require('react-notification-system-redux');
 const appReducers = {
      disaster: require('../reducers/disaster'),
-     report: require('../reducers/report'),
+     report: require('../reducers/report'),     
      notifications: reducer
  };
 const {getData, initState, getFeatures} = require('../actions/disaster');

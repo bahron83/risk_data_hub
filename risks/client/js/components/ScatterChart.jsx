@@ -4,18 +4,20 @@ import ChartTooltip from './ChartTooltip';
 
 class SChart extends Component {           
     shouldComponentUpdate(nextProps, nextState) {
-        const { riskEvent: ev, fullContext } = this.props;
+        const { selectedEventIds: ev, fullContext } = this.props;
         const { loc } = fullContext;
-        const { riskEvent: nextEv, loc: nextLoc } = nextProps;
+        const { selectedEventIds: nextEv, loc: nextLoc } = nextProps;
         
-        if(ev.event_id !== nextEv.event_id || loc !== nextLoc)
+        if(JSON.stringify(ev) !== JSON.stringify(nextEv) || loc !== nextLoc)
             return true;
 
         return false;
     } 
     
     render () {        
-        const { riskEvent, data } = this.props;                
+        const { selectedEventIds, data } = this.props;     
+        if(data.length == 0)
+            return null;           
         const dataKey = data[0]['data_key'];
         return (
           <ScatterChart width={500} height={400} margin={{top: 20, right: 0, bottom: 20, left: 0}}>
@@ -24,7 +26,7 @@ class SChart extends Component {
             <CartesianGrid />
             <Scatter onClick={this.handleClick.bind(this)} data={data} name='Events'>
                 {data.map((entry, index) => {
-                    const active = entry.event_id === riskEvent.event_id;
+                    const active = selectedEventIds.includes(entry.event_id);
                     return (
                         <Cell cursor="pointer" stroke={active ? '#2c689c' : '#ffffff'} strokeWidth={active ? 2 : 1}fill={active ? '#ff8f31' : '#2c689c'} key={`cell-${index}`}/>);
                 })
@@ -36,8 +38,9 @@ class SChart extends Component {
     }
     
     handleClick(event) {
-        const { selectEvent, fullContext } = this.props;        
-        selectEvent(event, fullContext.adm_level);
+        const { selectEvent, selectedEventIds } = this.props;        
+        const active = selectedEventIds.includes(event.event_id);        
+        selectEvent([event.event_id], !active, event.iso2);
     }
 }
 

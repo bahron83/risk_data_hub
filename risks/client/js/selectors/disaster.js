@@ -15,7 +15,9 @@ const fullContextSel = ({disaster = {}}) => disaster.riskAnalysis && disaster.ri
 const dimInit = {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0};
 const dimSelector = ({disaster = {}}) => disaster.dim || dimInit;
 const loadingStateSelector = ({disaster = {}}) => disaster.loading;
-const eventSelector = ({disaster = {}}) => disaster.riskEvent || {};
+//const eventSelector = ({disaster = {}}) => disaster.riskEvent || {};
+//const eventsSelector = ({disaster = {}}) => disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData && disaster.riskAnalysis.riskAnalysisData.events || {};
+const selectedEventsSelector = ({disaster = {}}) => disaster.selectedEventIds || [];
 const chartValues = ({disaster = {}}) => disaster.cValues || [];
 const showChartSel = ({disaster = {}}) => disaster.showChart || false;
 const contextSel = ({disaster = {}}) => disaster.context && !isNull(disaster.context) && disaster.context || '';
@@ -31,8 +33,8 @@ const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel,
         activeRisk: hazardType.mnemonic || "Overview",
         context
     }));
-const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analysisTypeSel, analysisTypeESel, riskAnalysisDataSel, dimSelector, loadingStateSelector, showChartSel, fullContextSel, analysisClassSelector, eventSelector, zoomJustCalledSel, chartValues],
-    (riskItems, hazardType, analysisType, analysisTypeE, riskAnalysisData, dim, loading, showChart, fullContext, analysisClass, riskEvent, zoomJustCalled, cValues) => ({
+const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analysisTypeSel, analysisTypeESel, riskAnalysisDataSel, dimSelector, loadingStateSelector, showChartSel, fullContextSel, analysisClassSelector, zoomJustCalledSel, chartValues, selectedEventsSelector],
+    (riskItems, hazardType, analysisType, analysisTypeE, riskAnalysisData, dim, loading, showChart, fullContext, analysisClass, zoomJustCalled, cValues, selectedEventIds) => ({
         showHazard: hazardType.mnemonic ? true : false,
         hazardTitle: hazardType.mnemonic ? head(riskItems.filter((hz) => hz.mnemonic === hazardType.mnemonic)).title || '' : '',
         hazardType,
@@ -43,10 +45,10 @@ const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analy
         loading,
         showChart,
         fullContext,
-        analysisClass,
-        riskEvent,
+        analysisClass,        
         zoomJustCalled,
-        cValues
+        cValues,
+        selectedEventIds
     }));
 const drillUpSelector = createSelector([navItemsSel],
      (navItems) => ({
@@ -149,6 +151,5 @@ module.exports = {
     sliderSelector,
     mapSliderSelector,
     sliderChartSelector,
-    additionalChartSelector,
-    eventSelector
+    additionalChartSelector    
 };

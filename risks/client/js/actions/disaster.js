@@ -28,7 +28,6 @@ const SET_CHART_SLIDER_INDEX = 'SET_CHART_SLIDER_INDEX';
 const CHART_SLIDER_UPDATE = 'CHART_SLIDER_UPDATE';
 const SET_ADDITIONAL_CHART_INDEX = 'SET_ADDITIONAL_CHART_INDEX';
 const TOGGLE_SWITCH_CHART = 'TOGGLE_SWITCH_CHART';
-const SET_EVENT_IDX = 'SET_EVENT_IDX';
 const SET_ANALYSIS_CLASS = 'SET_ANALYSIS_CLASS';
 const SELECT_EVENT = 'SELECT_EVENT';
 
@@ -190,13 +189,6 @@ function toggleSwitchChart() {
     };
 }
 
-function setEventIdx(event) {
-    return {
-        type: SET_EVENT_IDX,
-        event
-    };    
-}
-
 function setAnalysisClass(value) {
     return {
         type: SET_ANALYSIS_CLASS,
@@ -204,12 +196,12 @@ function setAnalysisClass(value) {
     };    
 }
 
-function selectEvent(event, adm_level, shouldZoom = false) {             
+function selectEvent(events, isSelected = true, loc = null) {                         
     return {
         type: SELECT_EVENT,  
-        event,
-        adm_level,
-        shouldZoom
+        events,
+        isSelected,                
+        loc
     };                
 }
 
@@ -233,10 +225,9 @@ module.exports = {
     SET_CHART_SLIDER_INDEX,
     CHART_SLIDER_UPDATE,
     SET_ADDITIONAL_CHART_INDEX,
-    TOGGLE_SWITCH_CHART,
-    SET_EVENT_IDX,  
+    TOGGLE_SWITCH_CHART,    
     SET_ANALYSIS_CLASS,     
-    SELECT_EVENT, 
+    SELECT_EVENT,     
     featuresLoaded,
     featuresLoading,
     featuresError,
@@ -259,8 +250,7 @@ module.exports = {
     setChartSliderIndex,
     chartSliderUpdate,
     setAdditionalChartIndex,
-    toggleSwitchChart,
-    setEventIdx,
+    toggleSwitchChart,    
     setAnalysisClass,    
-    selectEvent
+    selectEvent    
 };

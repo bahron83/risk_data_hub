@@ -29,6 +29,8 @@ from risks.models import (HazardType, AdministrativeDivision,
 from risks.datasource import GeoserverDataSource
 from risks.pdf_helpers import generate_pdf
 
+from dateutil.parser import parse
+
 cost_benefit_index = TemplateView.as_view(template_name='risks/cost_benefit_index.html')
 
 log = logging.getLogger(__name__)
@@ -439,12 +441,9 @@ class HazardTypeView(ContextAware, LocationSource, View):
 
 
 class EventView(FeaturesSource, HazardTypeView):
-    def get_event(self, **kwargs):
-        try:
-            event = Event.objects.get(event_id=kwargs['evt'])
-        except Event.DoesNotExist:
-            return
-        return event   
+    def get_events(self, **kwargs):        
+        ids = kwargs['evt'].split('__')
+        return Event.objects.filter(pk__in=ids)        
 
     def get_current_adm_level(self, **kwargs):
         return kwargs['lvl']
@@ -456,18 +455,20 @@ class EventView(FeaturesSource, HazardTypeView):
             return json_response(errors=['Invalid location code'], status=404)
         loc = locations[-1]
 
-        hazard_type = self.get_hazard_type(loc, **kwargs)
+        #hazard_type = self.get_hazard_type(loc, **kwargs)
 
-        event = self.get_event(**kwargs)
+        events = self.get_events(**kwargs)
+        if not events:
+            return json_response(errors=['Invalid event Id(s)'], status=404)
 
         adm_level = self.get_current_adm_level(**kwargs)
 
-        if not hazard_type:
-            return json_response(errors=['Invalid hazard type'], status=404)
+        #if not hazard_type:
+            #return json_response(errors=['Invalid hazard type'], status=404)
         
         wms_events = {
             'style': None,
-            'viewparams': self.get_viewparams(adm_level, loc, event),
+            'viewparams': self.get_viewparams(adm_level, loc, kwargs['evt']),
             'baseurl': settings.OGC_SERVER['default']['PUBLIC_LOCATION']            
         }
 
@@ -482,8 +483,8 @@ class EventView(FeaturesSource, HazardTypeView):
             'layerStyle': layer_style,
             'layerTitle': 'risk_analysis_event_location'
         }  
-
-        related_layers_events = [(l.id, l.typename, l.title, ) for l in event.related_layers.all()]  
+        
+        related_layers_events = [(l.id, l.typename, l.title, ) for l in events.first().related_layers.all()] if events.count() == 1 else []
         
         feat_kwargs = self.url_kwargs_to_query_params(**kwargs)
         features = self.get_features_base('geonode:risk_analysis', None, **feat_kwargs)
@@ -500,12 +501,13 @@ class EventView(FeaturesSource, HazardTypeView):
 
         return json_response(out)
 
-    def get_viewparams(self, adm_level, loc, event):
-        adm_codes_list = []         
+    def get_viewparams(self, adm_level, loc, events):
+        '''adm_codes_list = []         
         for adm in event.administrative_divisions.all():
             adm_codes_list.append(adm.code)
         adm_codes = "__".join(adm_codes_list)
-        return 'adm_level:{};region:{};adm_code:{};event_id:{}'.format(adm_level, loc.region.name, adm_codes, event.event_id)
+        return 'adm_level:{};region:{};adm_code:{};event_id:{}'.format(adm_level, loc.region.name, adm_codes, event.event_id)'''
+        return 'adm_level:{};event_id:{}'.format(adm_level, events)
 
 
 class DataExtractionView(FeaturesSource, HazardTypeView):
@@ -748,6 +750,13 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 events = events.filter(iso2=loc.code)
             elif loc.level == 2:
                 events = events.filter(nuts3__contains=loc.code)
+            
+            #check if need to filter by date
+            if events and 'from' in kwargs and 'to' in kwargs:
+                date_from = parse(kwargs.get('from'))
+                date_to = parse(kwargs.get('to'))
+                events = events.filter(begin_date__range=(date_from, date_to))
+            
             events = events.order_by('-begin_date')
             total = events.count()
             

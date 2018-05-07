@@ -126,13 +126,26 @@ class Command(BaseCommand):
                     x = axis_x.get(value=dim1)
                     y = axis_y.get(value=dim2)                                        
                     adm_div = AdministrativeDivision.objects.get(code=event.iso2)                
-                    params = { 'adm_div': adm_div, 'event': event, 'risk': risk, 'region': region, 'attribute_value': attribute_value, 'x': x , 'y': y, 'first_call': first_call, 'conn': conn }
+                    params = {
+                        'adm_div': adm_div,
+                        'event': event,
+                        'risk': risk,
+                        'region': region,
+                        'attribute_value': attribute_value,
+                        'x': x,
+                        'y': y,
+                        'first_call': first_call,
+                        'create_django_association': True,
+                        'conn': conn
+                    }
                     self.handle_row(params)
                     first_call = False
-                    if len(event.nuts3.split(';')) == 1:
+                    nuts3_list = event.nuts3.split(';')
+                    for nuts3 in nuts3_list:                        
                         try:
-                            adm_div = AdministrativeDivision.objects.get(code=event.nuts3)
-                            params['adm_div'] = adm_div
+                            adm_div = AdministrativeDivision.objects.get(code=nuts3)
+                            params['adm_div'] = adm_div                            
+                            params['create_django_association'] = True if len(nuts3_list) == 1 else False
                             self.handle_row(params)
                         except AdministrativeDivision.DoesNotExist:
                             pass
@@ -185,11 +198,12 @@ class Command(BaseCommand):
         }
         db = DbUtils()
         db.insert_db(params['conn'], db_values, params['first_call'])
-        risk_adm = RiskAnalysisAdministrativeDivisionAssociation.\
-            objects.\
-            filter(riskanalysis=params['risk'], administrativedivision=params['adm_div'])
-        if len(risk_adm) == 0:
-            RiskAnalysisAdministrativeDivisionAssociation.\
+        if params['create_django_association']:
+            risk_adm = RiskAnalysisAdministrativeDivisionAssociation.\
                 objects.\
-                create(riskanalysis=params['risk'], administrativedivision=params['adm_div'])
+                filter(riskanalysis=params['risk'], administrativedivision=params['adm_div'])
+            if len(risk_adm) == 0:
+                RiskAnalysisAdministrativeDivisionAssociation.\
+                    objects.\
+                    create(riskanalysis=params['risk'], administrativedivision=params['adm_div'])
     

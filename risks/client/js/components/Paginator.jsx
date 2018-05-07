@@ -17,8 +17,7 @@ class Paginator extends Component {
     }
 
     handleClick(e) {         
-        const { fullContext, getAnalysisData } = this.props;
-        console.log(`${fullContext.full_url}load/all/`);
+        const { fullContext, getAnalysisData } = this.props;        
         getAnalysisData(`${fullContext.full_url}load/all/`);
     }
 }

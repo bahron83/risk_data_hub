@@ -23,7 +23,7 @@ const {
     GET_RISK_FEATURES,
     GET_ANALYSIS_DATA,
     GET_EVENT_DATA,    
-    SELECT_EVENT,
+    SELECT_EVENT,     
     INIT_RISK_APP,
     DATA_LOADED,
     ANALYSIS_DATA_LOADED,
@@ -45,8 +45,7 @@ const {
     eventDataLoaded,
     getData,
     setChartSliderIndex,
-    zoomInOut,
-    setEventIdx    
+    zoomInOut      
 } = require('../actions/disaster');
 const {configureMap, configureError} = require('../../MapStore2/web/client/actions/config');
 const getRiskDataEpic = (action$, store) =>
@@ -166,22 +165,21 @@ const zoomInOutEpic = (action$, store) =>
     });       
 
 const selectEventEpic = (action$, store) =>
-    action$.ofType(SELECT_EVENT)        
-        .map(action => {            
-            const { app, riskAnalysis } = (store.getState()).disaster;            
-            const fullContext = riskAnalysis && riskAnalysis.fullContext;
-            const { event, adm_level, shouldZoom } = action;
-            //determine level of zoom
-            const zoomLevel = (event.nuts3.split(";").length > 1) ? "iso2" : "nuts3";
-            const dataHrefEvent = `/${app}/data_extraction/loc/${event[zoomLevel]}/`;
-            const dataHref = `/${app}/data_extraction/loc/${event.iso2}/`;
-            const geomHref = `/${app}/data_extraction/geom/${event.iso2}/`;
-            const eventHref = `${dataHrefEvent}lvl/${adm_level}/ht/${event.hazard_type}/evt/${event.event_id}/`;
-            if(fullContext.adm_level == 0 || shouldZoom)            
-                return [zoomInOut(dataHref, geomHref), setEventIdx(event), getEventData(eventHref)];
-            return [setEventIdx(event), getEventData(eventHref)];
+    action$.ofType(SELECT_EVENT) 
+        .map(action => {                           
+            const { app, riskAnalysis, selectedEventIds } = (store.getState()).disaster;             
+            if(selectedEventIds !== undefined && selectedEventIds.length > 0) {
+                const fullContext = riskAnalysis && riskAnalysis.fullContext;            
+                const { loc } = action;            
+                const dataHref = `/${app}/data_extraction/loc/${loc}/`;
+                const geomHref = `/${app}/data_extraction/geom/${loc}/`;
+                const evtString = selectedEventIds.join("__");
+                const eventHref = `${dataHref}lvl/${fullContext.adm_level}/ht/${fullContext.ht}/evt/${evtString}/`;            
+                return [getEventData(eventHref)];            
+            }
+            return [];
         })
-        .mergeAll();
+        .mergeAll();    
 
 const initStateEpic = action$ =>
     action$.ofType(INIT_RISK_APP) // Wait untile map config is loaded
