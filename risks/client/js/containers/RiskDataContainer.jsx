@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { dataContainerSelector, chartSelector, eventTableSelector, sChartSelector, eventCountryChartSelector } from '../selectors/disaster';
-import { getAnalysisData, getData, setDimIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent } from '../actions/disaster';
+import { getAnalysisData, getData, setDimIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent, setFilters } from '../actions/disaster';
 import Chart from '../components/Chart';
 import EventCountryChart from '../components/EventCountryChart';
 import SChart from '../components/ScatterChart';
@@ -85,7 +85,7 @@ class DataContainer extends Component {
     }    
 
     renderAnalysisData() {        
-        const { dim, loading, fullContext, analysisType, analysisTypeE, selectedEventIds, cValues, zoomInOut, selectEvent, getAnalysis } = this.props;        
+        const { dim, loading, fullContext, analysisType, analysisTypeE, selectedEventIds, cValues, zoomInOut, selectEvent, setFilters, getAnalysis } = this.props;        
         const { hazardSet, data } = this.props.riskAnalysisData;             
         const { unitOfMeasure } = this.props.riskAnalysisData || 'Values';
         const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
@@ -153,11 +153,11 @@ class DataContainer extends Component {
                         <div>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <EventCountryChart data={eventDataGroup} loc={fullContext.loc} zoomInOut={zoomInOut}/>
+                                <EventCountryChart data={eventDataGroup} loc={fullContext.loc} zoomInOut={zoomInOut} />
                             </Panel>
                             <Panel className="panel-box">
                                 <h4>Filter by date</h4>                                
-                                <DatePickerRange getAnalysisData={getAnalysis} fullContext={fullContext}/>
+                                <DatePickerRange fullContext={fullContext} setFilters={setFilters} loading={loading}/>
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
@@ -348,4 +348,4 @@ class DataContainer extends Component {
     }
 }
 
-export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, selectEvent, getEventData, zoomInOut, setAnalysisClass})(DataContainer);
+export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, selectEvent, getEventData, zoomInOut, setAnalysisClass, setFilters})(DataContainer);

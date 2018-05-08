@@ -6500,6 +6500,11 @@ a.disaster .label:focus {
 .disaster .disaster-header .nav {
   margin-bottom: 16px;
 }
+.disaster .disaster-header label,
+.disaster .disaster-header input {
+  margin-right: 5px;
+  color: #333;
+}
 .disaster .disaster-level {
   background: #f2f2f2;
   color: #333333;

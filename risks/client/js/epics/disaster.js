@@ -14,6 +14,7 @@ const bbox = require('turf-bbox');
 const {changeLayerProperties, addLayer, removeNode, removeLayer, toggleNode} = require('../../MapStore2/web/client/actions/layers');
 const assign = require('object-assign');
 const {find} = require('lodash');
+const _ = require('lodash');
 const {configLayer, configRefLayer, getStyleRef, makeNotificationBody, getLayerTitle, getLayerTitleEvents} = require('../utils/DisasterUtils');
 const ConfigUtils = require('../../MapStore2/web/client/utils/ConfigUtils');
 
@@ -32,6 +33,7 @@ const {
     DATA_LOADING,
     GET_S_FURTHER_RESOURCE_DATA,
     CHART_SLIDER_UPDATE,
+    SET_FILTERS,
     dataLoaded,
     dataLoading,
     dataError,
@@ -86,8 +88,13 @@ const getRiskFeatures = (action$, store) =>
         .catch(e => Rx.Observable.of(featuresError(e)))
     );
 const getAnalysisEpic = (action$, store) =>
-    action$.ofType(GET_ANALYSIS_DATA).switchMap(action =>
-        Rx.Observable.defer(() => Api.getData(action.url))
+    action$.ofType(GET_ANALYSIS_DATA).switchMap(action => {  
+        const { analysisFilters } = (store.getState()).disaster; 
+        console.log(analysisFilters);
+        let filtersString = '';
+        _.forIn(analysisFilters, (value, key) => { if(value != '') filtersString += `${key}/${value}/` });
+        const apiUrl = action.url + filtersString;
+        return Rx.Observable.defer(() => Api.getData(apiUrl))
             .retry(1)
             .map(val => {
                 const baseUrl = val.wms && val.wms.baseurl;
@@ -126,7 +133,7 @@ const getAnalysisEpic = (action$, store) =>
             .mergeAll()
             .startWith(dataLoading(true))            
             .catch(e => Rx.Observable.of(dataError(e)))
-    );
+        });
 const getEventEpic = (action$, store) =>
     action$.ofType(GET_EVENT_DATA).switchMap(action => 
         Rx.Observable.defer(() => Api.getData(action.url))
@@ -154,7 +161,7 @@ const getEventEpic = (action$, store) =>
     
 const zoomInOutEpic = (action$, store) =>
     action$.ofType("ZOOM_IN_OUT").switchMap( action => {
-        const {riskAnalysis, context} = (store.getState()).disaster;
+        const { riskAnalysis, context } = (store.getState()).disaster;                
         const analysisHref = riskAnalysis && `${action.dataHref}${riskAnalysis.context}`;
         return Rx.Observable.defer(() => Api.getData(`${action.dataHref}${context || ''}`))
             .retry(1).
@@ -179,7 +186,14 @@ const selectEventEpic = (action$, store) =>
             }
             return [];
         })
-        .mergeAll();    
+        .mergeAll();
+        
+const setFiltersEpic = (action$, store) =>
+    action$.ofType(SET_FILTERS)
+        .map(action =>            
+            { return [getAnalysisData(action.url)] }
+        )
+        .mergeAll();
 
 const initStateEpic = action$ =>
     action$.ofType(INIT_RISK_APP) // Wait untile map config is loaded
@@ -234,4 +248,4 @@ const chartSliderUpdateEpic = action$ =>
 
     );
 
-module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, getAnalysisEpic, getEventEpic, selectEventEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost};
+module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, getAnalysisEpic, getEventEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost};

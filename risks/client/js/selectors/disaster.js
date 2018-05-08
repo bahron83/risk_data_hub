@@ -18,6 +18,7 @@ const loadingStateSelector = ({disaster = {}}) => disaster.loading;
 //const eventSelector = ({disaster = {}}) => disaster.riskEvent || {};
 //const eventsSelector = ({disaster = {}}) => disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData && disaster.riskAnalysis.riskAnalysisData.events || {};
 const selectedEventsSelector = ({disaster = {}}) => disaster.selectedEventIds || [];
+//const analysisFiltersSel = ({disaster = {}}) => disaster.analysisFilters || { from: '', to: '' };
 const chartValues = ({disaster = {}}) => disaster.cValues || [];
 const showChartSel = ({disaster = {}}) => disaster.showChart || false;
 const contextSel = ({disaster = {}}) => disaster.context && !isNull(disaster.context) && disaster.context || '';

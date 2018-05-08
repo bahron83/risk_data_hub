@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import moment from 'moment';
 
 export default class DatePickerRange extends Component {
@@ -9,8 +10,8 @@ export default class DatePickerRange extends Component {
         this.formatDate = this.formatDate.bind(this);
         this.setRef = this.setRef.bind(this);
         this.state = {
-            from: undefined,
-            to: undefined,
+            from: '',
+            to: '',
         };
     }
 
@@ -40,7 +41,7 @@ export default class DatePickerRange extends Component {
 
     handleFromChange(e) {
         // Change the from date and focus the "to" input field
-        const from = new Date(e.target.value);
+        const from = this.formatDate(new Date(e.target.value));
         this.setState({ from }, () => {
             if (!this.state.to) {
                 this.focusTo();
@@ -49,28 +50,38 @@ export default class DatePickerRange extends Component {
     }
 
     handleToChange(e) {        
-        const { getAnalysisData, fullContext } = this.props;        
-        const to = new Date(e.target.value);
+        const { setFilters, fullContext } = this.props;        
+        const to = this.formatDate(new Date(e.target.value));
         this.setState({ to }, () => {
-            //this.showFromMonth;
-            const fromS = this.formatDate(this.state.from);
-            const toS = this.formatDate(this.state.to);
-            getAnalysisData(`${fullContext.full_url}from/${fromS}/to/${toS}/`);
+            //this.showFromMonth;            
+            setFilters(fullContext.full_url, this.state);
         });        
     }
 
     formatDate(date) {
-        return date.toISOString().slice(0,10).replace(/-/g,"");
+        return date.toISOString().slice(0,10);
+    }
+
+    renderButton() {    
+        const { loading } = this.props;
+        return this.state.from != '' ? <button className="loadAll btn btn-default pull-right" onClick={this.resetFilters.bind(this)}><i className={loading && "icon-spinner fa-spin" || 'fa'}/>{loading && "Loading..." || "Reset filters"}</button> : null;
     }
     
-    render() {
+    render() {        
         const { from, to } = this.state;
         const modifiers = { start: from, end: to };
         return (
             <div>
-                <label>From:</label><input type="date" className="dateFrom" onChange={this.handleFromChange}/>
-                <label>To:</label><input type="date" className="dateTo" ref={this.setRef} onChange={this.handleToChange}/>
+                <label>From:</label><input type="date" value={this.state.from} className="dateFrom" onChange={this.handleFromChange}/>
+                <label>To:</label><input type="date" value={this.state.to} className="dateTo" ref={this.setRef} onChange={this.handleToChange}/>
+                {this.renderButton()}
             </div>
         )
+    }
+
+    resetFilters(e) {
+        const { setFilters, fullContext } = this.props;
+        this.setState({ from: '', to: '' });
+        setFilters(fullContext.full_url);
     }
 }

@@ -753,14 +753,17 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             
             #check if need to filter by date
             if events and 'from' in kwargs and 'to' in kwargs:
-                date_from = parse(kwargs.get('from'))
-                date_to = parse(kwargs.get('to'))
-                events = events.filter(begin_date__range=(date_from, date_to))
+                try:
+                    date_from = parse(kwargs.get('from'))
+                    date_to = parse(kwargs.get('to'))
+                    events = events.filter(begin_date__range=(date_from, date_to))
+                except ValueError:
+                    return json_response(errors=['Invalid date format'], status=400)
             
             events = events.order_by('-begin_date')
             total = events.count()
             
-            if events and 'load' not in kwargs and total > 50:
+            if events and 'load' not in kwargs and 'from' not in kwargs and total > 50:
                 events = events[:50]
             ev_list = []
             data_key = values_events.values()[0][1]

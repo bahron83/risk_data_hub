@@ -30,6 +30,7 @@ const SET_ADDITIONAL_CHART_INDEX = 'SET_ADDITIONAL_CHART_INDEX';
 const TOGGLE_SWITCH_CHART = 'TOGGLE_SWITCH_CHART';
 const SET_ANALYSIS_CLASS = 'SET_ANALYSIS_CLASS';
 const SELECT_EVENT = 'SELECT_EVENT';
+const SET_FILTERS = 'SET_FILTERS';
 
 function initState({href, geomHref, gc, ac}) {
     return {
@@ -127,6 +128,7 @@ function zoomInOut(dataHref, geomHref) {
         geomHref
     };
 }
+
 function loadMapConfig(configName, mapId, featuresUrl) {
     return {
         type: 'LOAD_RISK_MAP_CONFIG',
@@ -135,6 +137,7 @@ function loadMapConfig(configName, mapId, featuresUrl) {
         featuresUrl
     };
 }
+
 function setDimIdx(dim, idx) {
     return {
         type: SET_DIM_IDX,
@@ -142,6 +145,7 @@ function setDimIdx(dim, idx) {
         idx
     };
 }
+
 function toggleAdminUnit() {
     return {
         type: TOGGLE_ADMIN_UNITS
@@ -205,6 +209,14 @@ function selectEvent(events, isSelected = true, loc = null) {
     };                
 }
 
+function setFilters(url, analysisFilters = { from: '', to: '' }) {
+    return {
+        type: SET_FILTERS,
+        analysisFilters,
+        url
+    }
+}
+
 module.exports = {
     DATA_LOADING,
     DATA_LOADED,
@@ -227,7 +239,8 @@ module.exports = {
     SET_ADDITIONAL_CHART_INDEX,
     TOGGLE_SWITCH_CHART,    
     SET_ANALYSIS_CLASS,     
-    SELECT_EVENT,     
+    SELECT_EVENT,   
+    SET_FILTERS,  
     featuresLoaded,
     featuresLoading,
     featuresError,
@@ -252,5 +265,6 @@ module.exports = {
     setAdditionalChartIndex,
     toggleSwitchChart,    
     setAnalysisClass,    
-    selectEvent    
+    selectEvent,
+    setFilters    
 };

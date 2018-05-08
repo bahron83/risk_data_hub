@@ -22,7 +22,8 @@ const {
     TOGGLE_SWITCH_CHART,
     ZOOM_IN_OUT,
     SET_ANALYSIS_CLASS,  
-    SELECT_EVENT    
+    SELECT_EVENT,
+    SET_FILTERS    
 } = require('../actions/disaster');
 
 function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, action) {
@@ -32,7 +33,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
                 loading: true
             });
         case DATA_LOADED: {
-            return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app, analysisClass: state.analysisClass}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, selectedEventIds: state.selectedEventIds, analysisClass: state.analysisClass, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app}, action.data);
+            return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app, analysisClass: state.analysisClass}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, selectedEventIds: state.selectedEventIds, analysisClass: state.analysisClass, analysisFilters: state.analysisFilters, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app}, action.data);
         }
         case ANALYSIS_DATA_LOADED: {
             return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values, zoomJustCalled: 2});
@@ -85,8 +86,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             return assign({}, state, { analysisClass: action.value });
         }          
         case SELECT_EVENT: {            
-            const { events, isSelected } = action;            
-            console.log("update sel event arrived to reducer: ", events);
+            const { events, isSelected } = action;                        
             let ids = state && state.selectedEventIds || [];            
             //set the array of ids             
             if(typeof events !== undefined && events.length > 1) {
@@ -95,10 +95,14 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             else if(events.length > 0) {                
                 ids = isSelected ? [...ids, events[0]] : ids.filter(item => item !== events[0]);
             }                        
-            ids = ids.filter((v, i, a) => a.indexOf(v) === i);            
-            console.log(ids);
+            ids = ids.filter((v, i, a) => a.indexOf(v) === i);                        
             return assign({}, state, { selectedEventIds: ids, zoomJustCalled: 1 });
-        }              
+        } 
+        case SET_FILTERS: {
+            const { analysisFilters } = action;
+            console.log("setting filters", analysisFilters);
+            return assign({}, state, { analysisFilters });
+        }             
         default:
             return state;
     }
