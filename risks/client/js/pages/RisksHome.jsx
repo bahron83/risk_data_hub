@@ -14,6 +14,7 @@ const Notifications = connect(state => ({notifications: state.notifications}))(r
 const TopBar = connect(topBarSelector, {zoom: zoomInOut, getData, toggleTutorial: toggleControl.bind(null, 'tutorial', null)})(require('../components/TopBar'));
 //const RiskDataContainer = require('../containers/RiskDataContainer');
 import RiskDataContainer from '../containers/RiskDataContainer';
+import EventDetails from '../components/EventDetails';
 const RisksMapContainer = require('../containers/RisksMapContainer');
 const Page = require('../../MapStore2/web/client/containers/Page');
 const ConfigUtils = require('../../MapStore2/web/client/utils/ConfigUtils');
@@ -53,8 +54,9 @@ const Home = React.createClass({
                     <TopBar/>
                     <div className="container-fluid container-main">
                         <div className="row">
-                            <RiskDataContainer />
-                            {<RisksMapContainer plugins={plugins}/>}
+                            <RiskDataContainer />                                
+                            <EventDetails/>                            
+                            {<RisksMapContainer plugins={plugins}/>}                            
                         </div>                        
                     </div>
                    {this.props.generateMap ? (<ReportMap/>) : null}

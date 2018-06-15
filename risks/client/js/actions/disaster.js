@@ -11,6 +11,7 @@ const DATA_ERROR = 'DATA_ERROR';
 const GET_DATA = 'GET_DATA';
 const ANALYSIS_DATA_LOADED = 'ANALYSIS_DATA_LOADED';
 const EVENT_DATA_LOADED = 'EVENT_DATA_LOADED';
+const EVENT_DETAILS_LOADED = 'EVENT_DETAILS_LOADED';
 const TOGGLE_DIM = 'TOGGLE_DIM';
 const SET_DIM_IDX = 'SET_DIM_IDX';
 const FEATURES_LOADING = 'FEATURES_LOADING';
@@ -30,7 +31,13 @@ const SET_ADDITIONAL_CHART_INDEX = 'SET_ADDITIONAL_CHART_INDEX';
 const TOGGLE_SWITCH_CHART = 'TOGGLE_SWITCH_CHART';
 const SET_ANALYSIS_CLASS = 'SET_ANALYSIS_CLASS';
 const SELECT_EVENT = 'SELECT_EVENT';
+const EVENT_DETAILS = 'EVENT_DETAILS';
 const SET_FILTERS = 'SET_FILTERS';
+const ADM_LOOKUP = 'ADM_LOOKUP';
+const ADM_LOOKUP_LOADED = 'ADM_LOOKUP_LOADED';
+const SWITCH_CONTEXT = 'SWITCH_CONTEXT';
+const TOOGLE_EVENT_DETAIL = 'TOOGLE_EVENT_DETAIL';
+const TOOGLE_EVENT_DETAIL_V = 'TOOGLE_EVENT_DETAIL_V';
 
 function initState({href, geomHref, gc, ac}) {
     return {
@@ -94,6 +101,12 @@ function analysisDataLoaded(data) {
 function eventDataLoaded(data) {
     return {
         type: EVENT_DATA_LOADED,
+        data
+    };
+}
+function eventDetailsLoaded(data) {
+    return {
+        type: EVENT_DETAILS_LOADED,
         data
     };
 }
@@ -201,12 +214,20 @@ function setAnalysisClass(value) {
 }
 
 function selectEvent(events, isSelected = true, loc = null) {                         
+    console.log('called action select_event', events);
     return {
         type: SELECT_EVENT,  
         events,
         isSelected,                
         loc
     };                
+}
+
+function eventDetails(url) {
+    return {
+        type: EVENT_DETAILS,
+        url
+    }
 }
 
 function setFilters(url, analysisFilters = { from: '', to: '' }) {
@@ -217,12 +238,51 @@ function setFilters(url, analysisFilters = { from: '', to: '' }) {
     }
 }
 
+function admDivisionLookup(url, detail = false) {
+    return {
+        type: ADM_LOOKUP,
+        url,
+        detail
+    }
+}
+
+function admLookupLoaded(val, detail = false) {
+    return {
+        type: ADM_LOOKUP_LOADED,
+        val,
+        detail
+    }
+}
+
+function switchContext(ht, at, an, loc) {
+    return {
+        type: SWITCH_CONTEXT,
+        ht,
+        at,
+        an,
+        loc
+    }
+}
+
+function toggleEventDetail() {
+    return {
+        type: TOOGLE_EVENT_DETAIL
+    }
+}
+
+function toggleEventDetailVisibility() {
+    return {
+        type: TOOGLE_EVENT_DETAIL_V
+    }
+}
+
 module.exports = {
     DATA_LOADING,
     DATA_LOADED,
     DATA_ERROR,
     ANALYSIS_DATA_LOADED,
     EVENT_DATA_LOADED,
+    EVENT_DETAILS_LOADED,
     TOGGLE_DIM,
     SET_DIM_IDX,
     TOGGLE_ADMIN_UNITS,
@@ -239,8 +299,14 @@ module.exports = {
     SET_ADDITIONAL_CHART_INDEX,
     TOGGLE_SWITCH_CHART,    
     SET_ANALYSIS_CLASS,     
-    SELECT_EVENT,   
-    SET_FILTERS,  
+    SELECT_EVENT,
+    EVENT_DETAILS,  
+    SET_FILTERS,
+    ADM_LOOKUP, 
+    ADM_LOOKUP_LOADED,
+    SWITCH_CONTEXT,
+    TOOGLE_EVENT_DETAIL,
+    TOOGLE_EVENT_DETAIL_V,
     featuresLoaded,
     featuresLoading,
     featuresError,
@@ -253,6 +319,7 @@ module.exports = {
     getEventData,
     analysisDataLoaded,
     eventDataLoaded,
+    eventDetailsLoaded,
     toggleDim,
     zoomInOut,
     loadMapConfig,
@@ -266,5 +333,11 @@ module.exports = {
     toggleSwitchChart,    
     setAnalysisClass,    
     selectEvent,
-    setFilters    
+    eventDetails,
+    setFilters,
+    admDivisionLookup,
+    admLookupLoaded,
+    switchContext,
+    toggleEventDetail,
+    toggleEventDetailVisibility
 };

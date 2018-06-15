@@ -13,6 +13,7 @@ const {
     TOGGLE_DIM,
     ANALYSIS_DATA_LOADED,
     EVENT_DATA_LOADED,
+    EVENT_DETAILS_LOADED,
     SET_DIM_IDX,    
     TOGGLE_ADMIN_UNITS,
     GET_ANALYSIS_DATA,
@@ -23,7 +24,10 @@ const {
     ZOOM_IN_OUT,
     SET_ANALYSIS_CLASS,  
     SELECT_EVENT,
-    SET_FILTERS    
+    SET_FILTERS,
+    ADM_LOOKUP_LOADED,
+    TOOGLE_EVENT_DETAIL,
+    TOOGLE_EVENT_DETAIL_V   
 } = require('../actions/disaster');
 
 function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, action) {
@@ -36,10 +40,13 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app, analysisClass: state.analysisClass}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, selectedEventIds: state.selectedEventIds, analysisClass: state.analysisClass, analysisFilters: state.analysisFilters, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app}, action.data);
         }
         case ANALYSIS_DATA_LOADED: {
-            return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values, zoomJustCalled: 2});
+            return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values, zoomJustCalled: 2, lookupResultsDetail: [], lookupResults: []});
         }
         case EVENT_DATA_LOADED: {            
             return assign({}, state, { loading: false, error: null, eventAnalysis: action.data, cValues: action.data.eventValues });
+        }
+        case EVENT_DETAILS_LOADED: {
+            return assign({}, state, { loading: false, error: null, eventDetails: action.data });
         }
         case TOGGLE_DIM: {
             const newDim = state.dim && {dim1: state.dim.dim2, dim2: state.dim.dim1, dim1Idx: 0, dim2Idx: 0} || {dim1: 1, dim2: 0, dim1Idx: 0, dim2Idx: 0};
@@ -85,7 +92,10 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
         case SET_ANALYSIS_CLASS: {
             return assign({}, state, { analysisClass: action.value });
         }          
-        case SELECT_EVENT: {            
+        case SELECT_EVENT: {  
+            console.log('event detail flag in reducer:', state.showEventDetail);
+            if(state.showEventDetail)
+                return assign({}, state, { eventDetails: {}, visibleEventDetail: true });
             const { events, isSelected } = action;                        
             let ids = state && state.selectedEventIds || [];            
             //set the array of ids             
@@ -100,9 +110,21 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
         } 
         case SET_FILTERS: {
             const { analysisFilters } = action;
-            console.log("setting filters", analysisFilters);
+            //console.log("setting filters", analysisFilters);
             return assign({}, state, { analysisFilters });
-        }             
+        }  
+        case ADM_LOOKUP_LOADED: {   
+            //console.log('value to reduce', action.val);
+            //console.log('has property riskAnalysis:', action.val.hasOwnProperty('riskAnalysis'));
+            const newState = action.detail ? { lookupResultsDetail: action.val } : { lookupResults: action.val, lookupResultsDetail: [] };
+            return assign({}, state, newState);
+        }  
+        case TOOGLE_EVENT_DETAIL: {
+            return assign({}, state, { showEventDetail: !state.showEventDetail });
+        } 
+        case TOOGLE_EVENT_DETAIL_V: {
+            return assign({}, state, { visibleEventDetail: !state.visibleEventDetail });
+        }        
         default:
             return state;
     }

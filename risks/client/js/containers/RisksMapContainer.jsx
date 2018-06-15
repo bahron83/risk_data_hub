@@ -16,7 +16,7 @@ const MapViewer = connect(() => ({}), {
 })(require('../../MapStore2/web/client/containers/MapViewer'));
 const Legend = connect(disasterRiskLayerSelector)(require('../../MapStore2/web/client/components/TOC/fragments/legend/Legend'));
 const {drillUpSelector, switchDimSelector, axesSelector} = require('../selectors/disaster');
-const {zoomInOut, toggleDim, setDimIdx, toggleAdminUnit} = require('../actions/disaster');
+const {zoomInOut, toggleDim, setDimIdx, toggleAdminUnit, toggleEventDetail} = require('../actions/disaster');
 const {setControlProperty, toggleControl} = require('../../MapStore2/web/client/actions/controls');
 
 const DrillUpBtn = connect(drillUpSelector, {zoomOut: zoomInOut})(require('../components/DrillUpBtn'));
@@ -35,11 +35,23 @@ const FurtherResources = connect(({disaster} = {}) => ({
     analysisType: disaster.riskAnalysis && disaster.riskAnalysis.furtherResources && disaster.riskAnalysis.furtherResources.analysisType || [],
     hazardType: disaster.riskAnalysis && disaster.riskAnalysis.furtherResources && disaster.riskAnalysis.furtherResources.hazardType || []
 }))(require('../components/FurtherResources'));
+const ToggleEventDetail = connect(({disaster}) => ({
+    showEventDetail: disaster.showEventDetail,
+    show: disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData && disaster.riskAnalysis.riskAnalysisData.events ? true : false
+}), {toggleEventDetail})(require('../components/ToggleEventDetail'));
+
 const MapContainer = (props) => (
         <div className="col">
             <div id="disaster-map-main-container" className="disaster-map-container">
                 <div className="container-fluid">
-                    <div id="disaster-map-tools" className="btn-group pull-left disaster-map-tools"><LayerBtn/><IdentifyBtn/><SwitchAdminU/><SwitchDimension/><DrillUpBtn/></div>
+                    <div id="disaster-map-tools" className="btn-group pull-left disaster-map-tools">
+                        <LayerBtn/>
+                        <IdentifyBtn/>
+                        <SwitchAdminU/>
+                        <SwitchDimension/>
+                        <DrillUpBtn/>
+                        <ToggleEventDetail/>
+                    </div>
                 </div>
                 <div className="drc">
                     <div className="drc-map-container">

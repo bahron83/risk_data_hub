@@ -8,30 +8,32 @@
       -90, -180,
       90, 180
     ],
-    "layers": [{
-      "type": "osm",
-      "title": "Open Street Map",
-      "name": "mapnik",
-      "source": "osm",
-      "group": "background",
-            "visibility": true
-        },
-        {
-            "type": "vector",
-            "queryable": false,
-            "visibility": true,
-            "group": "Default",
-            "name": "Admins units",
-            "hideLoading": true,
-            "id": "adminunits",
-            "style": {
-                "color": "black",
-                "weight": 1,
-                "opacity": 1,
-                "fillOpacity": 0
-              },
-            "features" : []
-        }
+    "layers": [
+      {
+        "type": "osm",
+        "title": "Open Street Map",
+        "name": "mapnik",
+        "source": "osm",
+        "group": "background",
+        "visibility": true
+      },
+      
+      {
+        "type": "vector",
+        "queryable": false,
+        "visibility": true,
+        "group": "Default",
+        "name": "Admins units",
+        "hideLoading": true,
+        "id": "adminunits",
+        "style": {
+            "color": "black",
+            "weight": 1,
+            "opacity": 1,
+            "fillOpacity": 0
+          },
+        "features" : []
+      }
 
     ]
   }

@@ -51,7 +51,8 @@ const StandardRouter = connect((state) => ({
 
 }))(require('../../MapStore2/web/client/components/app/StandardRouter'));
 
-const appStore = require('../../MapStore2/web/client/stores/StandardStore').bind(null, newInitState, appReducers, {...dEpics, ...rEpics});
+export const appStore = require('../../MapStore2/web/client/stores/StandardStore').bind(null, newInitState, appReducers, {...dEpics, ...rEpics});
+
 const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
 const loc = disasterRisk && disasterRisk.app && disasterRisk.app.region || 'EU';
 const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}loc/${loc}/` || '/risks/data_extraction/loc/EU/';
@@ -66,7 +67,7 @@ const appConfig = {
     appComponent: StandardRouter
 };
 
-ReactDOM.render(
+ReactDOM.render(    
     <StandardApp {...appConfig}/>,
     document.getElementById('container')
 );

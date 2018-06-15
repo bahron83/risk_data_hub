@@ -8,6 +8,7 @@ import SChart from '../components/ScatterChart';
 import EventTable from '../components/EventTable';
 import Paginator from '../components/Paginator';
 import DatePickerRange from '../components/DatePickerRange';
+import Search from '../components/Search';
 const SummaryChart = connect(chartSelector)(require('../components/SummaryChart'));
 const GetAnalysisBtn = connect(({disaster}) => ({loading: disaster.loading || false}))(require('../components/LoadingBtn'));
 
@@ -45,8 +46,16 @@ class DataContainer extends Component {
         return data.filter((d) => d[nameIdx] === val ).map((v) => {return {"name": v[dim], "value": parseInt(v[2], 10)}; });
     }    
     
-    prepareEventData() {        
-        const { events } = this.props.riskAnalysisData || [];
+    prepareEventData() {            
+        //return this.props.riskAnalysisData && this.props.riskAnalysisData.events || [];
+        const { fullContext } = this.props;
+        const events = this.props.riskAnalysisData && this.props.riskAnalysisData.events || [];
+        return events.map(v => {
+            let newObj = v;
+            newObj['details_link'] = `<a href="/risks/data_extraction/an/${fullContext.an}/evt/${v.event_id}">click</a>`;
+            return newObj;
+        });
+
         /*const { event_values: values } = this.props.riskAnalysisData.data || null;
         if(events && values) {
             const dataKey = Object.entries(values)[0][1][1];  
@@ -60,8 +69,8 @@ class DataContainer extends Component {
                 })  
             );
         }
-        return [];*/
-        return events;
+        return [];*/        
+        //return events;
     }
 
     filterByLoc(data) {        
@@ -148,6 +157,11 @@ class DataContainer extends Component {
                         </div>
                     </div>
                     )}
+
+                    <Panel className="panel-box">
+                        <h4>Search a name (country, nuts3 or city)</h4>
+                        <Search />                        
+                    </Panel>
                     
                     {fullContext.analysis_class == 'event' ? (                        
                         <div>
@@ -155,7 +169,7 @@ class DataContainer extends Component {
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
                                 <EventCountryChart data={eventDataGroup} loc={fullContext.loc} zoomInOut={zoomInOut} />
                             </Panel>
-                            <Panel className="panel-box">
+                            <Panel className="panel-box">                                
                                 <h4>Filter by date</h4>                                
                                 <DatePickerRange fullContext={fullContext} setFilters={setFilters} loading={loading}/>
                             </Panel>
@@ -168,13 +182,13 @@ class DataContainer extends Component {
                                 <h4 className="text-center">{'Historical Events Resume'}</h4>
                                 <EventTable data={eventData} selectEvent={selectEvent} selectedEventIds={selectedEventIds} fullContext={fullContext}/>
                                 <Paginator total={data.total_events} showing={eventData.length} fullContext={fullContext} getAnalysisData={getAnalysis} loading={loading}/>
-                            </Panel>
+                            </Panel>                                                                               
                         </div>
                     ) : (
                         <div>                            
                             <Panel className="panel-box">
-                            <h4 className="text-center">{'Current ' + data.dimensions[dim.dim1].name + ' Chart'}</h4>
-                            <Chart dim={dim} values={cValues} val={val} dimension={dimension} uOm={unitOfMeasure} selectRP={this.selectRP.bind(this)}/>
+                                <h4 className="text-center">{'Current ' + data.dimensions[dim.dim1].name + ' Chart'}</h4>
+                                <Chart dim={dim} values={cValues} val={val} dimension={dimension} uOm={unitOfMeasure} selectRP={this.selectRP.bind(this)}/>
                             </Panel>                                        
                             <SummaryChart/>
                         </div>
@@ -341,7 +355,7 @@ class DataContainer extends Component {
         } 
                         
         if(selectedEventIds.length == 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
-            const eventData = this.prepareEventData();            
+            const eventData = this.prepareEventData();                
             if(eventData.length > 0)                                 
                 selectEvent([eventData[0].event_id], true, fullContext.loc);
         }

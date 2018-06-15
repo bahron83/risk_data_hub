@@ -24,7 +24,8 @@ const {
     GET_RISK_FEATURES,
     GET_ANALYSIS_DATA,
     GET_EVENT_DATA,    
-    SELECT_EVENT,     
+    SELECT_EVENT,
+    EVENT_DETAILS,  
     INIT_RISK_APP,
     DATA_LOADED,
     ANALYSIS_DATA_LOADED,
@@ -34,6 +35,8 @@ const {
     GET_S_FURTHER_RESOURCE_DATA,
     CHART_SLIDER_UPDATE,
     SET_FILTERS,
+    ADM_LOOKUP,
+    SWITCH_CONTEXT,
     dataLoaded,
     dataLoading,
     dataError,
@@ -45,9 +48,12 @@ const {
     getEventData,
     analysisDataLoaded,
     eventDataLoaded,
+    eventDetailsLoaded,
     getData,
     setChartSliderIndex,
-    zoomInOut      
+    zoomInOut,
+    admLookupLoaded,
+    eventDetails     
 } = require('../actions/disaster');
 const {configureMap, configureError} = require('../../MapStore2/web/client/actions/config');
 const getRiskDataEpic = (action$, store) =>
@@ -157,7 +163,18 @@ const getEventEpic = (action$, store) =>
             .startWith(dataLoading(true))            
             .catch(e => Rx.Observable.of(dataError(e)))
     );
-           
+
+const getEventDetailsEpic = (action$, store) =>
+    action$.ofType(EVENT_DETAILS).switchMap(action => 
+        Rx.Observable.defer(() => Api.getData(action.url))
+            .retry(1)
+            .map(val => {
+                return [eventDetailsLoaded(val)];
+            })
+            .mergeAll()
+            .startWith(dataLoading(true))            
+            .catch(e => Rx.Observable.of(dataError(e)))
+    );
     
 const zoomInOutEpic = (action$, store) =>
     action$.ofType("ZOOM_IN_OUT").switchMap( action => {
@@ -174,14 +191,23 @@ const zoomInOutEpic = (action$, store) =>
 const selectEventEpic = (action$, store) =>
     action$.ofType(SELECT_EVENT) 
         .map(action => {                           
-            const { app, riskAnalysis, selectedEventIds } = (store.getState()).disaster;             
-            if(selectedEventIds !== undefined && selectedEventIds.length > 0) {
-                const fullContext = riskAnalysis && riskAnalysis.fullContext;            
+            const { app, riskAnalysis, selectedEventIds, showEventDetail } = (store.getState()).disaster;             
+            const urlPrefix = `/${app}/data_extraction`;
+            const fullContext = riskAnalysis && riskAnalysis.fullContext;
+            if(showEventDetail) { 
+                const { events } = action;               
+                if(events.length > 1)
+                    return [Rx.Observable.of(info({title: "Info", message: "Please, select a single event to view details", position: 'tc', autoDismiss: 3}))];
+                const event = events[0];
+                const eventHref = `${urlPrefix}/ht/${fullContext.ht}/an/${fullContext.an}/evt/${event}/`;
+                return [eventDetails(eventHref)];
+            }
+            if(selectedEventIds !== undefined && selectedEventIds.length > 0) {                
                 const { loc } = action;            
-                const dataHref = `/${app}/data_extraction/loc/${loc}/`;
-                const geomHref = `/${app}/data_extraction/geom/${loc}/`;
+                const dataHref = `${urlPrefix}/loc/${loc}/`;
+                const geomHref = `${urlPrefix}/geom/${loc}/`;
                 const evtString = selectedEventIds.join("__");
-                const eventHref = `${dataHref}lvl/${fullContext.adm_level}/ht/${fullContext.ht}/evt/${evtString}/`;            
+                const eventHref = `${dataHref}lvl/${fullContext.adm_level}/ht/${fullContext.ht}/an/${fullContext.an}/evt/${evtString}/`;            
                 return [getEventData(eventHref)];            
             }
             return [];
@@ -190,10 +216,21 @@ const selectEventEpic = (action$, store) =>
         
 const setFiltersEpic = (action$, store) =>
     action$.ofType(SET_FILTERS)
-        .map(action =>            
-            { return [getAnalysisData(action.url)] }
-        )
+        .map(action => [getAnalysisData(action.url)])
         .mergeAll();
+
+const admLookupEpic = (action$, store) =>
+    action$.ofType(ADM_LOOKUP).switchMap(action => {        
+        return Rx.Observable.defer(() => Api.getData(action.url))
+            .retry(1)
+            .map(val => [admLookupLoaded(val, action.detail)])
+            .mergeAll()
+            .startWith(dataLoading(true))            
+            .catch(e => Rx.Observable.of(dataError(e)))
+    })
+
+const switchContextAnalysisEpic = (action$, store) =>
+    action$.ofType(SWITCH_CONTEXT)
 
 const initStateEpic = action$ =>
     action$.ofType(INIT_RISK_APP) // Wait untile map config is loaded
@@ -248,4 +285,4 @@ const chartSliderUpdateEpic = action$ =>
 
     );
 
-module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, getAnalysisEpic, getEventEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost};
+module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost};

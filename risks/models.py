@@ -399,7 +399,7 @@ class RiskAnalysis(RiskAppAware, Schedulable, LocationAware, HazardTypeAware, An
     name = models.CharField(max_length=100, null=False, blank=False,
                             db_index=True)
     unit_of_measure = models.CharField(max_length=255, null=True, blank=True)
-
+    show_in_event_details = models.BooleanField(default=False)
     descriptor_file = models.FileField(upload_to='descriptor_files', max_length=255)
     data_file = models.FileField(upload_to='metadata_files', max_length=255)
     metadata_file = models.FileField(upload_to='metadata_files', max_length=255)
@@ -429,7 +429,7 @@ class RiskAnalysis(RiskAppAware, Schedulable, LocationAware, HazardTypeAware, An
         on_delete=models.CASCADE,
         blank=True,
         null=True
-    )
+    )    
 
     administrative_divisions = models.ManyToManyField(
         "AdministrativeDivision",
@@ -568,7 +568,7 @@ class AdministrativeDivision(RiskAppAware, Exportable, MPTTModel):
     id = models.AutoField(primary_key=True)
     code = models.CharField(max_length=30, null=False, unique=True,
                             db_index=True)
-    name = models.CharField(max_length=555550, null=False, blank=False,
+    name = models.CharField(max_length=100, null=False, blank=False,
                             db_index=True)
     # GeoDjango-specific: a geometry field (MultiPolygonField)
     # geom = gismodels.MultiPolygonField() - does not work w/ default db
@@ -1542,11 +1542,13 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         db_table = 'risks_event'
 
     def get_event_plain(self):
+        adm_div_nuts3 = AdministrativeDivision.objects.filter(code__in=self.nuts3.split(';')).values_list('name', flat=True)
         return {
             'event_id': self.event_id,
             'hazard_type': self.hazard_type.mnemonic,
             'iso2': self.iso2,
             'nuts3': self.nuts3,
+            'nuts3_names': ', '.join(adm_div_nuts3),
             'begin_date': self.begin_date,
             'end_date': self.end_date,
             'year': self.year,

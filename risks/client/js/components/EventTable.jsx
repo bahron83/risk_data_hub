@@ -26,8 +26,9 @@ class EventTable  extends Component {
     }
 
     handleRowSelect(row, isSelected, e) {
+        const detailViewEnabled = true; //to remove
         const { selectEvent, fullContext } = this.props;        
-        const list = Array.isArray(row) ? row.map(item => { return item.event_id}) : [row.event_id];
+        const list = Array.isArray(row) ? row.map(item => { return item.event_id}) : [row.event_id];        
         selectEvent(list, isSelected, fullContext.loc);
     }
 
@@ -57,7 +58,7 @@ class EventTable  extends Component {
                 <TableHeaderColumn dataField='event_source'>Source</TableHeaderColumn>
                 <TableHeaderColumn dataField='begin_date' dataSort>Start Date</TableHeaderColumn>
                 <TableHeaderColumn dataField={dataKey} dataSort>{dataKeyVerbose}</TableHeaderColumn>
-                <TableHeaderColumn dataField='sources'>References</TableHeaderColumn>
+                <TableHeaderColumn dataField='sources'>References</TableHeaderColumn>                
             </BootstrapTable>
         );                        
     }        

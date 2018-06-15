@@ -156,8 +156,9 @@ class Command(BaseCommand):
                                 cell_obj = sheet.cell(row_num, 5)
                                 iso_country = str(sheet.cell(row_num, 2).value)[:2]
                                 cell_type_str = ctype_text.get(cell_obj.ctype, 'unknown type')
+                                value = sheet.cell(row_num, col_num).value if self.is_number(sheet.cell(row_num, col_num).value) else None
                                 # print('(%s) %s %s' % (idx, cell_type_str, cell_obj.value))
-                                if cell_obj.value:
+                                if cell_obj.value and value:
                                     adm_code = cell_obj.value \
                                         if cell_type_str == 'text' \
                                         else iso_country + '{:05d}'.format(int(cell_obj.value))
@@ -167,23 +168,16 @@ class Command(BaseCommand):
                                     except AdministrativeDivision.DoesNotExist:
                                         traceback.print_exc()
                                         pass
-                                    #print('adm_div = {}'.format(adm_div))
-                                    #try:
-                                    #    parent_adm_div = AdministrativeDivision.objects.get(id=adm_div.parent)
-                                    #    print('parent_adm_div = {}'.format(parent_adm_div))
-                                    #except ObjectDoesNotExist:
-                                    #    traceback.print_exc()
-                                    #    pass
+                                    
                                     parent_adm_div = None
                                     if adm_div.parent is not None:
-                                        try:
-                                            
+                                        try:                                            
                                             parent_adm_div = AdministrativeDivision.objects.get(id=adm_div.parent.id)                                        
                                         except AdministrativeDivision.DoesNotExist:
                                             traceback.print_exc()
                                             pass
                                     #print('parent_adm_div = {}'.format(parent_adm_div.name))
-                                    value = sheet.cell_value(row_num, col_num)
+                                    
                                     #print('[%s] (%s) %s (%s) / %s' % (scenario.value, rp.value, adm_div.name.encode('utf-8'), adm_code, value))
                                     print('[%s] (%s) (%s) / %s' % (scenario.value, rp.value, adm_code, value))
 
@@ -208,13 +202,14 @@ class Command(BaseCommand):
                                         'value': value
                                     }
                                     self.insert_db(conn, db_values, rp_idx)
-                                    risk_adm = RiskAnalysisAdministrativeDivisionAssociation.\
+                                    '''risk_adm = RiskAnalysisAdministrativeDivisionAssociation.\
                                         objects.\
                                         filter(riskanalysis=risk, administrativedivision=adm_div)
                                     if len(risk_adm) == 0:
                                         RiskAnalysisAdministrativeDivisionAssociation.\
                                             objects.\
-                                            create(riskanalysis=risk, administrativedivision=adm_div)
+                                            create(riskanalysis=risk, administrativedivision=adm_div)'''
+                                    risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=risk, administrativedivision=adm_div)
                         elif app.name == RiskApp.APP_COST_BENEFIT:
                             cell_obj = sheet.cell(rp_idx + 1, 0)
                             cell_type_str = ctype_text.get(cell_obj.ctype, 'unknown type')

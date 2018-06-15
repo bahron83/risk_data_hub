@@ -25,6 +25,11 @@ const contextSel = ({disaster = {}}) => disaster.context && !isNull(disaster.con
 const riskAnalysisContextSelector = ({disaster = {}}) => disaster.riskAnalysis && disaster.riskAnalysis.context;
 const analysisClassSelector = ({disaster = {}}) => disaster.analysisClass || '';
 const zoomJustCalledSel = ({disaster = {}}) => disaster.zoomJustCalled || 0;
+const admLookupSel = ({disaster = {}}) => disaster.lookupResults || [];
+const admLookupDetailSel = ({disaster = {}}) => disaster.lookupResultsDetail || [];
+const showEventDetailSel = ({disaster = {}}) => disaster.showEventDetail || false;
+const visibleEventDetailSel = ({disaster = {}}) => disaster.visibleEventDetail || false;
+const eventDetailsSel = ({disaster = {}}) => disaster.eventDetails || {};
 const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel, contextSel],
      (navItems, riskItems, hazardType, context) => ({
         navItems,
@@ -136,6 +141,19 @@ const additionalChartSelector = createSelector([riskAnalysisDataSel, additionalC
         currentSection: additionalCharts.currentSection,
         currentTable: additionalCharts.currentTable
     }));
+const lookupResultsSelector = createSelector([admLookupSel, admLookupDetailSel],
+    (lookupResults, lookupResultsDetail) => ({
+        lookupResults,
+        lookupResultsDetail
+    }));
+const eventDetailsSelector = createSelector([eventDetailsSel, dimSelector, riskAnalysisDataSel, showEventDetailSel, visibleEventDetailSel],
+    (eventDetails, dim, riskAnalysisData, showEventDetail, visibleEventDetail) => ({
+        eventDetails,
+        dim,
+        riskAnalysisData,
+        showEventDetail,
+        visibleEventDetail
+    }));
 
 module.exports = {
     dimSelector,
@@ -152,5 +170,7 @@ module.exports = {
     sliderSelector,
     mapSliderSelector,
     sliderChartSelector,
-    additionalChartSelector    
+    additionalChartSelector,
+    lookupResultsSelector,
+    eventDetailsSelector 
 };

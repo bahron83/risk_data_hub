@@ -107,7 +107,7 @@ is mandatory")
             raise CommandError("Input Risk Metadata Table '--excel_file' \
 is mandatory")
 
-        wb = xlrd.open_workbook(filename=excel_file)
+        wb = xlrd.open_workbook(filename=excel_file, encoding_override="utf-8")
         risk = RiskAnalysis.objects.get(name=risk_analysis, app=app)
         region = Region.objects.get(name=region)
         # region_code = region.administrative_divisions.filter(parent=None)[0].code
@@ -186,7 +186,7 @@ is mandatory")
             cell_obj = sheet.cell(row_num, 2)
             if cell_title and 'Section' not in cell_title:
                 cell_id = row_num
-                cell_value = cell_obj.value.strip()
+                cell_value = cell_obj.value
                 d[cell_id] = cell_value
                 print("[%s] (%s) %s: %s" % (row_num, cell_title, d[row_num], cell_value))
 

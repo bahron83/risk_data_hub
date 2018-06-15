@@ -26,6 +26,21 @@ const Api = {
             return response.data;
         });
     },
+    postData: function(url, values) {
+        const cached = riskdataCache[url];
+        if (cached && new Date().getTime() < cached.timestamp + (ConfigUtils.getConfigProp('cacheDataExpire') || 60) * 1000) {
+            return new Promise((resolve) => {
+                resolve(cached.data);
+            });
+        }
+        return axios.post(url, values).then(response => {
+            riskdataCache[url] = {
+                timestamp: new Date().getTime(),
+                data: response.data
+            };
+            return response.data
+        });
+    },
     getReport: function(url, permalink, dimFields, mapImg, charts, legendImg) {
         const mapBlob = toBlob(mapImg);
         const legendBlob = toBlob(legendImg);

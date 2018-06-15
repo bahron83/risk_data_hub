@@ -1117,3 +1117,6 @@ footer {
   margin-top:20px;
   margin-bottom: 20px;
 }
+.modal-dialog label {
+  margin-right: 5px;
+}
