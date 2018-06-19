@@ -25,7 +25,7 @@ from geonode.base.forms import ValuesListField
 from risks.models import (HazardType, AdministrativeDivision,
                                           RiskAnalysisDymensionInfoAssociation,
                                           RiskAnalysis, DymensionInfo, AnalysisType,
-                                          FurtherResource, RiskApp, Event, AnalysisClass)
+                                          FurtherResource, RiskApp, Event, AnalysisClass, AdministrativeData, AdministrativeDivisionDataAssociation)
 
 from risks.datasource import GeoserverDataSource
 from risks.pdf_helpers import generate_pdf
@@ -720,7 +720,20 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
 
         return out
 
-    def get(self, request, *args, **kwargs):
+    def is_user_allowed(self, request, risk_analysis):
+        result = True
+        if risk_analysis.owner:
+            owner_groups = risk_analysis.owner.groups.all()        
+            current_user = request.user
+            current_user_group_ids = current_user.groups.all().values_list('id', flat=True)
+            
+            if not current_user.is_superuser:            
+                if owner_groups.filter(name='country_admin').exists():                
+                    if not owner_groups.filter(pk__in=current_user_group_ids).exists():
+                        result = False
+        return result        
+
+    def get(self, request, *args, **kwargs):        
         locations = self.get_location(**kwargs)
         app = self.get_app()
         if not locations:
@@ -754,6 +767,10 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         if not risks:
             return json_response(errors=['No risk analysis found for given parameters'], status=404)
         risk = risks[0]
+
+        #DETERMINE USER PERMISSIONS
+        if not self.is_user_allowed(request, risk):
+            return json_response(errors=['Data not available for current user'], status=404) 
 
         out = {'riskAnalysisData': risk.get_risk_details()}
         
@@ -916,8 +933,21 @@ class EventDetailsView(DataExtractionView):
         an_group = self.get_risk_analysis_group(hazard_type, **kwargs)
         data = {}        
         if an_group and event:
+            
+            #administrative data
+            administrative_data = {}            
+            adm_data_entries = AdministrativeData.objects.all()
+            location_adm_data = AdministrativeDivisionDataAssociation.objects.filter(adm=location)
+            for adm_data_entry in adm_data_entries:
+                data_per_type = location_adm_data.filter(data=adm_data_entry)
+                dimension = data_per_type.order_by('-dimension').values_list('dimension', flat=True).distinct()[0]
+                data_exact = data_per_type.filter(dimension=dimension)
+                if data_exact:                
+                    administrative_data[adm_data_entry.name] = {'value': data_exact[0].value, 'unitOfMeasure': adm_data_entry.unit_of_measure}
+
             overview = {                
-                'event': event.get_event_plain()
+                'event': event.get_event_plain(),
+                'administrativeData': administrative_data
             }
 
             for an_event in an_group:                

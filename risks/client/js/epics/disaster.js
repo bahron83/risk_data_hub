@@ -137,8 +137,8 @@ const getAnalysisEpic = (action$, store) =>
                 return actions;
             })
             .mergeAll()
-            .startWith(dataLoading(true))            
-            .catch(e => Rx.Observable.of(dataError(e)))
+            .startWith(dataLoading(true))                        
+            .catch( e => Rx.Observable.of(info({title: "Info", message: e.data.errors || "Error while loading data...", position: 'tc', autoDismiss: 3})))
         });
 const getEventEpic = (action$, store) =>
     action$.ofType(GET_EVENT_DATA).switchMap(action => 

@@ -24,12 +24,23 @@ class EventDetails extends Component {
                 </Panel>
             )
         });        
-    }        
+    } 
+    
+    renderAdministrativeData(data) {        
+        return Object.keys(data).map( key => {
+            const { unitOfMeasure, value } = data[key];
+            const displayValue = `${value} (${unitOfMeasure})`;
+            return (
+                <li className="list-group-item"><label>{key}</label>{displayValue}</li>
+            )
+        });
+    }
     
     render() {   
         const { eventDetails, showEventDetail, visibleEventDetail, riskAnalysisData, toggleEventDetailVisibility } = this.props;
         const { data, overview } = eventDetails;
         const { event } = overview || {};
+        const { administrativeData } = overview || {};        
         const showToggle = riskAnalysisData && riskAnalysisData.events ? true : false;
         return (
             data && showEventDetail ?                 
@@ -50,6 +61,11 @@ class EventDetails extends Component {
                                 <li className="list-group-item"><label>Cause</label>{event.cause}</li>
                                 <li className="list-group-item"><label>Notes</label>{event.notes}</li>
                                 <li className="list-group-item"><label>Sources</label>{event.sources}</li>                        
+                            </ul>
+                            <hr />
+                            <h4>Administrative data for country</h4>
+                            <ul className="list-group">
+                               {this.renderAdministrativeData(administrativeData)} 
                             </ul>
                             <hr />
                             <h4>Comparison Charts</h4>

@@ -21,6 +21,7 @@
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Q
+from django.conf import settings
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core import files
 from geonode.base.models import ResourceBase, TopicCategory
@@ -29,6 +30,17 @@ from geonode.layers.models import Layer, Style
 from jsonfield import JSONField
 import xlrd
 
+
+class OwnedModel(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
+        related_name='owned_risk_analysis',
+        verbose_name="Owner")
+
+    class Meta:
+        abstract = True
 
 class RiskApp(models.Model):
     APP_DATA_EXTRACTION = 'data_extraction'
@@ -372,7 +384,7 @@ class HazardType(RiskAppAware, LocationAware, Exportable, Schedulable, models.Mo
         return out
 
 
-class RiskAnalysis(RiskAppAware, Schedulable, LocationAware, HazardTypeAware, AnalysisTypeAware, Exportable, models.Model):
+class RiskAnalysis(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardTypeAware, AnalysisTypeAware, Exportable, models.Model):
     """
     A type of Analysis associated to an Hazard (Earthquake, Flood, ...) and
     an Administrative Division.
@@ -589,6 +601,11 @@ class AdministrativeDivision(RiskAppAware, Exportable, MPTTModel):
     event = models.ManyToManyField(
         "Event",
         through='EventAdministrativeDivisionAssociation'
+    )
+
+    administrative_data = models.ManyToManyField(
+        "AdministrativeData",
+        through='AdministrativeDivisionDataAssociation'        
     )
 
     @property
@@ -1713,3 +1730,41 @@ class EventImportAttributes(models.Model):
     def __unicode__(self):
         return u"{0}".format(self.data_file.name)
 
+
+class AdministrativeData(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=50)
+    unit_of_measure = models.CharField(max_length=10, blank=True, null=True)
+
+    administrative_divisions = models.ManyToManyField(
+        "AdministrativeDivision",
+        through='AdministrativeDivisionDataAssociation'        
+    )
+
+class AdministrativeDivisionDataAssociation(models.Model):
+    id = models.AutoField(primary_key=True)
+    dimension = models.CharField(max_length=50)
+    value = models.CharField(max_length=50, blank=True, null=True)    
+
+    #Relationships
+    data = models.ForeignKey(
+        AdministrativeData,        
+        on_delete=models.CASCADE,
+        blank=False,
+        null=False
+    )    
+    adm = models.ForeignKey(
+        AdministrativeDivision,        
+        on_delete=models.CASCADE,
+        blank=False,
+        null=False
+    )          
+
+    def __unicode__(self):
+        return u"{0}".format(self.data.name + " - " +
+                             self.adm.name)
+
+    class Meta:
+        """
+        """
+        db_table = 'risks_administrativedivisiondataassociation'
