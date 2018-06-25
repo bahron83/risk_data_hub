@@ -407,15 +407,9 @@ class Command(BaseCommand):
 
         insert_dimension_value_template = "INSERT INTO risk_dimensions(adm_fid, risk_analysis_id, dim1_id, dim2_id, dim3_id, dim4_id, dim5_id, value, event_id) " +\
                                           "SELECT {fid}, {ra_id}, {dim1}, {dim2}, {dim3}, {dim4}, {dim5}, '{value}', '' " +\
-                                          "WHERE NOT EXISTS (SELECT adm_fid FROM public.risk_dimensions WHERE " +\
-                                          " adm_fid = {fid} AND " +\
-                                          " risk_analysis_id = {ra_id} AND " +\
-                                          " (dim1_id IS NULL OR dim1_id = {dim1}) AND " +\
-                                          " (dim2_id IS NULL OR dim2_id = {dim2}) AND " +\
-                                          " (dim3_id IS NULL OR dim3_id = {dim3}) AND " +\
-                                          " (dim4_id IS NULL OR dim4_id = {dim4}) AND " +\
-                                          " (dim5_id IS NULL OR dim5_id = {dim5}) " +\
-                                          ") RETURNING adm_fid;"
+                                          "ON CONFLICT (adm_fid, dim1_id, dim2_id, risk_analysis_id, event_id) DO UPDATE " +\
+                                          "SET value = '{value}';"
+                                                                                    
         curs.execute(insert_dimension_value_template.format(**dim_ids))
     
     def is_number(self, s):
