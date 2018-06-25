@@ -193,6 +193,6 @@ class Command(BaseCommand):
         db = DbUtils()
         db.insert_db(params['conn'], db_values, params['first_call'])
         if params['create_django_association']:
-            risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=params['risk_analysis'], administrativedivision=params['adm_div'])
+            risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=params['risk'], administrativedivision=params['adm_div'])
             event_adm, created = EventAdministrativeDivisionAssociation.objects.get_or_create(event=params['event'], adm=params['adm_div'])
     
