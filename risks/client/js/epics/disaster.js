@@ -96,7 +96,7 @@ const getRiskFeatures = (action$, store) =>
 const getAnalysisEpic = (action$, store) =>
     action$.ofType(GET_ANALYSIS_DATA).switchMap(action => {  
         const { analysisFilters } = (store.getState()).disaster; 
-        console.log(analysisFilters);
+        //console.log(analysisFilters);
         let filtersString = '';
         _.forIn(analysisFilters, (value, key) => { if(value != '') filtersString += `${key}/${value}/` });
         const apiUrl = action.url + filtersString;
@@ -106,16 +106,23 @@ const getAnalysisEpic = (action$, store) =>
                 const baseUrl = val.wms && val.wms.baseurl;
                 const anLayers = val.riskAnalysisData && val.riskAnalysisData.additionalLayers || [];
                 const referenceLayer = val.riskAnalysisData && val.riskAnalysisData.referenceLayer;
-                const layers = (store.getState()).layers;
+                const layers = (store.getState()).layers;                
                 const {app, dim} = (store.getState()).disaster;                                 
-                const indexOfAdditionalLayer = (dim == {} || dim === undefined) ? 0 : dim.dim2Idx;
-                const dimensions = val.riskAnalysisData.data.dimensions;
-                const valueOfAdditionalLayer = dimensions[1].values[indexOfAdditionalLayer];
-                const resource = dimensions[1]['layers'][valueOfAdditionalLayer]['resource'];
-                const layerDetails = resource != null ? resource['details'] : null;
-                const layerName = layerDetails != null ? layerDetails.replace("/layers/", "") : "";
+                
+                //additional gis layers
                 let anLayerDim = [];
-                anLayers.map((arr, index) => { if(arr[1] == layerName) anLayerDim.push(arr) });                
+                //check for layers on X and Y axis
+                for(var i=0;i<2;i++) {
+                    const dimIdx = i == 0 ? "dim1Idx" : "dim2Idx";
+                    const indexOfAdditionalLayer = (dim == {} || dim === undefined) ? 0 : dim[dimIdx];
+                    const dimensions = val.riskAnalysisData.data.dimensions;
+                    const valueOfAdditionalLayer = dimensions[i].values[indexOfAdditionalLayer];
+                    const resource = dimensions[i]['layers'][valueOfAdditionalLayer]['resource'];
+                    const layerDetails = resource != null ? resource['details'] : null;
+                    const layerName = layerDetails != null ? layerDetails.replace("/layers/", "") : "";                    
+                    anLayers.map((arr, index) => { if(arr[1] == layerName) anLayerDim.push(arr) });                
+                }
+                
                 const hasGis = find(layers.groups, g => g.id === 'Gis Overlays');
                 const hasAnalysisLayer = find(layers.flat, l => l.id === '_riskAn_');                                                
                 //data adjustment for event grouped_values
