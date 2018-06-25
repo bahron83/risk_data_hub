@@ -138,7 +138,7 @@ class Command(BaseCommand):
                         try:
                             # if int(cell_obj.value) == int(rp.value):
                             # print('{} =? {}'.format(rp.value, cell_obj.value))
-                            if self.to_int_if_number(cell_obj.value) == self.to_int_if_number(rp.value):
+                            if self.to_int_if_number(str(cell_obj.value).strip()) == self.to_int_if_number(str(rp.value).strip()):
                                 # print('[%s] (%s) RP-%s' % (scenario.value, idx, rp.value))
                                 col_num = idx
                                 break
@@ -158,7 +158,7 @@ class Command(BaseCommand):
                                 cell_type_str = ctype_text.get(cell_obj.ctype, 'unknown type')
                                 value = sheet.cell(row_num, col_num).value if self.is_number(sheet.cell(row_num, col_num).value) else None
                                 # print('(%s) %s %s' % (idx, cell_type_str, cell_obj.value))
-                                if cell_obj.value and value:
+                                if cell_obj.value and value is not None:
                                     adm_code = cell_obj.value \
                                         if cell_type_str == 'text' \
                                         else iso_country + '{:05d}'.format(int(cell_obj.value))
