@@ -21,6 +21,8 @@
 from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
+
+from django.contrib.auth.models import User
 from geonode.layers.models import Layer
 from risks.models import RiskAnalysis, HazardType, RiskApp
 from risks.models import AnalysisType, DymensionInfo
@@ -129,6 +131,11 @@ Loss Impact and Impact Analysis Types.'
                             default=RISK_APP_DEFAULT,
                             help="Risk application name, available: {}, default: {}. Note that app config value has precedense over cli switch.".format(', '.join(RISK_APPS), RISK_APP_DEFAULT)
                             )
+        parser.add_argument('-u',
+                            '--current-user',
+                            dest='current_user',
+                            type=str,
+                            help='Current user ID.')
 
         return parser
     
@@ -152,6 +159,7 @@ Loss Impact and Impact Analysis Types.'
     
     def handle(self, **options):
         descriptor_file = options.get('descriptor_file')
+        user_id = options.get('current_user')
 
         if not descriptor_file or len(descriptor_file) == 0:
             raise CommandError("Input Risk Analysis Descriptor INI File \
@@ -189,11 +197,12 @@ Loss Impact and Impact Analysis Types.'
         hazard = HazardType.objects.get(mnemonic=hazard_type_name, app=app)
         analysis = AnalysisType.objects.get(name=analysis_type_name, app=app)
         layer = Layer.objects.get(name=layer_name)
+        owner = User.objects.get(id=user_id)
         print ("before transaction")
         risk, created = RiskAnalysis.objects.update_or_create(
+            owner=owner,
             name=risk_name,
-            app=app,
-            #analysis_class = analysis_class,
+            app=app,            
             analysis_type = analysis,
             hazard_type = hazard,
             layer = layer

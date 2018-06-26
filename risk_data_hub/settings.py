@@ -397,3 +397,6 @@ LOGGING = {
             "handlers": ["console"], "level": "DEBUG", },
         },
     }
+
+APP_DEFAULT_REGION = 'Europe'
+COUNTRY_ADMIN_USER_GROUP = 'country_admin'

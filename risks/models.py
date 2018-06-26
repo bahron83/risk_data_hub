@@ -22,6 +22,7 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Q
 from django.conf import settings
+from risk_data_hub import settings as rdh_settings
 from mptt.models import MPTTModel, TreeForeignKey
 from django.core import files
 from geonode.base.models import ResourceBase, TopicCategory
@@ -31,12 +32,21 @@ from jsonfield import JSONField
 import xlrd
 
 
+
+def get_default_region():
+    region = Region.objects.get(name=rdh_settings.APP_DEFAULT_REGION)
+    return region.id
+
 class OwnedModel(models.Model):
+    @staticmethod
+    def get_owner_related_name():
+        return '%(app_label)s_%(class)s'
+    
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         blank=True,
         null=True,
-        related_name='owned_risk_analysis',
+        related_name=get_owner_related_name.__func__(),
         verbose_name="Owner")
 
     class Meta:
@@ -48,7 +58,7 @@ class RiskApp(models.Model):
     APP_TEST = 'test'
     APPS = ((APP_DATA_EXTRACTION, 'Data Extraction',),
             (APP_COST_BENEFIT, 'Cost Benefit Analysis',),
-            (APP_TEST, 'Test'))
+            (APP_TEST, 'Test'))    
 
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=64, choices=APPS, unique=True, null=False, blank=False)
@@ -82,6 +92,7 @@ class RiskAppAware(object):
         """
         self.app = app
         return self
+    
 
 class Schedulable(models.Model):
     STATE_QUEUED = 'queued'
@@ -484,7 +495,11 @@ class RiskAnalysis(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardT
     )
 
     additional_layers = models.ManyToManyField(Layer, blank=True)
-    app = models.ForeignKey(RiskApp)    
+    app = models.ForeignKey(RiskApp)  
+
+    @staticmethod
+    def get_owner_related_name():
+        return 'owned_risk_analysis'  
 
     def __unicode__(self):
         return u"{0}".format(self.name)
@@ -646,7 +661,7 @@ class AdministrativeDivision(RiskAppAware, Exportable, MPTTModel):
         return out
 
 
-class Region(models.Model):
+class Region(OwnedModel, models.Model):
     """
     Groups a set of AdministrativeDivisions
     """
@@ -665,6 +680,10 @@ class Region(models.Model):
         AdministrativeDivision,
         related_name='administrative_divisions'
     )
+
+    @staticmethod
+    def get_owner_related_name():
+        return 'owned_region'    
 
     def __unicode__(self):
         return u"{0}".format(self.name)
@@ -1512,16 +1531,25 @@ def get_risk_app_default():
 
 class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulable, models.Model):
     EXPORT_FIELDS = (('event_id', 'event_id',),                     
-                     ('href', 'href',),)
-    
+                     ('href', 'href',),)    
+
     event_id = models.CharField(max_length=25, primary_key=True)
-    #hazard_type = models.CharField(max_length=2)
+    
     hazard_type = models.ForeignKey(
         HazardType,
         blank=False,
         null=False,
-        unique=False,
+        unique=False,        
     )
+    
+    region = models.ForeignKey(
+        Region,
+        blank=False,
+        null=False,
+        unique=False,
+        default=get_default_region,        
+    )
+
     iso2 = models.CharField(max_length=10)
     nuts3 = models.CharField(max_length=255, null=True)
     begin_date = models.DateField()
@@ -1557,6 +1585,7 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         """
         ordering = ['iso2']
         db_table = 'risks_event'
+    
 
     def get_event_plain(self):
         adm_div_nuts3 = AdministrativeDivision.objects.filter(code__in=self.nuts3.split(';')).values_list('name', flat=True)

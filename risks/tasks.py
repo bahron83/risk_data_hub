@@ -13,17 +13,17 @@ from django.db import IntegrityError, transaction
 
 from risks.models import RiskAnalysis, HazardSet, HazardType
 
-def create_risk_analysis(input_file, file_ini):
-    _create_risk_analysis.apply_async(args=(input_file, file_ini))
+def create_risk_analysis(input_file, file_ini, current_user):
+    _create_risk_analysis.apply_async(args=(input_file, file_ini, current_user))
 
 
 @task(name='risks.tasks.create_risk_analysis')
-def _create_risk_analysis(input_file, file_ini):
+def _create_risk_analysis(input_file, file_ini, current_user):
     out = StringIO.StringIO()
     risk = None
     try:
         call_command('createriskanalysis',
-                     descriptor_file=str(input_file).strip(), stdout=out)
+                     descriptor_file=str(input_file).strip(), current_user=current_user, stdout=out)
         value = out.getvalue()
 
         risk = RiskAnalysis.objects.get(name=str(value).strip())

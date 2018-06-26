@@ -45,6 +45,7 @@ from risks.forms import ImportMetadataRiskAnalysisForm
 from risks.forms import ImportDataEventForm
 from risks.forms import ImportDataEventAttributeForm
 
+admin.site.site_header = 'Risk Data Hub - Administration'
 
 class DymensionInfoInline(admin.TabularInline):
     model = DymensionInfo.risks_analysis.through
@@ -145,7 +146,13 @@ class RiskAnalysisAdmin(admin.ModelAdmin):
     inlines = [LinkedResourceInline, DymensionInfoInline]
     group_fieldsets = True
     raw_id_fields = ('hazardset', 'layer', 'style', 'reference_layer', 'reference_style',)
-    filter_horizontal = ('additional_layers',)
+    filter_horizontal = ('additional_layers',)    
+
+    def get_queryset(self, request):
+        qs = super(RiskAnalysisAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(owner=request.user)        
 
     def has_add_permission(self, request):
         return False
@@ -187,6 +194,11 @@ class RiskAnalysisCreateAdmin(admin.ModelAdmin):
         super(RiskAnalysisCreateAdmin, self).__init__(*args, **kwargs)
         self.list_display_links = (None, )
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(RiskAnalysisCreateAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form
+
 
 class RiskAnalysisImportDataAdmin(admin.ModelAdmin):
     model = RiskAnalysisImportData
@@ -204,6 +216,18 @@ class RiskAnalysisImportDataAdmin(admin.ModelAdmin):
         super(RiskAnalysisImportDataAdmin, self).__init__(*args, **kwargs)
         self.list_display_links = (None, )
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(RiskAnalysisImportDataAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form
+
+    def get_queryset(self, request):
+        qs = super(RiskAnalysisImportDataAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        risk_analysis_owned = RiskAnalysis.objects.filter(owner=request.user)
+        return qs.filter(riskanalysis__in=risk_analysis_owned)
+
 
 class RiskAnalysisImportMetaDataAdmin(admin.ModelAdmin):
     model = RiskAnalysisImportMetadata
@@ -219,7 +243,19 @@ class RiskAnalysisImportMetaDataAdmin(admin.ModelAdmin):
 
     def __init__(self, *args, **kwargs):
         super(RiskAnalysisImportMetaDataAdmin, self).__init__(*args, **kwargs)
-        self.list_display_links = (None, )
+        self.list_display_links = (None, ) 
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(RiskAnalysisImportMetaDataAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form   
+
+    def get_queryset(self, request):
+        qs = super(RiskAnalysisImportMetaDataAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        risk_analysis_owned = RiskAnalysis.objects.filter(owner=request.user)
+        return qs.filter(riskanalysis__in=risk_analysis_owned)
 
 
 class EventAdmin(admin.ModelAdmin):
@@ -245,9 +281,21 @@ class EventImportDataAdmin(admin.ModelAdmin):
             del actions['delete_selected']
         return actions
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(EventImportDataAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form
+
     def __init__(self, *args, **kwargs):
         super(EventImportDataAdmin, self).__init__(*args, **kwargs)
         self.list_display_links = (None, )
+
+    def get_queryset(self, request):
+        qs = super(EventImportDataAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        regions_owned = Region.objects.filter(owner=request.user)
+        return qs.filter(region__in=regions_owned)
 
 class EventImportAttributeDataAdmin(admin.ModelAdmin):
     model = EventImportAttributes
@@ -261,9 +309,21 @@ class EventImportAttributeDataAdmin(admin.ModelAdmin):
             del actions['delete_selected']
         return actions
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(EventImportAttributeDataAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form
+
     def __init__(self, *args, **kwargs):
         super(EventImportAttributeDataAdmin, self).__init__(*args, **kwargs)
         self.list_display_links = (None, )
+
+    def get_queryset(self, request):
+        qs = super(EventImportAttributeDataAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        regions_owned = Region.objects.filter(owner=request.user)
+        return qs.filter(region__in=regions_owned)
 
 class AnalysisClassAdmin(admin.ModelAdmin):
     model = AnalysisClass

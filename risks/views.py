@@ -7,6 +7,7 @@ import logging
 import re
 
 from django.conf import settings
+from risk_data_hub import settings as rdh_settings
 from django import forms
 from django.views.generic import TemplateView, View, FormView
 from django.core.urlresolvers import reverse
@@ -726,9 +727,11 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             owner_groups = risk_analysis.owner.groups.all()        
             current_user = request.user
             current_user_group_ids = current_user.groups.all().values_list('id', flat=True)
+
+            user_group = rdh_settings.COUNTRY_ADMIN_USER_GROUP if rdh_settings.COUNTRY_ADMIN_USER_GROUP else None
             
             if not current_user.is_superuser:            
-                if owner_groups.filter(name='country_admin').exists():                
+                if owner_groups.filter(name=rdh_settings.COUNTRY_ADMIN_USER_GROUP).exists():                
                     if not owner_groups.filter(pk__in=current_user_group_ids).exists():
                         result = False
         return result        

@@ -31,6 +31,7 @@ from django import forms
 
 from django.forms import models
 
+from risks.models import Region
 from risks.models import HazardSet
 from risks.models import RiskAnalysis
 from risks.models import RiskAnalysisCreate
@@ -56,7 +57,7 @@ class CreateRiskAnalysisForm(models.ModelForm):
         path = default_storage.save('tmp/'+file_ini.name,
                                     ContentFile(file_ini.read()))
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
-        create_risk_analysis(tmp_file, file_ini)
+        create_risk_analysis(tmp_file, file_ini, self.current_user.id)
         return file_ini
 
 
@@ -69,6 +70,14 @@ class ImportDataRiskAnalysisForm(models.ModelForm):
         """
         model = RiskAnalysisImportData
         fields = ('riskapp', 'region', 'riskanalysis', "data_file",)
+
+    def __init__(self, *args, **kwargs):
+        super(ImportDataRiskAnalysisForm, self).__init__(*args, **kwargs)        
+        if not self.current_user.is_superuser:
+            self.fields['region'].queryset = Region.objects.filter(
+                                            owner=self.current_user)
+            self.fields['riskanalysis'].queryset = RiskAnalysis.objects.filter(
+                                            owner=self.current_user)
 
     def clean_data_file(self):
         file_xlsx = self.cleaned_data['data_file']
@@ -119,6 +128,12 @@ class ImportDataEventForm(models.ModelForm):
         model = EventImportData
         fields = ('riskapp', 'region', "data_file",)
 
+    def __init__(self, *args, **kwargs):
+        super(ImportDataEventForm, self).__init__(*args, **kwargs)        
+        if not self.current_user.is_superuser:
+            self.fields['region'].queryset = Region.objects.filter(
+                                            owner=self.current_user)            
+
     def clean_data_file(self):
         file_xlsx = self.cleaned_data['data_file']
         path = default_storage.save('tmp/'+file_xlsx.name,
@@ -141,6 +156,14 @@ class ImportDataEventAttributeForm(models.ModelForm):
         model = EventImportAttributes
         fields = ('riskapp', 'region', 'riskanalysis', "data_file",) #allow_null_values checkbox not shown
 
+    def __init__(self, *args, **kwargs):
+        super(ImportDataEventAttributeForm, self).__init__(*args, **kwargs)        
+        if not self.current_user.is_superuser:
+            self.fields['region'].queryset = Region.objects.filter(
+                                            owner=self.current_user)
+            self.fields['riskanalysis'].queryset = RiskAnalysis.objects.filter(
+                                            owner=self.current_user)
+    
     def clean_data_file(self):
         file_xlsx = self.cleaned_data['data_file']
         path = default_storage.save('tmp/'+file_xlsx.name,
