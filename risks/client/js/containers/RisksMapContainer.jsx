@@ -12,7 +12,7 @@ const {findIndex} = require('lodash');
 const {loadMapConfig} = require('../../MapStore2/web/client/actions/config');
 const {disasterRiskLayerSelector} = require('../../MapStore2/web/client/selectors/layers');
 const MapViewer = connect(() => ({}), {
-    loadMapConfig: loadMapConfig.bind(null, "/static/js/config-risks.json")
+    loadMapConfig: loadMapConfig.bind(null, "/risk-data-hub/static/js/config-risks.json")
 })(require('../../MapStore2/web/client/containers/MapViewer'));
 const Legend = connect(disasterRiskLayerSelector)(require('../../MapStore2/web/client/components/TOC/fragments/legend/Legend'));
 const {drillUpSelector, switchDimSelector, axesSelector} = require('../selectors/disaster');
