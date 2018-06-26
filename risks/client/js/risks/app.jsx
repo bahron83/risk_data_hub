@@ -19,7 +19,7 @@ const {getData, initState, getFeatures} = require('../actions/disaster');
 const dEpics = require('../epics/disaster');
 const rEpics = require('../epics/report');
 const ConfigUtils = require('../../MapStore2/web/client/utils/ConfigUtils');
-ConfigUtils.setLocalConfigurationFile('/static/js/risksConfig.json');
+ConfigUtils.setLocalConfigurationFile('/risk-data-hub/static/js/risksConfig.json');
 // Set one hour cache
 ConfigUtils.setConfigProp("cacheDataExpire", 3600);
 const {defaultStep, riskTutorialPresets} = require('../utils/TutorialPresets');
@@ -42,7 +42,7 @@ const initDim = init && init.d || {};
 
 const newInitState = assign({}, initialState, {defaultState: {disaster: {dim: initDim, app: 'risks'}, mapInfo: { infoFormat: "text/html"} }});
 const themeCfg = {
-    path: './static/js'
+    path: '/risk-data-hub/static/js'
 };
 const StandardRouter = connect((state) => ({
     locale: state.locale || {},
@@ -55,8 +55,8 @@ export const appStore = require('../../MapStore2/web/client/stores/StandardStore
 
 const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
 const loc = disasterRisk && disasterRisk.app && disasterRisk.app.region || 'EU';
-const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}loc/${loc}/` || './risks/data_extraction/loc/EU/';
-const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}geom/${loc}/` || './risks/data_extraction/geom/EU/';
+const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}loc/${loc}/` || '/risk-data-hub/risks/data_extraction/loc/EU/';
+const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}geom/${loc}/` || '/risk-data-hub/risks/data_extraction/geom/EU/';
 
 const initialActions = init ? [() => initState(init)] : [() => getData(dataPath), () => getFeatures(geomPath)];
 const appConfig = {
