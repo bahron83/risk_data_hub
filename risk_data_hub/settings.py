@@ -41,7 +41,7 @@ WSGI_APPLICATION = "{}.wsgi.application".format(PROJECT_NAME)
 
 #ALLOWED_HOSTS = ['localhost', 'django'] if os.getenv('ALLOWED_HOSTS') is None \
 #    else re.split(r' *[,|:|;] *', os.getenv('ALLOWED_HOSTS'))
-ALLOWED_HOSTS = ['localhost', 'django', '139.191.10.182', 'drmkc.jrc.ec.europa.eu/riskdatahub']
+ALLOWED_HOSTS = ['localhost', 'django', 'drmkc.jrc.ec.europa.eu']
 
 PROXY_ALLOWED_HOSTS += ('nominatim.openstreetmap.org',)
 
