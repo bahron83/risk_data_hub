@@ -40,9 +40,16 @@ if (Cookies.get('csrftoken')) {
 
 const initDim = init && init.d || {};
 
-const newInitState = assign({}, initialState, {defaultState: {disaster: {dim: initDim, app: 'risks'}, mapInfo: { infoFormat: "text/html"} }});
+//data from Home Page
+const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
+
+
+const defaultUrlPrefix = 'risk-data-hub';
+const contextUrlPrefix = disasterRisk && disasterRisk.contextUrl || defaultUrlPrefix;
+
+const newInitState = assign({}, initialState, {defaultState: {disaster: {dim: initDim, app: 'risks', contextUrl: contextUrlPrefix}, mapInfo: { infoFormat: "text/html"} }});
 const themeCfg = {
-    path: '/risk-data-hub/static/js'
+    path: `/${contextUrlPrefix}/static/js`
 };
 const StandardRouter = connect((state) => ({
     locale: state.locale || {},
@@ -53,10 +60,9 @@ const StandardRouter = connect((state) => ({
 
 export const appStore = require('../../MapStore2/web/client/stores/StandardStore').bind(null, newInitState, appReducers, {...dEpics, ...rEpics});
 
-const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
 const loc = disasterRisk && disasterRisk.app && disasterRisk.app.region || 'EU';
-const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}loc/${loc}/` || '/risk-data-hub/risks/data_extraction/loc/EU/';
-const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}geom/${loc}/` || '/risk-data-hub/risks/data_extraction/geom/EU/';
+const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}loc/${loc}/` || `/${contextUrlPrefix}/risks/data_extraction/loc/EU/`;
+const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}geom/${loc}/` || `/${contextUrlPrefix}/risks/data_extraction/geom/EU/`;
 
 const initialActions = init ? [() => initState(init)] : [() => getData(dataPath), () => getFeatures(geomPath)];
 const appConfig = {

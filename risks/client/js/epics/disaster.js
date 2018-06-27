@@ -198,8 +198,8 @@ const zoomInOutEpic = (action$, store) =>
 const selectEventEpic = (action$, store) =>
     action$.ofType(SELECT_EVENT) 
         .map(action => {                           
-            const { app, riskAnalysis, selectedEventIds, showEventDetail } = (store.getState()).disaster;             
-            const urlPrefix = `/${app}/data_extraction`;
+            const { app, contextUrl, riskAnalysis, selectedEventIds, showEventDetail } = (store.getState()).disaster;             
+            const urlPrefix = `/${contextUrl}/${app}/data_extraction`;
             const fullContext = riskAnalysis && riskAnalysis.fullContext;
             if(showEventDetail) { 
                 const { events } = action;               

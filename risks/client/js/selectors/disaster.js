@@ -30,6 +30,7 @@ const admLookupDetailSel = ({disaster = {}}) => disaster.lookupResultsDetail || 
 const showEventDetailSel = ({disaster = {}}) => disaster.showEventDetail || false;
 const visibleEventDetailSel = ({disaster = {}}) => disaster.visibleEventDetail || false;
 const eventDetailsSel = ({disaster = {}}) => disaster.eventDetails || {};
+const contextUrlPrefixSel = ({disaster = {}}) => disaster.contextUrlPrefix || '';
 const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel, contextSel],
      (navItems, riskItems, hazardType, context) => ({
         navItems,
@@ -39,8 +40,8 @@ const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel,
         activeRisk: hazardType.mnemonic || "Overview",
         context
     }));
-const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analysisTypeSel, analysisTypeESel, riskAnalysisDataSel, dimSelector, loadingStateSelector, showChartSel, fullContextSel, analysisClassSelector, zoomJustCalledSel, chartValues, selectedEventsSelector],
-    (riskItems, hazardType, analysisType, analysisTypeE, riskAnalysisData, dim, loading, showChart, fullContext, analysisClass, zoomJustCalled, cValues, selectedEventIds) => ({
+const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analysisTypeSel, analysisTypeESel, riskAnalysisDataSel, dimSelector, loadingStateSelector, showChartSel, fullContextSel, analysisClassSelector, zoomJustCalledSel, chartValues, selectedEventsSelector, contextUrlPrefixSel],
+    (riskItems, hazardType, analysisType, analysisTypeE, riskAnalysisData, dim, loading, showChart, fullContext, analysisClass, zoomJustCalled, cValues, selectedEventIds, contextUrlPrefix) => ({
         showHazard: hazardType.mnemonic ? true : false,
         hazardTitle: hazardType.mnemonic ? head(riskItems.filter((hz) => hz.mnemonic === hazardType.mnemonic)).title || '' : '',
         hazardType,
@@ -54,7 +55,8 @@ const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analy
         analysisClass,        
         zoomJustCalled,
         cValues,
-        selectedEventIds
+        selectedEventIds,
+        contextUrlPrefix
     }));
 const drillUpSelector = createSelector([navItemsSel],
      (navItems) => ({

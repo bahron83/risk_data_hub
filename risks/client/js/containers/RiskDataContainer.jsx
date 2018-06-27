@@ -167,7 +167,7 @@ class DataContainer extends Component {
                         <div>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <EventCountryChart data={eventDataGroup} loc={fullContext.loc} zoomInOut={zoomInOut} />
+                                <EventCountryChart data={eventDataGroup} loc={fullContext.loc} zoomInOut={zoomInOut} contextUrlPrefix={contextUrlPrefix}/>
                             </Panel>
                             <Panel className="panel-box">                                
                                 <h4>Filter by date</h4>                                

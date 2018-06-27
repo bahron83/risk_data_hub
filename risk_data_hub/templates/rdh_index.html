@@ -208,10 +208,12 @@
         }
 
         function handleClick(e) {
+            var contextUrlPrefix = window.location.pathname.split('/').length > 1 ? window.location.pathname.split('/')[1] : "/";
+            var dataUrl = '/' + contextUrlPrefix + '/risks/data_extraction/';
             var adm_code = e.target.feature.properties.HRpcode !== undefined ? e.target.feature.properties.HRpcode : 'EU';             
-            var disasterRisk = {app: {region: adm_code, href: '/risks/data_extraction/', geom: '/risks/data_extraction/'}};
+            var disasterRisk = {app: {region: adm_code, href: dataUrl, geom: dataUrl}, contextUrl: contextUrlPrefix};
             localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
-            location.href = '/risks/data_extraction/';
+            location.href = dataUrl;
         }
 
         function onEachFeature(feature, layer) {
