@@ -94,7 +94,7 @@ class DataContainer extends Component {
     }    
 
     renderAnalysisData() {        
-        const { dim, loading, fullContext, analysisType, analysisTypeE, selectedEventIds, cValues, zoomInOut, selectEvent, setFilters, getAnalysis, contextUrlPrefix } = this.props;        
+        const { dim, loading, fullContext, analysisType, analysisTypeE, selectedEventIds, cValues, zoomInOut, selectEvent, setFilters, getAnalysis, contextUrl } = this.props;        
         const { hazardSet, data } = this.props.riskAnalysisData;             
         const { unitOfMeasure } = this.props.riskAnalysisData || 'Values';
         const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
@@ -167,7 +167,7 @@ class DataContainer extends Component {
                         <div>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <EventCountryChart data={eventDataGroup} loc={fullContext.loc} zoomInOut={zoomInOut} contextUrlPrefix={contextUrlPrefix}/>
+                                <EventCountryChart data={eventDataGroup} loc={fullContext.loc} zoomInOut={zoomInOut} contextUrl={contextUrl}/>
                             </Panel>
                             <Panel className="panel-box">                                
                                 <h4>Filter by date</h4>                                
