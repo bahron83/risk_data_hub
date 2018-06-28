@@ -25,7 +25,7 @@ const {getData, initState, getFeatures} = require('../actions/disaster');
 const dEpics = require('../epics/disaster');
 const rEpics = require('../epics/report');
 const ConfigUtils = require('../../MapStore2/web/client/utils/ConfigUtils');
-const risksConfigPath = `${defaultUrlPrefix}/static/js/risksConfig.json`;
+const risksConfigPath = `${contextUrlPrefix}/static/js/risksConfig.json`;
 ConfigUtils.setLocalConfigurationFile(risksConfigPath);
 // Set one hour cache
 ConfigUtils.setConfigProp("cacheDataExpire", 3600);
