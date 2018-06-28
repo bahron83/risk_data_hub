@@ -780,7 +780,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         
         #current parameters                
         parts = rdh_settings.SITEURL.replace('//', '').split('/')
-        context_url = parts[len(parts)-1] if len(parts) > 1 else ''
+        context_url = '/' + parts[len(parts)-1] if len(parts) > 1 else ''
         full_context = {
             'app': app.name,
             'adm_level': loc.level,
