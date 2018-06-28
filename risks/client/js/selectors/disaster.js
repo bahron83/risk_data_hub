@@ -156,6 +156,10 @@ const eventDetailsSelector = createSelector([eventDetailsSel, dimSelector, riskA
         showEventDetail,
         visibleEventDetail
     }));
+const contextUrlPrefixSelector = createSelector([contextUrlPrefixSel],
+    (contextUrl) => ({
+        contextUrl
+    }));
 
 module.exports = {
     dimSelector,
@@ -174,5 +178,6 @@ module.exports = {
     sliderChartSelector,
     additionalChartSelector,
     lookupResultsSelector,
-    eventDetailsSelector 
+    eventDetailsSelector,
+    contextUrlPrefixSelector
 };

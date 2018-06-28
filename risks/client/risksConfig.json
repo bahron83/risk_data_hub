@@ -3,7 +3,7 @@
 	"geoStoreUrl": "/mapstore/rest/geostore",
 	"printUrl": "https://demo.geo-solutions.it/geoserver/pdf/info.json",
 	"bingApiKey": "AhuXBu7ipR1gNbBfXhtUAyCZ6rkC5PkWpxs2MnMRZ1ZupxQfivjLCch22ozKSCAn",
-	"translationsPath": "/risk-data-hub/static/assets/translations",
+	"translationsPath": "/static/assets/translations",
 	"plugins": {
 			"home": [
 				{

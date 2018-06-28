@@ -94,7 +94,7 @@ class DataContainer extends Component {
     }    
 
     renderAnalysisData() {        
-        const { dim, loading, fullContext, analysisType, analysisTypeE, selectedEventIds, cValues, zoomInOut, selectEvent, setFilters, getAnalysis, contextUrl } = this.props;        
+        const { dim, loading, fullContext, analysisType, analysisTypeE, selectedEventIds, cValues, zoomInOut, selectEvent, setFilters, getAnalysis, contextUrl } = this.props;                
         const { hazardSet, data } = this.props.riskAnalysisData;             
         const { unitOfMeasure } = this.props.riskAnalysisData || 'Values';
         const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
@@ -322,7 +322,7 @@ class DataContainer extends Component {
     }
 
     render() {
-        const {showHazard, getData: loadData} = this.props;
+        const {showHazard, getData: loadData } = this.props;                
         return showHazard ? this.renderHazard() : (<Overview className={this.props.className} getData={loadData}/>);
     }
 

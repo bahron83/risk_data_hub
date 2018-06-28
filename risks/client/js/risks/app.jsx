@@ -5,6 +5,12 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
+//data from Home Page
+const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
+const defaultUrlPrefix = '';
+const contextUrlPrefix = disasterRisk && disasterRisk.contextUrl || defaultUrlPrefix;
+
 const React = require('react');
 const ReactDOM = require('react-dom');
 const {connect} = require('react-redux');
@@ -19,7 +25,8 @@ const {getData, initState, getFeatures} = require('../actions/disaster');
 const dEpics = require('../epics/disaster');
 const rEpics = require('../epics/report');
 const ConfigUtils = require('../../MapStore2/web/client/utils/ConfigUtils');
-ConfigUtils.setLocalConfigurationFile('/risk-data-hub/static/js/risksConfig.json');
+const risksConfigPath = `${defaultUrlPrefix}static/js/risksConfig.json`;
+ConfigUtils.setLocalConfigurationFile(risksConfigPath);
 // Set one hour cache
 ConfigUtils.setConfigProp("cacheDataExpire", 3600);
 const {defaultStep, riskTutorialPresets} = require('../utils/TutorialPresets');
@@ -39,17 +46,9 @@ if (Cookies.get('csrftoken')) {
 }
 
 const initDim = init && init.d || {};
-
-//data from Home Page
-const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
-
-
-const defaultUrlPrefix = 'risk-data-hub';
-const contextUrlPrefix = disasterRisk && disasterRisk.contextUrl || defaultUrlPrefix;
-
 const newInitState = assign({}, initialState, {defaultState: {disaster: {dim: initDim, app: 'risks', contextUrl: contextUrlPrefix}, mapInfo: { infoFormat: "text/html"} }});
 const themeCfg = {
-    path: `/${contextUrlPrefix}/static/js`
+    path: `${contextUrlPrefix}/static/js`
 };
 const StandardRouter = connect((state) => ({
     locale: state.locale || {},
@@ -61,8 +60,8 @@ const StandardRouter = connect((state) => ({
 export const appStore = require('../../MapStore2/web/client/stores/StandardStore').bind(null, newInitState, appReducers, {...dEpics, ...rEpics});
 
 const loc = disasterRisk && disasterRisk.app && disasterRisk.app.region || 'EU';
-const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}loc/${loc}/` || `/${contextUrlPrefix}/risks/data_extraction/loc/EU/`;
-const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}geom/${loc}/` || `/${contextUrlPrefix}/risks/data_extraction/geom/EU/`;
+const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/loc/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/loc/EU/`;
+const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/geom/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/geom/EU/`;
 
 const initialActions = init ? [() => initState(init)] : [() => getData(dataPath), () => getFeatures(geomPath)];
 const appConfig = {

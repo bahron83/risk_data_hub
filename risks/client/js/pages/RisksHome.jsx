@@ -72,6 +72,6 @@ module.exports = connect((state) => {
         locale: state.locale && state.locale.current,
         messages: state.locale && state.locale.messages || {},
         reportprocessing: state.report && state.report.processing,
-        generateMap: state.report && state.report.generateMap
+        generateMap: state.report && state.report.generateMap        
     };
 })(Home);

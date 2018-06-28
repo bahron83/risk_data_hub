@@ -11,9 +11,12 @@ const {connect} = require('react-redux');
 const {findIndex} = require('lodash');
 const {loadMapConfig} = require('../../MapStore2/web/client/actions/config');
 const {disasterRiskLayerSelector} = require('../../MapStore2/web/client/selectors/layers');
-const MapViewer = connect(() => ({}), {
-    loadMapConfig: loadMapConfig.bind(null, "/risk-data-hub/static/js/config-risks.json")
+const contextUrlPrefix = window.location.pathname.split('/').length > 2 ? '/' + window.location.pathname.split('/')[1] : '';
+const loadMapConfigParam = `${contextUrlPrefix}/static/js/config-risks.json`;
+const MapViewer = connect(({disaster}) => ({}), {
+    loadMapConfig: loadMapConfig.bind(null, loadMapConfigParam)
 })(require('../../MapStore2/web/client/containers/MapViewer'));
+//import MapViewer from '../../MapStore2/web/client/containers/MapViewer';
 const Legend = connect(disasterRiskLayerSelector)(require('../../MapStore2/web/client/components/TOC/fragments/legend/Legend'));
 const {drillUpSelector, switchDimSelector, axesSelector} = require('../selectors/disaster');
 const {zoomInOut, toggleDim, setDimIdx, toggleAdminUnit, toggleEventDetail} = require('../actions/disaster');
@@ -40,8 +43,8 @@ const ToggleEventDetail = connect(({disaster}) => ({
     show: disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData && disaster.riskAnalysis.riskAnalysisData.events ? true : false
 }), {toggleEventDetail})(require('../components/ToggleEventDetail'));
 
-const MapContainer = (props) => (
-        <div className="col">
+const MapContainer = (props) => (        
+        <div className="col">            
             <div id="disaster-map-main-container" className="disaster-map-container">
                 <div className="container-fluid">
                     <div id="disaster-map-tools" className="btn-group pull-left disaster-map-tools">
@@ -55,7 +58,7 @@ const MapContainer = (props) => (
                 </div>
                 <div className="drc">
                     <div className="drc-map-container">
-                        <MapViewer plugins={props.plugins} params={{mapType: "leaflet"}}/>
+                        <MapViewer plugins={props.plugins} params={{mapType: "leaflet"}} />
                     </div>
                 </div>
                 <div className="container-fluid">

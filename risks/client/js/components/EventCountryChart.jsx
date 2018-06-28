@@ -42,8 +42,8 @@ class EventCountryChart extends Component {
 
     handleClick(item, index) {        
         const { zoomInOut, contextUrl } = this.props;        
-        const dataHref = `/${contextUrl}/risks/data_extraction/loc/${item.name}/`;
-        const geomHref = `/${contextUrl}/risks/data_extraction/geom/${item.name}/`;
+        const dataHref = `${contextUrl}/risks/data_extraction/loc/${item.name}/`;
+        const geomHref = `${contextUrl}/risks/data_extraction/geom/${item.name}/`;
         zoomInOut(dataHref, geomHref);
     }
 
