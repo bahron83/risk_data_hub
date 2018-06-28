@@ -778,7 +778,9 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         out = {'riskAnalysisData': risk.get_risk_details()}
         
         
-        #current parameters
+        #current parameters                
+        parts = rdh_settings.SITEURL.replace('//', '').split('/')
+        context_url = parts[len(parts)-1] if len(parts) > 1 else ''
         full_context = {
             'app': app.name,
             'adm_level': loc.level,
@@ -787,7 +789,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             'at': current_atype.name,
             'an': risk.id,
             'analysis_class': risk.analysis_type.analysis_class.name,
-            'full_url': '/risks/' + app.name + '/loc/' + loc.code + '/ht/' + hazard_type.mnemonic + '/at/' + current_atype.name + '/an/' + str(risk.id) + '/'
+            'full_url': context_url + '/risks/' + app.name + '/loc/' + loc.code + '/ht/' + hazard_type.mnemonic + '/at/' + current_atype.name + '/an/' + str(risk.id) + '/'
         }
         
         dymlist = risk.dymension_infos.all().distinct()
