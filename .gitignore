@@ -65,6 +65,10 @@ development.db
 development.db-journal
 local_settings.py
 
+# Client config files
+risks/client/costsConfig.json
+risks/client/risksConfig.json
+
 # build artifacts
 *.pyc
 *.egg-info
