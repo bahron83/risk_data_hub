@@ -158,7 +158,8 @@ const LayerTree = React.createClass({
                 var isGisOverlay = (layers[i].innerHTML != 'Admins units' && layers[i].innerHTML.indexOf('_analysis') < 0);
                 if(layers[i].parentNode.getElementsByClassName('linkto-layer-details').length == 0 && isGisOverlay) {
                     var link = document.createElement('a');
-                    link.setAttribute('href', window.location.origin + '/layers/geonode:' + layers[i].innerHTML);
+                    const contextUrl = window.location.pathname.indexOf('risk-data-hub') !== -1 ? '/risk-data-hub' : '';
+                    link.setAttribute('href', window.location.origin + contextUrl + '/layers/geonode:' + layers[i].innerHTML);
                     link.setAttribute('target', '_blank');
                     link.setAttribute('class', 'linkto-layer-details');
                     link.innerHTML = 'Open details';
