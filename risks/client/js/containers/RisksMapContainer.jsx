@@ -11,8 +11,12 @@ const {connect} = require('react-redux');
 const {findIndex} = require('lodash');
 const {loadMapConfig} = require('../../MapStore2/web/client/actions/config');
 const {disasterRiskLayerSelector} = require('../../MapStore2/web/client/selectors/layers');
-const contextUrlPrefix = window.location.pathname.split('/').length > 2 ? '/' + window.location.pathname.split('/')[1] : '';
+
+const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
+const defaultUrlPrefix = '';
+const contextUrlPrefix = disasterRisk && disasterRisk.contextUrl || defaultUrlPrefix;
 const loadMapConfigParam = `${contextUrlPrefix}/static/js/config-risks.json`;
+
 const MapViewer = connect(({disaster}) => ({}), {
     loadMapConfig: loadMapConfig.bind(null, loadMapConfigParam)
 })(require('../../MapStore2/web/client/containers/MapViewer'));
