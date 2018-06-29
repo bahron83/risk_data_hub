@@ -119,7 +119,11 @@ const getAnalysisEpic = (action$, store) =>
                     const valueOfAdditionalLayer = dimensions[i].values[indexOfAdditionalLayer];
                     const resource = dimensions[i]['layers'][valueOfAdditionalLayer]['resource'];
                     const layerDetails = resource != null ? resource['details'] : null;
-                    const layerName = layerDetails != null ? layerDetails.replace("/layers/", "") : "";                    
+                    let layerName = "";                    
+                    if(layerDetails != null) {
+                        const parts = layerDetails.split("/");
+                        layerName = parts[parts.length - 1];
+                    }
                     anLayers.map((arr, index) => { if(arr[1] == layerName) anLayerDim.push(arr) });                
                 }
                 
