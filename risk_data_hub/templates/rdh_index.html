@@ -208,11 +208,18 @@
         }
 
         function handleClick(e) {
-            var contextUrlPrefix = window.location.pathname.split('/').length > 2 ? '/' + window.location.pathname.split('/')[1] : '';
+            var urlContextObj = JSON.parse(localStorage.getItem("urlContext"));
+	        var contextUrlPrefix = urlContextObj && urlContextObj.value || '';
+            if(urlContextObj == null) {
+		        var adjustedPathname = window.location.pathname;
+                if(adjustedPathname.slice(-1) != "/")
+                    adjustedPathname += "/";
+            	contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
+            }
             var dataUrl = `${contextUrlPrefix}/risks/data_extraction`;
             var adm_code = e.target.feature.properties.HRpcode !== undefined ? e.target.feature.properties.HRpcode : 'EU';             
             var disasterRisk = {app: {region: adm_code, href: dataUrl, geom: dataUrl}, contextUrl: contextUrlPrefix};
-            localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
+            localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));            
             location.href = dataUrl;
         }
 
@@ -234,6 +241,9 @@
             
         jQuery.noConflict();
         jQuery(document).ready(function(){
+            var adjustedPathname = window.location.pathname.slice(-1) == "/" ? window.location.pathname : window.location.pathname + "/";
+            var contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
+            localStorage.setItem("urlContext", JSON.stringify({'value': contextUrlPrefix}));
             jQuery('.partners-slide').slick({
                 arrows: true,
                 centerMode: true,                
