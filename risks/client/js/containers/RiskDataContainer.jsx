@@ -140,7 +140,7 @@ class DataContainer extends Component {
                                 start={[dim.dim1Idx]}
                                 step={1}
                                 tooltips={false}
-                                onChange={(idx) => this.props.setDimIdx('dim1Idx', Number.parseInt(idx[0]))}
+                                onChange={(idx) => {this.props.setDimIdx('dim1Idx', Number.parseInt(idx[0])); getAnalysis(fullContext.full_url); }}
                                 pips= {{
                                     mode: 'steps',
                                     density: 20,
@@ -165,8 +165,8 @@ class DataContainer extends Component {
                     
                     {fullContext.analysis_class == 'event' ? (                        
                         <div>
-                            <Panel className="panel-box">
-                                <h4 className="text-center">{'Historical Events Chart'}</h4>
+                            <Panel className="panel-box">   
+                                <h4 className="text-center">{'Historical Events Chart'}</h4>                             
                                 <EventCountryChart data={eventDataGroup} loc={fullContext.loc} zoomInOut={zoomInOut} contextUrl={contextUrl}/>
                             </Panel>
                             <Panel className="panel-box">                                

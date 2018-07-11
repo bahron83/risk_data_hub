@@ -99,8 +99,7 @@ const LayerTree = React.createClass({
     getNoBackgroundLayers(group) {
         return group.name !== 'background';
     },
-    renderTOC() {
-        //console.log(this.props.groups);
+    renderTOC() {        
         const Group = (<DefaultGroup onSort={this.props.onSort}
                                   propertiesChangeHandler={this.props.groupPropertiesChangeHandler}
                                   onToggle={this.props.onToggleGroup}
@@ -159,7 +158,12 @@ const LayerTree = React.createClass({
                 if(layers[i].parentNode.getElementsByClassName('linkto-layer-details').length == 0 && isGisOverlay) {
                     var link = document.createElement('a');
                     const contextUrl = window.location.pathname.indexOf('risk-data-hub') !== -1 ? '/risk-data-hub' : '';
-                    link.setAttribute('href', window.location.origin + contextUrl + '/layers/geonode:' + layers[i].innerHTML);
+                    let layerName = "";                    
+                    overlays[0]['nodes'].map(v => {
+                        if(v && v.title == layers[i].innerHTML)
+                            layerName = v && v.name;
+                    });
+                    link.setAttribute('href', window.location.origin + contextUrl + '/layers/' + layerName);
                     link.setAttribute('target', '_blank');
                     link.setAttribute('class', 'linkto-layer-details');
                     link.innerHTML = 'Open details';

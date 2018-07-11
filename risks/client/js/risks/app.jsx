@@ -60,8 +60,9 @@ const StandardRouter = connect((state) => ({
 export const appStore = require('../../MapStore2/web/client/stores/StandardStore').bind(null, newInitState, appReducers, {...dEpics, ...rEpics});
 
 const loc = disasterRisk && disasterRisk.app && disasterRisk.app.region || 'EU';
-const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/loc/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/loc/EU/`;
-const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/geom/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/geom/EU/`;
+const reg = disasterRisk && disasterRisk.app && disasterRisk.app.regionName || 'Europe';
+const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/loc/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/reg/Europe/loc/EU/`;
+const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/geom/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/reg/Europe/geom/EU/`;
 
 const initialActions = init ? [() => initState(init)] : [() => getData(dataPath), () => getFeatures(geomPath)];
 const appConfig = {

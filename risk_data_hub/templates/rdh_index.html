@@ -22,26 +22,63 @@
     
     {% block hero %}
     <div class="jumbotron">
-        <div class="container no-padding">                        
-            <div class="row">
-                <div class="col-sm-4">                    
-                    <h2>Risk Data Hub</h2>        
-                    <span>The Disaster Risk Management Knowledge Centre (DRMKC) makes available a GIS web-platform – the Risk Data Hub – intended to improve the access and sharing of curated European-wide (EU, EFTA  and IPA  countries) risk data, tools and methodologies for fostering Disaster Risk Managemet (DRM) related actions.</span>                    
-                </div>
-                <div class="col-sm-8">
-                    <div id="mapid" style="height:500px"></div>
-                </div>                
+        <div class="container no-padding">                                                
+            <div class="col-sm-6">                    
+                <h1>Risk Data Hub</h1>        
+                <p>The Disaster Risk Management Knowledge Centre (DRMKC) makes available a GIS web-platform – the Risk Data Hub – intended to improve the access and sharing of curated European-wide (EU, EFTA  and IPA  countries) risk data, tools and methodologies for fostering Disaster Risk Managemet (DRM) related actions.</p>                
             </div>
-            <!--<div class="row">
-                <div class="col">
-                    <span>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</span>
-                </div>
-            </div>-->
+            <div class="col-sm-6">
+                <img style="max-width: 100%" src="{{ STATIC_URL }}img/rdh_home_presentation_img.png" />
+            </div>                            
         </div>
     </div>
     {% endblock %}
 
     {% block mainbody %}
+        <div class="container no-padding">                                    
+            <div class="row">
+                <div class="col-sm-6">
+                    <img style="max-width:100%" src="{{ STATIC_URL }}img/rdh_analysis_screenshot.png" />
+                </div>
+                <div class="col-sm-6">                    
+                    <h2>Rich analysis features</h2>        
+                    <p>Large amounts of complex data rendered in an understandable and valuable way by:</p>
+                    <ul class="list-group">
+                        <li class="list-group-item">Different levels of aggregation</li>
+                        <li class="list-group-item">Interactive map</li>
+                        <li class="list-group-item">Charts</li>
+                        <li class="list-group-item">Meaningful descriptions and metadata</li>
+                    </ul>
+                </div>
+            </div>            
+            <div class="row">
+                <div class="col-sm-6">                    
+                    <h2>Country corner</h2>        
+                    <p>Risk Data Hub aims to help single member states to prepare their own risk assessment, using detailed data coming from all administrative levels.</p>                    
+                    <p>The online platform is helpful for two main types of assessment:</p>
+                    <ul class="list-group">
+                        <li class="list-group-item">Exposure to potential disaster events (using data from models). This leads to <strong>Prevention and Preparedness</strong></li>
+                        <li class="list-group-item">Damages and losses caused by past events. This leads to <strong>Response and Recovery</strong></li>                        
+                    </ul>
+                    <p>Authorized users may access the tool by selecting their country of competence.</p>
+                </div>
+                <div class="col-sm-6">
+                    <div id="mapid-country" style="height:400px"></div>
+                </div>                
+            </div>
+            <div class="row">                    
+                <div class="col-sm-6">
+                    <div id="mapid" style="height:400px"></div>
+                </div>   
+                <div class="col-sm-6">                    
+                    <h2>Getting started</h2>        
+                    <p>Risk Data Hub makes publicly available many European-wide datasets.</p>
+                    <p>To start using the web tool, select and click a region on the map, or simply click the link on the main navigation menu.</p>                                        
+                    <p><strong>Note: this release is a prototype. Please, refer to Contact section for bug reporting, suggestions or any further request.</strong></p>
+                </div>             
+            </div>
+        </div>
+
         {% block partners %}
         <div class="container section">            
             <h2>Scientific Partners</h2>            
@@ -117,132 +154,173 @@
     <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
     <script>
-        function getGeoJson(url) {
-            let res = '';
+        
+        
 
-            return fetch(url)
-            .then((response) => {
-                if(response.ok) {
-                    return response.json();
-                } else {
-                    throw new Error('Server response wasn\'t OK');
-                }
-            })
-            .then((json) => {
-                return json;
-            });
-        }
+        /*MAIN BLOCK FUNCTION*/
+        function bootstrapMap(id, filename, params = null) {
+            const lat = params && params.lat || 50;
+            const lng = params && params.lng || 9;
+            const zoom = params && params.zoom || 4;
+            const max_zoom = params && params.maxZoom || 18;
 
-        var map = L.map('mapid').setView([49, 8], 4);  
+            var map = L.map(id).setView([lat, lng], zoom);  
                 
-        L.tileLayer('//europa.eu/webtools/maps/tiles/osm-ec/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            attribution: 'Map data &copy; <a href="http://europa.eu/index_en.htm">European Union</a>',            
-        }).addTo(map);
-
-        var info = L.control();
-
-        info.onAdd = function (map) {
-            this._div = L.DomUtil.create('div', 'info');
-            this.update();
-            return this._div;
-        };
-
-        info.update = function (props) {
-            this._div.innerHTML = '<h4>Available Regions</h4>' +  (props ?
-                '<b>' + props.code + '</b>'
-                : 'Hover over a region');
-        };
-
-        info.addTo(map);
-
-        function getColor(feature) {
-            switch (feature.properties.HRpcode) {
-                /*case 'European Union': return "#ff0000";
-                case 'EU Waters': return "#0000ff";
-                case 'IPA DRAM': return "#80f442";*/
-                case 'EU': return "#2c689c";
-                case 'EW': return "#2c689c";
-                case 'SEE': return "#2c689c";
-            } 
-        }
-
-        function style(feature) {
-            return {
-                weight: 1,
-                opacity: 1,
-                color: 'white',
-                //dashArray: '3',
-                fillOpacity: 0.3,
-                fillColor: getColor(feature)
+            L.tileLayer('//europa.eu/webtools/maps/tiles/osm-ec/{z}/{x}/{y}.png', {
+                maxZoom: max_zoom,
+                attribution: 'Map data &copy; <a href="http://europa.eu/index_en.htm">European Union</a>',            
+            }).addTo(map);
+    
+            var info = L.control();
+    
+            info.onAdd = function (map) {
+                this._div = L.DomUtil.create('div', 'info');
+                this.update();
+                return this._div;
             };
-        }
-
-        function highlightFeature(e) {
-            var layer = e.target;            
-            /*var color = null;
-            switch (layer.feature.properties.code) {
-                case 'europe': color = "#ff0000"; break;
-                case 'marine': color = "#0000ff"; break;
-                case 'ipa': color = "#80f442"; break;
-            }*/            
-            layer.setStyle({                
-                weight: 3,
-                color: '#666',
-                dashArray: '',
-                fillOpacity: 0.7
-            });
-
-            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                layer.bringToFront();
-            }
-
-            info.update(layer.feature.properties);
-        }
-
-        var geojson;
-
-        function resetHighlight(e) {
-            geojson.resetStyle(e.target);
-            info.update();
-        }
-
-        function handleClick(e) {
-            var urlContextObj = JSON.parse(localStorage.getItem("urlContext"));
-	        var contextUrlPrefix = urlContextObj && urlContextObj.value || '';
-            if(urlContextObj == null) {
-		        var adjustedPathname = window.location.pathname;
-                if(adjustedPathname.slice(-1) != "/")
-                    adjustedPathname += "/";
-            	contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
-            }
-            var dataUrl = `${contextUrlPrefix}/risks/data_extraction`;
-            var adm_code = e.target.feature.properties.HRpcode !== undefined ? e.target.feature.properties.HRpcode : 'EU';             
-            var disasterRisk = {app: {region: adm_code, href: dataUrl, geom: dataUrl}, contextUrl: contextUrlPrefix};
-            localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));            
-            location.href = dataUrl;
-        }
-
-        function onEachFeature(feature, layer) {
-            layer.on({
-                mouseover: highlightFeature,
-                mouseout: resetHighlight,
-                click: handleClick
-            });
-        }
-
-        getGeoJson("{{ STATIC_URL }}js/rdh_maskprj.json")
-            .then(data => {
-                geojson = L.geoJSON(data, {
-                    style: style,
-		            onEachFeature: onEachFeature
-                }).addTo(map);
-            });  
+    
+            info.update = function (props) {
+                const displayName = props ? props.name ? `<b>${props.name}</b>` : `<b>${props.HRname}</b>` : 'Hover over a region';
+                this._div.innerHTML = '<h4>Available Regions</h4>' +  displayName;
+            };
+    
+            info.addTo(map);            
             
+            let geojson;
+            const filePath = `{{ STATIC_URL }}js/${filename}`;            
+    
+            getGeoJson(filePath)
+                .then(data => {
+                    geojson = L.geoJSON(data, {
+                        style: style,
+                        onEachFeature: onEachFeature
+                    }).addTo(map);
+                }); 
+
+            /***FUNCTIONS***/
+            function getGeoJson(url) {
+                let res = '';
+
+                return fetch(url)
+                .then((response) => {
+                    if(response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Server response wasn\'t OK');
+                    }
+                })
+                .then((json) => {
+                    return json;
+                });
+            }
+
+            function getColor(feature) {
+                switch (feature.properties.HRpcode) {                
+                    case 'EU': return "#2e7c6b";
+                    case 'EW': return "#2e7c6b";
+                    case 'SEE': return "#2e7c6b";
+                }
+                return "#2c689c";
+            }
+
+            function style(feature) {
+                return {
+                    weight: 1,
+                    opacity: 1,
+                    color: 'white',
+                    //dashArray: '3',
+                    fillOpacity: 0.3,
+                    fillColor: getColor(feature)
+                };
+            }
+
+            function highlightFeature(e) {
+                var layer = e.target;            
+                /*var color = null;
+                switch (layer.feature.properties.code) {
+                    case 'europe': color = "#ff0000"; break;
+                    case 'marine': color = "#0000ff"; break;
+                    case 'ipa': color = "#80f442"; break;
+                }*/            
+                layer.setStyle({                
+                    weight: 3,
+                    color: '#666',
+                    dashArray: '',
+                    fillOpacity: 0.7
+                });
+
+                if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                    layer.bringToFront();
+                }
+
+                info.update(layer.feature.properties);                
+            }
+
+            function resetHighlight(e) {
+                geojson.resetStyle(e.target);
+                info.update();
+            }
+
+            function handleClick(e) {
+                const publicRegions = ['EU', 'EW', 'SEE'];
+                const isUserAuthenticated = '{{ user.is_authenticated }}' === 'True';  
+                const appUrl = jQuery("#nav_risks a").attr("href").replace(/\/$/, "");                  
+                const urlContextObj = JSON.parse(localStorage.getItem("urlContext"));
+                let contextUrlPrefix = urlContextObj && urlContextObj.value || '';
+                if(urlContextObj == null) {
+                    let adjustedPathname = window.location.pathname;
+                    if(adjustedPathname.slice(-1) != "/")
+                        adjustedPathname += "/";
+                    contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
+                }
+                const dataUrl = `${contextUrlPrefix}${appUrl}`;
+                const props = e.target.feature.properties;
+                const adm_code = props.HRpcode || 'EU';             
+                const adm_name = props.HRname || 'Europe';             
+                const disasterRisk = {app: {region: adm_code, regionName: adm_name, href: dataUrl, geom: dataUrl}, contextUrl: contextUrlPrefix, csrfmiddlewaretoken: '{{ csrf_token }}'};
+                localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
+                if(isUserAuthenticated || publicRegions.includes(adm_code)) {
+                    jQuery.ajax({
+                        url: "/risks/data_extraction/countryauth/",
+                        type: "POST",
+                        data: disasterRisk,
+
+                    })
+                    .done(function(response){
+                        console.log('errors: ', response && response.errors);
+                        if(response && response.success)
+                            location.href = dataUrl;
+                        else if(response && response.errors) 
+                            alert(response.errors);
+                    })
+                    .fail(function(jqXHR, textStatus, errorThrown){                        
+                        const errorObj = JSON.parse(jqXHR.responseText);                        
+                        const errorMessage = errorObj && errorObj.errors[0] || "Error loading data";
+                        alert(errorMessage);
+                    });
+                    
+                }          
+                    
+                else
+                    (document.getElementById('user-login-link')).click();
+            }
+
+            function onEachFeature(feature, layer) {
+                layer.on({
+                    mouseover: highlightFeature,
+                    mouseout: resetHighlight,
+                    click: handleClick
+                });
+            }
+            /***END OF FUNCTIONS***/
+        }                                                     
+        
         jQuery.noConflict();
-        jQuery(document).ready(function(){
-            var adjustedPathname = window.location.pathname.slice(-1) == "/" ? window.location.pathname : window.location.pathname + "/";
-            var contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
+        jQuery(document).ready(function(){  
+            const appUrl = jQuery("#nav_risks a").attr("href");  
+            console.log('appUrl = ', appUrl);          
+            const adjustedPathname = window.location.pathname.slice(-1) == "/" ? window.location.pathname : window.location.pathname + "/";
+            const contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
             localStorage.setItem("urlContext", JSON.stringify({'value': contextUrlPrefix}));
             jQuery('.partners-slide').slick({
                 arrows: true,
@@ -252,6 +330,11 @@
                 slidesToScroll: 3
             });
         });
+
+        //main map
+        bootstrapMap('mapid', 'rdh_maskprj.json');
+        //country corners map
+        bootstrapMap('mapid-country', 'rdh_country_corner.json');
         
     </script>
 {% endblock extra_script %}

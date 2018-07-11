@@ -20,7 +20,7 @@ const Overview = React.createClass({
     },
     getDefaultProps() {
         return {
-            className: "pippo",//"col-sm-6",
+            className: "",//"col-sm-6",
             getData: () => {}
         };
     },
@@ -41,7 +41,7 @@ const Overview = React.createClass({
     },
     render() {
         return (
-            <div id="disaster-overview-list" style={{minHeight: 500}} className={this.props.className + ' disaster-level-container'}>
+            <div id="disaster-overview-list" className="disaster-level-container">
                 <aside className="disaster-level">Analysis</aside>
                 {this.getItems()}
             </div>);

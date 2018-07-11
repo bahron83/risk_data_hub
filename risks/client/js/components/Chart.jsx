@@ -12,12 +12,19 @@ const CustomizedYLable = (props) => {
 };
 
 class Chart extends Component {    
+    shouldComponentUpdate(nextProps, nextState) {        
+        if((this.props.dim.dim1Idx !== nextProps.dim.dim1Idx) || (this.props.dim.dim2Idx !== nextProps.dim.dim2Idx) || (this.props.val !== nextProps.val))
+            return true;
+
+        return false;
+    } 
+    
     getChartData() {
         const { dim, values, val } = this.props;        
         return values.filter((d) => d[dim.dim1] === val ).map((v) => {return {"name": v[dim.dim2], "value": parseFloat(v[2], 10)}; });
     }
 
-    render() {
+    render() {        
         const { dim, dimension, uOm, selectRP } = this.props;
         const chartData = this.getChartData();
         /*const colors = chromaJs.scale('OrRd').colors(chartData.length);*/
@@ -47,6 +54,7 @@ class Chart extends Component {
     formatXTiks(v) {
         return !isNaN(v) && parseFloat(v).toLocaleString() || v;
     }
+    
 };
 
 export default Chart;

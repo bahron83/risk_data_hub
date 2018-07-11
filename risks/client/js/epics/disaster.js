@@ -111,9 +111,11 @@ const getAnalysisEpic = (action$, store) =>
                 
                 //additional gis layers
                 let anLayerDim = [];
-                //check for layers on X and Y axis
-                for(var i=0;i<2;i++) {
-                    const dimIdx = i == 0 ? "dim1Idx" : "dim2Idx";
+                //check for layers on X and Y axis                
+                const dimX = dim && dim.dim1 == 0 ? "dim1Idx" : "dim2Idx";
+                const dimY = dim && dim.dim1 == 0 ? "dim2Idx" : "dim1Idx";
+                for(var i=0;i<2;i++) {                    
+                    const dimIdx = i == 0 ? dimX : dimY;
                     const indexOfAdditionalLayer = (dim == {} || dim === undefined) ? 0 : dim[dimIdx];
                     const dimensions = val.riskAnalysisData.data.dimensions;
                     const valueOfAdditionalLayer = dimensions[i].values[indexOfAdditionalLayer];
@@ -149,7 +151,7 @@ const getAnalysisEpic = (action$, store) =>
             })
             .mergeAll()
             .startWith(dataLoading(true))                        
-            .catch( e => Rx.Observable.of(info({title: "Info", message: e.data.errors || "Error while loading data...", position: 'tc', autoDismiss: 3})))
+            .catch( e => Rx.Observable.of(info({title: "Info", message: e.data && e.data.errors || "Error while loading data...", position: 'tc', autoDismiss: 3})))
         });
 const getEventEpic = (action$, store) =>
     action$.ofType(GET_EVENT_DATA).switchMap(action => 

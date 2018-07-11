@@ -14,7 +14,7 @@ KWARGS_TEST = {'app': RiskApp.APP_TEST}
 
 
 geometry_urls = [
-    url(r'loc/(?P<adm_code>[\w\-]+)/$', geometry_views.administrative_division_view, name='location'),
+    url(r'reg/(?P<reg>[\w\-]+)/loc/(?P<adm_code>[\w\-]+)/$', geometry_views.administrative_division_view, name='location'),
 ]
 api_urls = [
     url(r'risk/(?P<risk_id>[\d]+)/layers/$', views.risk_layers, name='layers'),
@@ -27,17 +27,20 @@ urlpatterns = [
 
 _urls = (
     (r'^$', views.risk_data_extraction_index, 'index',),
+    (r'^reg/(?P<reg>[\w\-]+)/geom/(?P<adm_code>[\w\-]+)/$', geometry_views.administrative_division_view, 'geometry',),
     (r'^geom/(?P<adm_code>[\w\-]+)/$', geometry_views.administrative_division_view, 'geometry',),
-    (r'loc/(?P<loc>[\w\-]+)/$', views.location_view, 'location',),
-    (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/$', views.hazard_type_view, 'hazard_type',),
+    (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/$', views.location_view, 'location',),
+    (r'loc/(?P<loc>[\w\-]+)/$', views.location_view, 'location',),    
+    (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/$', views.hazard_type_view, 'hazard_type',),
     (r'loc/(?P<loc>[\w\-]+)/lvl/(?P<lvl>[\w\-]+)/ht/(?P<ht>[\w\-]+)/an/(?P<an>[\w\-]+)/evt/(?P<evt>[\w\-]+)/$', views.event_view, 'event',),
     (r'ht/(?P<ht>[\w\-]+)/an/(?P<an>[\w\-]+)/evt/(?P<evt>[\w\-]+)/$', views.event_details_view, 'event_details',),
-    (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/$', views.hazard_type_view, 'analysis_type',),
-    (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/$', views.data_extraction, 'analysis',),
+    (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/$', views.hazard_type_view, 'analysis_type',),
+    (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/$', views.data_extraction, 'analysis',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/load/(?P<load>[\w\-]+)/$', views.data_extraction, 'analysis_all',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/from/(?P<from>[\w\-]+)/to/(?P<to>[\w\-]+)/$', views.data_extraction, 'analysis_daterange',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/dym/(?P<dym>[\w\-]+)$', views.data_extraction, 'analysis_dym',),
-    (r'apps/(?P<apps>[\w\-]+)$', views.apps_view, 'apps',),
+    (r'apps/(?P<apps>[\w\-]+)/?$', views.apps_view, 'apps',),
+    (r'countryauth/?$', views.auth_view, 'countryauth',),
     (r'admlookup/(?P<admlookup>[\w\-]+)/?$', views.adm_lookup_view, 'admlookup',),
     (r'loc/(?P<loc>[\w\-]+)/detail/(?P<detail>[\w\-]+)/?$', views.adm_lookup_view, 'admlookup',),    
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/pdf/$', views.pdf_report, 'pdf_report',),

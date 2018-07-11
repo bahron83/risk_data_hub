@@ -23,7 +23,7 @@ from operator import attrgetter
 from geonode.layers.models import Layer
 from geonode.utils import json_response
 from geonode.base.forms import ValuesListField
-from risks.models import (HazardType, AdministrativeDivision,
+from risks.models import (HazardType, AdministrativeDivision, Region,
                                           RiskAnalysisDymensionInfoAssociation,
                                           RiskAnalysis, DymensionInfo, AnalysisType,
                                           FurtherResource, RiskApp, Event, AnalysisClass, AdministrativeData, AdministrativeDivisionDataAssociation)
@@ -85,8 +85,10 @@ class ContextAware(AppAware):
         if an.hazardset is None:
             return []
         region = None
-        if kwargs.get('loc'):
-            region = kwargs['loc'].region
+        #if kwargs.get('loc'):
+            #region = kwargs['loc'].region
+        if kwargs.get('reg'):
+            region = kwargs['reg']
 
         return FurtherResource.for_hazard_set(an.hazardset, region=region)
 
@@ -109,8 +111,10 @@ class ContextAware(AppAware):
             return []
         ranalysis = kwargs.get('an')
         region = None
-        if kwargs.get('loc'):
-            region = kwargs['loc'].region
+        #if kwargs.get('loc'):
+            #region = kwargs['loc'].region
+        if kwargs.get('reg'):
+            region = kwargs['reg']
         return FurtherResource.for_dymension_info(dym, region=region, ranalysis=ranalysis)
 
 
@@ -130,8 +134,10 @@ class ContextAware(AppAware):
             return []
         htype = kwargs.get('ht')
         region = None
-        if kwargs.get('loc'):
-            region = kwargs['loc'].region
+        #if kwargs.get('loc'):
+            #region = kwargs['loc'].region
+        if kwargs.get('reg'):
+            region = kwargs['reg']
         return FurtherResource.for_analysis_type(at, region=region, htype=htype)
 
 
@@ -140,6 +146,7 @@ class ContextAware(AppAware):
                             ('at', AnalysisType, 'name',),
                             ('an', RiskAnalysis, 'id',),
                             ('dym', DymensionInfo, 'id',),
+                            ('reg', Region, 'name',),
                             ('loc', AdministrativeDivision, 'code',)
                             )
 
@@ -292,6 +299,12 @@ risk_test_index = RiskIndexView.as_view()
 
 class LocationSource(object):
 
+    def get_region(self, **kwargs):
+        try:
+            return Region.objects.get(name=kwargs['reg'])            
+        except Region.DoesNotExist:
+            return
+
     def get_location_exact(self, loc):
         try:
             return AdministrativeDivision.objects.get(code=loc)            
@@ -305,6 +318,9 @@ class LocationSource(object):
             return locations
         except:
             pass
+
+    def get_location_range(self, loc):
+        return AdministrativeDivision.objects.filter(code__in=loc)        
     
     def location_lookup(self, **kwargs):
         matches = AdministrativeDivision.objects.filter(name__contains=kwargs['admlookup'])
@@ -316,18 +332,19 @@ class LocationSource(object):
 class LocationView(ContextAware, LocationSource, View):
 
     def get(self, request, *args, **kwargs):
+        reg = self.get_region(**kwargs)
         locations = self.get_location(**kwargs)
         if not locations:
             return json_response(errors=['Invalid location code'], status=404)
-        loc = locations[-1]
+        loc = locations[-1]        
         app = self.get_app()
         hazard_types = HazardType.objects.filter(app=app)
 
 
-        location_data = {'navItems': [location.set_app(app).export() for location in locations],
+        location_data = {'navItems': [location.set_app(app).set_region(reg).export() for location in locations],
                          'context': self.get_context_url(**kwargs),
                          'furtherResources': self.get_further_resources(**kwargs),
-                         'overview': [ht.set_location(loc).export() for ht in hazard_types]}
+                         'overview': [ht.set_region(reg).set_location(loc).export() for ht in hazard_types]}
 
         return json_response(location_data)
 
@@ -443,14 +460,14 @@ class HazardTypeView(ContextAware, LocationSource, View):
 
     """
 
-    def get_hazard_type(self, location, **kwargs):
+    def get_hazard_type(self, region, location, **kwargs):
         app = self.get_app()
         try:
-            return HazardType.objects.get(mnemonic=kwargs['ht'], app=app).set_location(location)
+            return HazardType.objects.get(mnemonic=kwargs['ht'], app=app).set_region(region).set_location(location)
         except (KeyError, HazardType.DoesNotExist,):
             return
 
-    def get_analysis_type(self, location, hazard_type, **kwargs):
+    def get_analysis_type(self, region, location, hazard_type, **kwargs):
         atypes = hazard_type.get_analysis_types()
         aclasses = AnalysisClass.objects.all()
         aclass_risk = aclasses.get(name='risk')
@@ -460,10 +477,10 @@ class HazardTypeView(ContextAware, LocationSource, View):
         
         first_atype = atypes.filter(analysis_class=aclass_risk).first()
         if first_atype is not None:
-            first_atype = first_atype.set_location(location).set_hazard_type(hazard_type)
+            first_atype = first_atype.set_region(region).set_location(location).set_hazard_type(hazard_type)
         first_atype_e = atypes.filter(analysis_class=aclass_event).first()
         if first_atype_e is not None:
-            first_atype_e = first_atype_e.set_location(location).set_hazard_type(hazard_type)
+            first_atype_e = first_atype_e.set_region(region).set_location(location).set_hazard_type(hazard_type)
         if not kwargs.get('at'):
             atype_r = first_atype
             atype_e = first_atype_e
@@ -473,13 +490,14 @@ class HazardTypeView(ContextAware, LocationSource, View):
             if atype is None:
                 return None, None, atypes, None
             else:
-                atype = atype.set_location(location).set_hazard_type(hazard_type)            
+                atype = atype.set_region(region).set_location(location).set_hazard_type(hazard_type)            
                 atype_r = atype if atype.analysis_class == aclass_risk else first_atype
                 atype_e = atype if atype.analysis_class == aclass_event else first_atype_e
                 aclass = atype.analysis_class
         return atype_r, atype_e, atypes, aclass,
 
     def get(self, request, *args, **kwargs):
+        reg = self.get_region(**kwargs)
         locations = self.get_location(**kwargs)
         if not locations:
             return json_response(errors=['Invalid location code'], status=404)
@@ -487,19 +505,19 @@ class HazardTypeView(ContextAware, LocationSource, View):
         app = self.get_app()
         hazard_types = HazardType.objects.filter(app=app)
 
-        hazard_type = self.get_hazard_type(loc, **kwargs)
+        hazard_type = self.get_hazard_type(reg, loc, **kwargs)
 
         if not hazard_type:
             return json_response(errors=['Invalid hazard type'], status=404)
 
-        (atype_r, atype_e, atypes, aclass,) = self.get_analysis_type(loc, hazard_type, **kwargs)
+        (atype_r, atype_e, atypes, aclass,) = self.get_analysis_type(reg, loc, hazard_type, **kwargs)
                 
         if not atype_r and not atype_e:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404)        
 
         out = {
-            'navItems': [location.set_app(app).export() for location in locations],
-            'overview': [ht.set_location(loc).export() for ht in hazard_types],
+            'navItems': [location.set_app(app).set_region(reg).export() for location in locations],
+            'overview': [ht.set_region(reg).set_location(loc).export() for ht in hazard_types],
             'context': self.get_context_url(**kwargs),
             'furtherResources': self.get_further_resources(**kwargs),
             'hazardType': hazard_type.get_hazard_details(),            
@@ -736,19 +754,20 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                         result = False
         return result        
 
-    def get(self, request, *args, **kwargs):        
+    def get(self, request, *args, **kwargs):   
+        reg = self.get_region(**kwargs)     
         locations = self.get_location(**kwargs)
         app = self.get_app()
         if not locations:
             return json_response(errors=['Invalid location code'], status=404)
         loc = locations[-1]
 
-        hazard_type = self.get_hazard_type(loc, **kwargs)
+        hazard_type = self.get_hazard_type(reg, loc, **kwargs)
 
         if not hazard_type:
             return json_response(errors=['Invalid hazard type'], status=404)
 
-        (atype_r, atype_e, atypes, aclass,) = self.get_analysis_type(loc, hazard_type, **kwargs)
+        (atype_r, atype_e, atypes, aclass,) = self.get_analysis_type(reg, loc, hazard_type, **kwargs)
         
         current_atype = None
         risks = None
@@ -783,13 +802,14 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         context_url = '/' + parts[len(parts)-1] if len(parts) > 1 else ''
         full_context = {
             'app': app.name,
-            'adm_level': loc.level,
+            'reg': reg.name,
+            'adm_level': loc.level,            
             'loc': loc.code,
             'ht': hazard_type.mnemonic,
             'at': current_atype.name,
             'an': risk.id,
             'analysis_class': risk.analysis_type.analysis_class.name,
-            'full_url': context_url + '/risks/' + app.name + '/loc/' + loc.code + '/ht/' + hazard_type.mnemonic + '/at/' + current_atype.name + '/an/' + str(risk.id) + '/'
+            'full_url': context_url + '/risks/' + app.name + '/reg/' + reg.name + '/loc/' + loc.code + '/ht/' + hazard_type.mnemonic + '/at/' + current_atype.name + '/an/' + str(risk.id) + '/'
         }
         
         dymlist = risk.dymension_infos.all().distinct()
@@ -933,8 +953,9 @@ class EventDetailsView(DataExtractionView):
     
     def get(self, request, *args, **kwargs):        
         event = self.get_event(**kwargs)
-        location = self.get_location_exact(event.iso2)
-        hazard_type = self.get_hazard_type(location, **kwargs)
+        #location = self.get_location_exact(event.iso2)
+        locations = self.get_location_range(event.nuts3.split(';') + [event.iso2])
+        hazard_type = self.get_hazard_type(locations[0], **kwargs)
         an_group = self.get_risk_analysis_group(hazard_type, **kwargs)
         data = {}        
         if an_group and event:
@@ -942,13 +963,18 @@ class EventDetailsView(DataExtractionView):
             #administrative data
             administrative_data = {}            
             adm_data_entries = AdministrativeData.objects.all()
-            location_adm_data = AdministrativeDivisionDataAssociation.objects.filter(adm=location)
-            for adm_data_entry in adm_data_entries:
-                data_per_type = location_adm_data.filter(data=adm_data_entry)
-                dimension = data_per_type.order_by('-dimension').values_list('dimension', flat=True).distinct()[0]
-                data_exact = data_per_type.filter(dimension=dimension)
-                if data_exact:                
-                    administrative_data[adm_data_entry.name] = {'value': data_exact[0].value, 'unitOfMeasure': adm_data_entry.unit_of_measure}
+            location_adm_data = AdministrativeDivisionDataAssociation.objects.filter(adm__in=locations)
+            for adm_data_entry in adm_data_entries:                
+                administrative_data[adm_data_entry.name] = {
+                        'unitOfMeasure': adm_data_entry.unit_of_measure,
+                        'values': {}
+                }
+                for location in locations:
+                    data_filtered = location_adm_data.filter(data=adm_data_entry, adm=location)
+                    dimension = data_filtered.order_by('-dimension').values_list('dimension', flat=True).distinct()[0]
+                    data_exact = data_filtered.filter(dimension=dimension).first()
+                    if data_exact:   
+                        administrative_data[adm_data_entry.name]['values'][data_exact.adm.code] = data_exact.value                                        
 
             overview = {                
                 'event': event.get_event_plain(),
@@ -957,7 +983,7 @@ class EventDetailsView(DataExtractionView):
 
             for an_event in an_group:                
                 adjusted_kwargs = {
-                    'loc': event.iso2,
+                    'loc': event.iso2,                    
                     'ht': kwargs['ht'],
                     'evt': kwargs['evt'],
                     'an': an_event.name
@@ -975,8 +1001,9 @@ class EventDetailsView(DataExtractionView):
                 
                 for an_risk in matching_ra:
                     adjusted_kwargs['an'] = an_risk.name
+                    adjusted_kwargs['loc'] = event.nuts3.replace(';', '__')
                     feat_kwargs = self.url_kwargs_to_query_params(**self.removekey(adjusted_kwargs, 'evt'))
-                    features = self.get_features_base('geonode:risk_analysis', None, **feat_kwargs)
+                    features = self.get_features_base('geonode:risk_analysis_grouped_values', None, **feat_kwargs)
 
                     dymlist = an_risk.dymension_infos.all().distinct()
                     if kwargs.get('dym'):
@@ -1281,6 +1308,28 @@ class PDFReportView(ContextAware, FormView):
 
         return html_path_absolute
 
+class AuthorizationView(ContextAware, View):
+    def post(self, request, *args, **kwargs):        
+        if 'app' in kwargs:            
+            region_name = request.POST.get("app[regionName]", "")
+            owner_groups = None
+            try:
+                region = Region.objects.get(name=region_name)
+                owner_groups = region.owner.groups.all() if region.owner else None
+            except Region.DoesNotExist:
+                return json_response(errors=['No data available for selected country'], status=404)
+
+            current_user = request.user
+            current_user_group_ids = current_user.groups.all().values_list('id', flat=True)
+            user_group = rdh_settings.COUNTRY_ADMIN_USER_GROUP if rdh_settings.COUNTRY_ADMIN_USER_GROUP else None
+
+            if not current_user.is_superuser:            
+                if owner_groups.filter(name=rdh_settings.COUNTRY_ADMIN_USER_GROUP).exists():                
+                    if not owner_groups.filter(pk__in=current_user_group_ids).exists():
+                        return json_response(errors=['You are not allowed to access the requested resources'], status=403)
+                        
+        return json_response({'success': True})
+
 class TestView(ContextAware, View):
     def get(self, request, *args, **kwargs):
         app_array = []
@@ -1288,6 +1337,13 @@ class TestView(ContextAware, View):
             app_array.append({'appname': '{}'.format(app.verbose_name)})
 
         return json_response({'apps': app_array})                    
+
+    def post(self, request, *args, **kwargs):
+        app_array = []
+        for app in apps.get_app_configs():
+            app_array.append({'appname': '{}'.format(app.verbose_name)})
+
+        return json_response({'apps': app_array})                            
 
 CACHE_TTL = 120
 location_view = cache_page(CACHE_TTL)(LocationView.as_view()) 
@@ -1297,6 +1353,7 @@ data_extraction = cache_page(CACHE_TTL)(DataExtractionView.as_view())
 event_view = cache_page(CACHE_TTL)(EventView.as_view())
 event_details_view = cache_page(CACHE_TTL)(EventDetailsView.as_view())
 adm_lookup_view = cache_page(CACHE_TTL)(AdmLookupView.as_view())
+auth_view = cache_page(CACHE_TTL)(AuthorizationView.as_view())
 apps_view = cache_page(CACHE_TTL)(TestView.as_view())
 
 risk_layers = RiskLayersView.as_view()

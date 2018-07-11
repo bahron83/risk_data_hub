@@ -178,6 +178,15 @@ class LocationAware(object):
             raise ValueError("Cannot use location-less {} here".format(self.__class__.__name__))
         return self._location
 
+    def set_region(self, region):
+        self._region = region
+        return self
+
+    def get_region(self):
+        if not getattr(self, '_region', None):
+            raise ValueError("Cannot use region-less {} here".format(self.__class__.__name__))
+        return self._region
+
 
 class HazardTypeAware(object):
     def set_hazard_type(self, ht):
@@ -268,18 +277,22 @@ class AnalysisType(RiskAppAware, HazardTypeAware, LocationAware, Exportable, mod
         db_table = 'risks_analysistype'
 
     def href(self):
+        reg = self.get_region()
         loc = self.get_location()
         ht = self.get_hazard_type()
-        return self.get_url('analysis_type', loc.code, ht.mnemonic, self.name)
+        return self.get_url('analysis_type', reg.name, loc.code, ht.mnemonic, self.name)
 
     def get_risk_analysis_list(self, **kwargs):
+        reg = self.get_region()
         loc = self.get_location()
-        ht = self.get_hazard_type().set_location(loc)
+        ht = self.get_hazard_type().set_region(reg).set_location(loc)
         ra = self.riskanalysis_analysistype.filter(hazard_type=ht,
+                                                   region=reg,
                                                    administrative_divisions__in=[loc])
         if kwargs:
             ra = ra.filter(**kwargs)
-        risk_analysis = [r.set_location(loc)
+        risk_analysis = [r.set_region(reg)
+                          .set_location(loc)
                           .set_hazard_type(ht)
                           .set_analysis_type(self)
                          for r in ra.distinct()]
@@ -342,13 +355,17 @@ class HazardType(RiskAppAware, LocationAware, Exportable, Schedulable, models.Mo
     @property
     def risk_analysis_count(self):
         loc = self.get_location()
+        reg = self.get_region()
         ra = RiskAnalysis.objects.filter(administrative_divisions=loc,
+                                         region=reg,
                                          hazard_type=self)
         return ra.count()
 
     def get_analysis_types(self):
         loc = self.get_location()
+        reg = self.get_region()
         ra = RiskAnalysis.objects.filter(administrative_divisions=loc,
+                                         region=reg,
                                          app=self.app,
                                          hazard_type=self)
 
@@ -356,18 +373,20 @@ class HazardType(RiskAppAware, LocationAware, Exportable, Schedulable, models.Mo
         return at
 
     def default_analysis_type(self):
+        reg = self.get_region()
         loc = self.get_location()
         at = self.get_analysis_types()
         if at.exists():
             at = at.first()
-            return {'href': self.get_url('analysis_type', loc.code, self.mnemonic, at.name)}
+            return {'href': self.get_url('analysis_type', reg.name, loc.code, self.mnemonic, at.name)}
         else:
             return {}
 
     @property
     def href(self):
+        reg = self.get_region()
         loc = self.get_location()
-        return self.get_url('hazard_type', loc.code, self.mnemonic)
+        return self.get_url('hazard_type', reg.name, loc.code, self.mnemonic)
 
     def get_hazard_details(self):
         """
@@ -388,11 +407,46 @@ class HazardType(RiskAppAware, LocationAware, Exportable, Schedulable, models.Mo
 
         """
         analysis_types = self.get_analysis_types()
+        reg = self.get_region()
         loc = self.get_location()
         out = {'mnemonic': self.mnemonic,
                'description': self.description,
-               'analysisTypes': [at.set_location(loc).set_hazard_type(self).export() for at in analysis_types]}
+               'analysisTypes': [at.set_region(reg).set_location(loc).set_hazard_type(self).export() for at in analysis_types]}
         return out
+
+
+class Region(OwnedModel, models.Model):
+    """
+    Groups a set of AdministrativeDivisions
+    """
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=30, null=False, blank=False,
+                            db_index=True)
+    # level:
+    # 0 is global
+    # 1 is continent
+    # 2 is sub-continent
+    # 3 is country
+    level = models.IntegerField(null=False, blank=False, db_index=True)
+
+    # Relationships
+    administrative_divisions = models.ManyToManyField(
+        'AdministrativeDivision',
+        through='RegionAdministrativeDivisionAssociation',
+        related_name='administrative_divisions'
+    )
+
+    @staticmethod
+    def get_owner_related_name():
+        return 'owned_region'    
+
+    def __unicode__(self):
+        return u"{0}".format(self.name)
+
+    class Meta:
+        ordering = ['name', 'level']
+        db_table = 'risks_region'
+        verbose_name_plural = 'Regions'
 
 
 class RiskAnalysis(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardTypeAware, AnalysisTypeAware, Exportable, models.Model):
@@ -430,6 +484,14 @@ class RiskAnalysis(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardT
     #analysis_class = models.CharField(max_length=50, null=True, blank=True)   
 
     # Relationships
+    region = models.ForeignKey(
+        Region,
+        related_name='riskanalysis_region',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
+
     analysis_type = models.ForeignKey(
         AnalysisType,
         related_name='riskanalysis_analysistype',
@@ -527,10 +589,11 @@ class RiskAnalysis(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardT
         return {}
 
     def href(self):
+        reg = self.get_region()
         loc = self.get_location()
         ht = self.get_hazard_type()
         at = self.get_analysis_type()
-        return self.get_url('analysis', loc.code, ht.mnemonic, at.name, self.id)
+        return self.get_url('analysis', reg.name, loc.code, ht.mnemonic, at.name, self.id)
 
     def get_style(self):
         if self.style:
@@ -582,7 +645,7 @@ class AdministrativeDivisionManager(models.Manager):
         return self.get(code=code)
 
 
-class AdministrativeDivision(RiskAppAware, Exportable, MPTTModel):
+class AdministrativeDivision(RiskAppAware, LocationAware, Exportable, MPTTModel):
     """
     Administrative Division Gaul dataset.
     """
@@ -606,7 +669,11 @@ class AdministrativeDivision(RiskAppAware, Exportable, MPTTModel):
     # Relationships
     parent = TreeForeignKey('self', null=True, blank=True,
                             related_name='children')
-    region = models.ForeignKey('Region')
+    
+    regions = models.ManyToManyField(
+        Region,
+        through='RegionAdministrativeDivisionAssociation'        
+    )
 
     risks_analysis = models.ManyToManyField(
         RiskAnalysis,
@@ -625,15 +692,18 @@ class AdministrativeDivision(RiskAppAware, Exportable, MPTTModel):
 
     @property
     def href(self):
-        return self.get_url('location', self.code)
+        reg = self.get_region()
+        return self.get_url('location', reg, self.code)
 
     @property
     def geom_href(self):
-        return self.get_url('geometry', self.code)
+        reg = self.get_region()
+        return self.get_url('geometry', reg, self.code)
 
     @property
     def parent_geom_href(self):
         if self.parent:
+            self.parent.set_region(self.get_region())
             return self.parent.geom_href
 
     def __unicode__(self):
@@ -659,39 +729,6 @@ class AdministrativeDivision(RiskAppAware, Exportable, MPTTModel):
             parent = parent.parent
         out.reverse()
         return out
-
-
-class Region(OwnedModel, models.Model):
-    """
-    Groups a set of AdministrativeDivisions
-    """
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=30, null=False, blank=False,
-                            db_index=True)
-    # level:
-    # 0 is global
-    # 1 is continent
-    # 2 is sub-continent
-    # 3 is country
-    level = models.IntegerField(null=False, blank=False, db_index=True)
-
-    # Relationships
-    administrative_divisions = models.ManyToManyField(
-        AdministrativeDivision,
-        related_name='administrative_divisions'
-    )
-
-    @staticmethod
-    def get_owner_related_name():
-        return 'owned_region'    
-
-    def __unicode__(self):
-        return u"{0}".format(self.name)
-
-    class Meta:
-        ordering = ['name', 'level']
-        db_table = 'risks_region'
-        verbose_name_plural = 'Regions'
 
 
 class DymensionInfo(RiskAnalysisAware, Exportable, models.Model):
@@ -818,6 +855,22 @@ class RiskAnalysisAdministrativeDivisionAssociation(models.Model):
         """
         db_table = 'risks_riskanalysisadministrativedivisionassociation'
 
+class RegionAdministrativeDivisionAssociation(models.Model):
+
+    id = models.AutoField(primary_key=True)
+
+    # Relationships
+    region = models.ForeignKey(Region)
+    administrativedivision = models.ForeignKey(AdministrativeDivision)
+
+    def __unicode__(self):
+        return u"{0}".format(self.region.name + " - " +
+                             self.administrativedivision.name)
+
+    class Meta:
+        """
+        """
+        db_table = 'risks_regionadministrativedivisionassociation'
 
 class RiskAnalysisDymensionInfoAssociation(models.Model):
     """
@@ -1478,9 +1531,9 @@ class RiskAnalysisImportMetadata(models.Model):
         """
         ordering = ['riskapp', 'region', 'riskanalysis']
         db_table = 'risks_metadata_files'
-        verbose_name = 'Risks Analysis: Import or Update Risk Metadata from \
+        verbose_name = 'Risks Analysis: Import or Update Metadata from \
                         XLSX file'
-        verbose_name_plural = 'Risks Analysis: Import or Update Risk Metadata \
+        verbose_name_plural = 'Risks Analysis: Import or Update Metadata \
                                from XLSX file'
 
 class AdditionalData(Exportable, models.Model):
@@ -1703,8 +1756,8 @@ class EventImportData(models.Model):
         """
         ordering = ['riskapp', 'region']
         db_table = 'risks_data_event_files'
-        verbose_name = 'Risks Event: Import Event Data (Main) from XLSX file'
-        verbose_name_plural = 'Risks Events: Import Event Data (Main) from XLSX file'      
+        verbose_name = 'Events: Import Data (Main) from XLSX file'
+        verbose_name_plural = 'Events: Import Data (Main) from XLSX file'      
 
     def __unicode__(self):
         return u"{0}".format(self.data_file.name)
@@ -1753,8 +1806,8 @@ class EventImportAttributes(models.Model):
         """
         ordering = ['riskapp', 'region', 'riskanalysis']
         db_table = 'risks_attribute_event_files'
-        verbose_name = 'Risks Event: Import Analysis Data (Attributes) from XLSX file'
-        verbose_name_plural = 'Risks Events: Import Analysis Data (Atributes) from XLSX file'      
+        verbose_name = 'Risks Analysis: Import Events Data (Attributes) from XLSX file'
+        verbose_name_plural = 'Risks Analysis: Import Events Data (Atributes) from XLSX file'      
 
     def __unicode__(self):
         return u"{0}".format(self.data_file.name)

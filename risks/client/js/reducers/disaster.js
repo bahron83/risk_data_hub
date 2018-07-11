@@ -49,7 +49,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             return assign({}, state, { loading: false, error: null, eventDetails: action.data });
         }
         case TOGGLE_DIM: {
-            const newDim = state.dim && {dim1: state.dim.dim2, dim2: state.dim.dim1, dim1Idx: 0, dim2Idx: 0} || {dim1: 1, dim2: 0, dim1Idx: 0, dim2Idx: 0};
+            const newDim = state.dim && {dim1: state.dim.dim2, dim2: state.dim.dim1, dim1Idx: state.dim.dim2Idx, dim2Idx: state.dim.dim1Idx} || {dim1: 1, dim2: 0, dim1Idx: 0, dim2Idx: 0};
             return assign({}, state, {dim: newDim, sliders: {}});
         }
         case TOGGLE_ADMIN_UNITS: {

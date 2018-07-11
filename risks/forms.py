@@ -103,6 +103,14 @@ class ImportMetadataRiskAnalysisForm(models.ModelForm):
         model = RiskAnalysisImportMetadata
         fields = ('riskapp', 'region', 'riskanalysis', "metadata_file",)
 
+    def __init__(self, *args, **kwargs):
+        super(ImportMetadataRiskAnalysisForm, self).__init__(*args, **kwargs)        
+        if not self.current_user.is_superuser:
+            self.fields['region'].queryset = Region.objects.filter(
+                                            owner=self.current_user)
+            self.fields['riskanalysis'].queryset = RiskAnalysis.objects.filter(
+                                            owner=self.current_user)
+    
     def clean_metadata_file(self):
         file_xlsx = self.cleaned_data['metadata_file']
         path = default_storage.save('tmp/'+file_xlsx.name,

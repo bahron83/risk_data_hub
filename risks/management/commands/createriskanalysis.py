@@ -22,7 +22,9 @@ from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 
-from django.contrib.auth.models import User
+#from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 from geonode.layers.models import Layer
 from risks.models import RiskAnalysis, HazardType, RiskApp
 from risks.models import AnalysisType, DymensionInfo

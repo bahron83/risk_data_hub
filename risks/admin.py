@@ -174,6 +174,12 @@ class HazardSetAdmin(admin.ModelAdmin):
     inlines = [AdditionalResourceInline]
     group_fieldsets = True
 
+    def get_queryset(self, request):
+        qs = super(HazardSetAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(riskanalysis__in=RiskAnalysis.objects.filter(owner=request.user))
+
     def has_add_permission(self, request):
         return False
 
@@ -268,6 +274,16 @@ class EventAdmin(admin.ModelAdmin):
     group_fieldsets = True  
     list_select_related = True
     filter_horizontal = ('related_layers',)
+
+    def get_queryset(self, request):
+        qs = super(EventAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        regions_owned = Region.objects.filter(owner=request.user)
+        return qs.filter(region__in=regions_owned)
+
+    def has_add_permission(self, request):
+        return False
 
 class EventImportDataAdmin(admin.ModelAdmin):
     model = EventImportData

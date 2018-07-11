@@ -16,7 +16,7 @@ function configLayer(baseurl, layerName, layerId, layerTitle, visibility = true,
     "name": layerName,
     "title": layerTitle,
     "visibility": visibility,
-    "format": "image/png8",
+    "format": "image/png",
     "tiled": true    
     }, group && {group} || {});
 }
@@ -28,7 +28,7 @@ function configRefLayer(baseurl, layerName, layerId, layerTitle, style, visibili
     "name": layerName,
     "title": layerTitle,
     "visibility": visibility,
-    "format": "image/png8",
+    "format": "image/png",
     "tiled": true,
     "style": style    
   }, group && {group} || {}) : configLayer(baseurl, layerName, layerId, layerTitle, visibility, group);

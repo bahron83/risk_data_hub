@@ -107,7 +107,7 @@ class Command(BaseCommand):
 
         wb = xlrd.open_workbook(filename=excel_file)
         region = Region.objects.get(name=region)
-        region_code = region.administrative_divisions.filter(parent=None)[0].code
+        region_code = region.administrative_divisions.order_by('level')[0].code #region.administrative_divisions.filter(parent=None)[0].code
 
         scenarios = RiskAnalysisDymensionInfoAssociation.objects.filter(riskanalysis=risk, axis='x')
         round_periods = RiskAnalysisDymensionInfoAssociation.objects.filter(riskanalysis=risk, axis='y')
@@ -163,11 +163,14 @@ class Command(BaseCommand):
                                         if cell_type_str == 'text' \
                                         else iso_country + '{:05d}'.format(int(cell_obj.value))
                                     print('adm code read from cell: {}'.format(adm_code))
+                                    
+                                    #check if exists ADM unit with given code and if ADM unit belongs to given region
                                     try:
                                         adm_div = AdministrativeDivision.objects.get(code=adm_code)
+                                        region_match = adm_div.regions.get(name=region.name)
                                     except AdministrativeDivision.DoesNotExist:
                                         traceback.print_exc()
-                                        pass
+                                        pass                                    
                                     
                                     parent_adm_div = None
                                     if adm_div.parent is not None:
@@ -420,8 +423,8 @@ class Command(BaseCommand):
             return False
     
     def to_int_if_number(self, s):
-        if self.is_number(s):
-            return int(s)
-        else:
-            return s
+        try:
+            return int(float(s))
+        except ValueError:
+            return s        
 

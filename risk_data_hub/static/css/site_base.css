@@ -402,6 +402,20 @@ body.groups li#nav_groups a {
   color: #028baf;
   text-decoration: none;
 }
+.home .row {
+  margin-top: 40px;
+}
+.home .list-group-item {
+  border: none;
+  white-space: normal;
+}
+.home .list-group-item:before {
+  content: "\f0a9";
+  font-family: FontAwesome;
+  display: inline-block;
+  /*margin-left: -1.3em;*/
+  width: 1.3em;
+}
 /* Items
 ----------------------- */
 .filter .fa,
@@ -1119,4 +1133,7 @@ footer {
 }
 .modal-dialog label {
   margin-right: 5px;
+}
+.align-right {
+  text-align:right;
 }

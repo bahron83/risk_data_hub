@@ -25,13 +25,26 @@ class EventDetails extends Component {
             )
         });        
     } 
+
+    formatNumber(string) {
+        return Math.round(parseFloat(string) * 100) / 100
+    }
     
-    renderAdministrativeData(data) {        
+    renderAdministrativeData(data, event) {        
         return Object.keys(data).map( key => {
-            const { unitOfMeasure, value } = data[key];
-            const displayValue = `${value} (${unitOfMeasure})`;
+            const { unitOfMeasure, values } = data[key];
+            console.log(values);
+            const nuts3List = event.nuts3.split(';');            
+            let sumOfNuts3Values = 0;
+            nuts3List.map(v => {
+                sumOfNuts3Values += this.formatNumber(values[v])
+            })            
+            
             return (
-                <li className="list-group-item"><label>{key}</label>{displayValue}</li>
+                <ul className="list-group">
+                    <li key={`${key}-country`} className="list-group-item"><label>{key} of Country</label>{`${this.formatNumber(values[event.iso2])} (${unitOfMeasure})`}</li>
+                    <li key={`${key}-nuts`} className="list-group-item"><label>{key} of nuts3 affected</label>{`${sumOfNuts3Values} (${unitOfMeasure})`}</li>
+                </ul>
             )
         });
     }
@@ -64,9 +77,9 @@ class EventDetails extends Component {
                             </ul>
                             <hr />
                             <h4>Administrative data for country</h4>
-                            <ul className="list-group">
-                               {this.renderAdministrativeData(administrativeData)} 
-                            </ul>
+                            
+                            {this.renderAdministrativeData(administrativeData, event)} 
+                            
                             <hr />
                             <h4>Comparison Charts</h4>
                             <p>Impact of the event vs potential impact based on models (per return period)</p>
