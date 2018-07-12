@@ -349,6 +349,9 @@ if MONITORING_ENABLED:
     MONITORING_SERVICE_NAME = 'local-geonode'
     MONITORING_HOST_NAME = SITE_HOST_NAME
 
+#Maintenance mode middleware
+MIDDLEWARE_CLASSES += ('maintenance_mode.middleware.MaintenanceModeMiddleware',)
+
 INSTALLED_APPS += ('geonode.contrib.ows_api',)
 
 GEOIP_PATH = os.path.join(os.path.dirname(__file__), '..', 'GeoLiteCity.dat')

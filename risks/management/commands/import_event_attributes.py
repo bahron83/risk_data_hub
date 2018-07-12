@@ -105,7 +105,7 @@ class Command(BaseCommand):
         try:
             for row_num in range(1, sheet.nrows):
                 event_id = str(sheet.cell(row_num, 0).value).strip()
-                iso2 = str(sheet.cell(row_num, 1).value).strip()
+                adm_code = str(sheet.cell(row_num, 1).value).strip()
                 dim1 = str(sheet.cell(row_num, 2).value).strip()
                 dim2 = str(sheet.cell(row_num, 3).value).strip()
                 attribute_value = str(sheet.cell(row_num, 4).value).strip()
@@ -125,7 +125,10 @@ class Command(BaseCommand):
                 if (attribute_value or allow_null_values) and any(x.value == dim1 for x in axis_x) and any(y.value == dim2 for y in axis_y):                    
                     x = axis_x.get(value=dim1)
                     y = axis_y.get(value=dim2)                                        
-                    adm_div = AdministrativeDivision.objects.get(code=event.iso2)                
+                    try:
+                        adm_div = AdministrativeDivision.objects.get(code=adm_code)  
+                    except AdministrativeDivision.DoesNotExist:
+                        raise ValueError('No adm unit found with code: {}'.format(adm_code))                  
                     params = {
                         'adm_div': adm_div,
                         'event': event,
@@ -149,11 +152,14 @@ class Command(BaseCommand):
                             self.handle_row(params)
                         except AdministrativeDivision.DoesNotExist:
                             pass
-            #calculate aggregate values for Region (eg. Europe)
+            
+            #following lines are commented because values for every administrative division will be included in excel files
+            '''calculate aggregate values for Region (eg. Europe)
             params = { 'region': region.name, 'risk_analysis_id': risk.id }
             db.insert_aggregate_values(conn, params)
             region_adm_div = AdministrativeDivision.objects.get(region=region, level=0)
-            risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=risk, administrativedivision=region_adm_div)            
+            risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=risk, administrativedivision=region_adm_div)
+            '''
 
             conn.commit()
         except Exception:

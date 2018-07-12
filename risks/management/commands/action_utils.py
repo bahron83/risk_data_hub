@@ -26,6 +26,7 @@ class DbUtils:
         )
         return conn
     
+    #no longer used
     def insert_aggregate_values(self, conn, values):
         curs = conn.cursor()        
         
@@ -60,15 +61,14 @@ class DbUtils:
         insert_template = """INSERT INTO adm_divisions (
                           the_geom,                          
                           adm_name, adm_code,
-                          region, parent_adm_code, level)
+                          parent_adm_code, level)
                   SELECT '{the_geom}',                          
                           '{adm_name}', '{adm_code}',
-                          '{region}', '{parent_adm_code}', {adm_level}
+                          '{parent_adm_code}', {adm_level}
                   WHERE
                   NOT EXISTS (SELECT fid FROM adm_divisions WHERE                                        
                     adm_code = '{adm_code}' AND
-                    level = {adm_level} AND
-                    region = '{region}')
+                    level = {adm_level})
                   RETURNING fid;"""
 
         curs.execute(insert_template.format(**values))
@@ -82,8 +82,7 @@ class DbUtils:
         if next_table_fid is None:
             select_template = """SELECT fid FROM adm_divisions WHERE                                        
                     adm_code = '{adm_code}' AND
-                    level = {adm_level} AND
-                    region = '{region}'"""
+                    level = {adm_level} """
 
             curs.execute(select_template.format(**values))
             id_of_new_row = curs.fetchone()
@@ -103,12 +102,13 @@ class DbUtils:
             next_ra_id = None
                 
         if first_call and next_ra_id is None:
-            insert_risk_analysis_template = """INSERT INTO risk_analysis (id, name, hazard_type)
-                SELECT {risk_analysis_id}, '{risk_analysis}', '{hazard_type}'
+            insert_risk_analysis_template = """INSERT INTO risk_analysis (id, name, hazard_type, region)
+                SELECT {risk_analysis_id}, '{risk_analysis}', '{hazard_type}', '{region}'
                 WHERE
                 NOT EXISTS (SELECT id FROM risk_analysis WHERE
                     name = '{risk_analysis}' AND
-                    hazard_type = '{hazard_type}')
+                    hazard_type = '{hazard_type}' AND
+                    region = '{region}')
                 RETURNING id;"""
             
             curs.execute(insert_risk_analysis_template.format(**values))

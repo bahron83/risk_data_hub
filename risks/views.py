@@ -867,7 +867,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             
             event_group_country = [[f['properties']['adm_code'], f['properties']['dim1_value'], f['properties']['dim2_value'], f['properties']['value']] for f in features_event_group_country['features']]            
             
-            events = Event.objects.filter(hazard_type=hazard_type)
+            events = Event.objects.filter(hazard_type=hazard_type, region=reg)
             if loc.level == 1:
                 events = events.filter(iso2=loc.code)
             elif loc.level == 2:
