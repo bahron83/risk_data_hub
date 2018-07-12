@@ -281,7 +281,7 @@
                 localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
                 if(isUserAuthenticated || publicRegions.includes(adm_code)) {
                     jQuery.ajax({
-                        url: "/risks/data_extraction/countryauth/",
+                        url: `${contextUrlPrefix}/risks/data_extraction/countryauth/`,
                         type: "POST",
                         data: disasterRisk,
 
