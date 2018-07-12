@@ -60,6 +60,9 @@ MANAGERS = ADMINS = os.getenv('ADMINS', [])
 TIME_ZONE = os.getenv('TIME_ZONE', "Europe/Rome")
 USE_TZ = True
 
+#MAINTENANCE MODE
+INSTALLED_APPS += ('maintenance_mode',)
+
 INSTALLED_APPS += (PROJECT_NAME,)
 
 # Location of url mappings

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block head %}
+    <title>Risk Data Hub - Service Unavailable</title>
+    <style>
+        .container {
+            text-align: center;
+            max-width: 1170px;
+            margin: 20px auto;
+        }
+        .container h1 {
+            font-size: 24px;
+            margin: 20px 0 10px 0;
+        }
+        .container p {
+            margin: 10px 0;
+        }
+        .container img {
+            max-width: 100%;
+            margin: 20px 0;
+        }
+        .modal {
+            display: none;
+        }
+    </style>
+{% endblock head %}
+
+{% block header %}
+{% endblock header %}
+
+{% block middle %}
+    <div class="container">
+        <h1>The website is temporarily unavailable</h1>
+        <p>Our apologies for the temporary inconvenience. The requested URL generated 503 "Service Unavailable" error due to overloading or maintenance of the server.</p>    
+        <img src="{{ STATIC_URL }}img/rdh.png" />
+    </div>    
+{% endblock middle %}
+
+{% block footer %}
+{% endblock footer %}
