@@ -1597,10 +1597,10 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
     
     region = models.ForeignKey(
         Region,
+        related_name='events',
         blank=False,
         null=False,
-        unique=False,
-        default=get_default_region,        
+        unique=False,        
     )
 
     iso2 = models.CharField(max_length=10)
@@ -1615,7 +1615,7 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
     event_source = models.CharField(max_length=255)
     #area_affected = models.DecimalField(max_digits=20, decimal_places=6, null=True)
     #fatalities = models.CharField(max_length=10, null=True)
-    people_affected = models.IntegerField()
+    #people_affected = models.IntegerField()
     cause = models.CharField(max_length=255)
     notes = models.CharField(max_length=255, null=True, blank=True)
     sources = models.CharField(max_length=255)
@@ -1645,6 +1645,7 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         return {
             'event_id': self.event_id,
             'hazard_type': self.hazard_type.mnemonic,
+            'region': self.region.name,
             'iso2': self.iso2,
             'nuts3': self.nuts3,
             'nuts3_names': ', '.join(adm_div_nuts3),
@@ -1652,16 +1653,16 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
             'end_date': self.end_date,
             'year': self.year,
             'event_type': self.event_type,
-            'event_source': self.event_source,
-            'people_affected': self.people_affected,
+            'event_source': self.event_source,            
             'cause': self.cause,
             'notes': self.notes,
             'sources': self.sources
         }
 
     def href(self):
+        reg = self.get_region()
         loc = self.get_location()                
-        return self.get_url('event', loc.code, self.event_id)
+        return self.get_url('event', reg.name, loc.code, self.event_id)
 
 class EventAdministrativeDivisionAssociation(models.Model):
     id = models.AutoField(primary_key=True)

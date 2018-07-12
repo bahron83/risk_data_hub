@@ -75,7 +75,7 @@ class Command(BaseCommand):
 
         wb = xlrd.open_workbook(filename=excel_file)
         region = Region.objects.get(name=region)
-        region_code = region.administrative_divisions.filter(parent=None)[0].code                
+        #region_code = region.administrative_divisions.filter(parent=None)[0].code                
 
         sheet = wb.sheet_by_index(0)
         row_headers = sheet.row(0)        
@@ -88,7 +88,7 @@ class Command(BaseCommand):
             for row_num in range(1, sheet.nrows):  
                 obj = {}                
                 event_id = sheet.cell(row_num, 0).value
-                obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
+                '''obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
                 obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
                 obj['nuts3'] = sheet.cell(row_num, 3).value                
                 obj['year'] = int(sheet.cell(row_num, 4).value)                                
@@ -99,7 +99,20 @@ class Command(BaseCommand):
                 obj['people_affected'] = int(self.try_parse_float(str(sheet.cell(row_num, 12).value), 0))
                 obj['cause'] = sheet.cell(row_num, 16).value
                 obj['notes'] = sheet.cell(row_num, 17).value
-                obj['sources'] = sheet.cell(row_num, 18).value                                                                                                                    
+                obj['sources'] = sheet.cell(row_num, 18).value'''
+
+                obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
+                obj['region'] = region
+                obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
+                obj['nuts3'] = sheet.cell(row_num, 3).value                
+                obj['year'] = int(sheet.cell(row_num, 4).value)                                
+                begin_date_raw = str(sheet.cell(row_num, 5).value)
+                end_date_raw = str(sheet.cell(row_num, 6).value)                
+                obj['event_type'] = sheet.cell(row_num, 7).value
+                obj['event_source'] = sheet.cell(row_num, 8).value                
+                obj['cause'] = sheet.cell(row_num, 9).value
+                obj['notes'] = sheet.cell(row_num, 10).value
+                obj['sources'] = sheet.cell(row_num, 11).value                                                                                                                    
 
                 try:
                     obj['begin_date'] = parse(begin_date_raw)
@@ -108,7 +121,7 @@ class Command(BaseCommand):
                     obj['begin_date'] = datetime.date(obj['year'], 1, 1)
                     obj['end_date'] = datetime.date(obj['year'], 1, 1)              
                 try:
-                    event = Event.objects.get(event_id=event_id)
+                    event = Event.objects.get(event_id=event_id, region=region)
                     for key, value in obj.items():
                         setattr(event, key, value)                    
                     event.save()
@@ -121,7 +134,7 @@ class Command(BaseCommand):
 
                 for adm_code in event.nuts3.split(';'):                    
                     try:
-                        adm_div = AdministrativeDivision.objects.get(region=region, code=adm_code)
+                        adm_div = AdministrativeDivision.objects.get(regions__id__exact=region.id, code=adm_code)
                         adm_link = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=adm_div)                        
                     except AdministrativeDivision.DoesNotExist:
                         traceback.print_exc()

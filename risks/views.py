@@ -955,7 +955,7 @@ class EventDetailsView(DataExtractionView):
         event = self.get_event(**kwargs)
         #location = self.get_location_exact(event.iso2)
         locations = self.get_location_range(event.nuts3.split(';') + [event.iso2])
-        hazard_type = self.get_hazard_type(locations[0], **kwargs)
+        hazard_type = self.get_hazard_type(event.region, locations[0], **kwargs)
         an_group = self.get_risk_analysis_group(hazard_type, **kwargs)
         data = {}        
         if an_group and event:

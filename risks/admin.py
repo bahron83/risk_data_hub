@@ -267,9 +267,9 @@ class RiskAnalysisImportMetaDataAdmin(admin.ModelAdmin):
 class EventAdmin(admin.ModelAdmin):
     model= Event
     list_display_links = ('event_id',)
-    list_display = ('event_id', 'iso2', 'nuts3', 'begin_date', 'end_date',)
+    list_display = ('event_id', 'region', 'iso2', 'nuts3', 'begin_date', 'end_date',)
     search_fields = ('event_id',)
-    list_filter = ('iso2', 'year',) 
+    list_filter = ('region', 'iso2', 'year',) 
     readonly_fields = ('administrative_divisions',)
     group_fieldsets = True  
     list_select_related = True
