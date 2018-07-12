@@ -272,12 +272,11 @@
                     if(adjustedPathname.slice(-1) != "/")
                         adjustedPathname += "/";
                     contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
-                }
-                const dataUrl = `${contextUrlPrefix}${appUrl}`;
+                }                
                 const props = e.target.feature.properties;
                 const adm_code = props.HRpcode || 'EU';             
                 const adm_name = props.HRname || 'Europe';             
-                const disasterRisk = {app: {region: adm_code, regionName: adm_name, href: dataUrl, geom: dataUrl}, contextUrl: contextUrlPrefix, csrfmiddlewaretoken: '{{ csrf_token }}'};
+                const disasterRisk = {app: {region: adm_code, regionName: adm_name, href: appUrl, geom: appUrl}, contextUrl: contextUrlPrefix, csrfmiddlewaretoken: '{{ csrf_token }}'};
                 localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
                 if(isUserAuthenticated || publicRegions.includes(adm_code)) {
                     jQuery.ajax({
@@ -287,9 +286,9 @@
 
                     })
                     .done(function(response){
-                        console.log('errors: ', response && response.errors);
+                        //console.log('errors: ', response && response.errors);
                         if(response && response.success)
-                            location.href = dataUrl;
+                            location.href = appUrl;
                         else if(response && response.errors) 
                             alert(response.errors);
                     })
@@ -318,7 +317,7 @@
         jQuery.noConflict();
         jQuery(document).ready(function(){  
             const appUrl = jQuery("#nav_risks a").attr("href");  
-            console.log('appUrl = ', appUrl);          
+            //console.log('appUrl = ', appUrl);          
             const adjustedPathname = window.location.pathname.slice(-1) == "/" ? window.location.pathname : window.location.pathname + "/";
             const contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
             localStorage.setItem("urlContext", JSON.stringify({'value': contextUrlPrefix}));
