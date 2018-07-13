@@ -68,6 +68,8 @@ local_settings.py
 # Client config files
 risks/client/costsConfig.json
 risks/client/risksConfig.json
+static/js/costsConfig.json
+static/js/risksConfig.json
 
 # build artifacts
 *.pyc
