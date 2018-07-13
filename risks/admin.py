@@ -115,6 +115,24 @@ class AdministrativeDivisionAdmin(admin.ModelAdmin):
     # inlines = [AdministrativeDivisionInline]
     group_fieldsets = True
 
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj: # editing an existing object
+            if not request.user.is_superuser:
+                return self.list_display + ('geom', 'srid', 'level')
+        return self.readonly_fields
+    
+    def get_queryset(self, request):
+        qs = super(AdministrativeDivisionAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        regions_owned = Region.objects.filter(owner=request.user)
+        if regions_owned.exists():
+            return qs.filter(regions__in=regions_owned)
+        return None
+
 
 class AnalysisTypeAdmin(admin.ModelAdmin):
     model = AnalysisType

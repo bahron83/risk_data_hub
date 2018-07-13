@@ -190,8 +190,8 @@ const getEventDetailsEpic = (action$, store) =>
     );
     
 const zoomInOutEpic = (action$, store) =>
-    action$.ofType("ZOOM_IN_OUT").switchMap( action => {
-        const { riskAnalysis, context } = (store.getState()).disaster;                
+    action$.ofType("ZOOM_IN_OUT").switchMap( action => {        
+        const { riskAnalysis, context } = (store.getState()).disaster;                        
         const analysisHref = riskAnalysis && `${action.dataHref}${riskAnalysis.context}`;
         return Rx.Observable.defer(() => Api.getData(`${action.dataHref}${context || ''}`))
             .retry(1).

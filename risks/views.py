@@ -870,7 +870,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             events = Event.objects.filter(hazard_type=hazard_type, region=reg)
             if loc.level == 1:
                 events = events.filter(iso2=loc.code)
-            elif loc.level == 2:
+            elif loc.level >= 2:
                 events = events.filter(nuts3__contains=loc.code)
             
             #check if need to filter by date
@@ -997,8 +997,11 @@ class EventDetailsView(DataExtractionView):
                 data['{}'.format(an_event.analysis_type.name)]['riskAnalysis'] = an_event.get_risk_details()
 
                 dym_values = [v[0] for v in an_event_values['values']]
+                
+                #for every analysis bound to current event, find matching risk analysis (based on analysis type)
                 matching_ra = self.get_related_ra(hazard_type, dym_values, self.get_related_analysis_type(an_event))                        
                 
+                #for every match, retrieve sum of values of administrative divisions affected
                 for an_risk in matching_ra:
                     adjusted_kwargs['an'] = an_risk.name
                     adjusted_kwargs['loc'] = event.nuts3.replace(';', '__')

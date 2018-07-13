@@ -276,8 +276,7 @@
                 const props = e.target.feature.properties;
                 const adm_code = props.HRpcode || 'EU';             
                 const adm_name = props.HRname || 'Europe';             
-                const disasterRisk = {app: {region: adm_code, regionName: adm_name, href: appUrl, geom: appUrl}, contextUrl: contextUrlPrefix, csrfmiddlewaretoken: '{{ csrf_token }}'};
-                localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
+                const disasterRisk = {app: {region: adm_code, regionName: adm_name, href: appUrl, geom: appUrl}, contextUrl: contextUrlPrefix, csrfmiddlewaretoken: '{{ csrf_token }}'};                
                 if(isUserAuthenticated || publicRegions.includes(adm_code)) {
                     jQuery.ajax({
                         url: `${contextUrlPrefix}/risks/data_extraction/countryauth/`,
@@ -287,8 +286,10 @@
                     })
                     .done(function(response){
                         //console.log('errors: ', response && response.errors);
-                        if(response && response.success)
+                        if(response && response.success) {
+                            localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
                             location.href = appUrl;
+                        }                            
                         else if(response && response.errors) 
                             alert(response.errors);
                     })

@@ -15,8 +15,8 @@ class EventCountryChart extends Component {
         return [];
     }
 
-    shouldComponentUpdate(nextProps, nextState) {
-        if(this.props.loc !== nextProps.loc)
+    shouldComponentUpdate(nextProps, nextState) {        
+        if(this.props.fullContext.loc !== nextProps.fullContext.loc)
             return true;
 
         return false;
@@ -35,7 +35,7 @@ class EventCountryChart extends Component {
                         <Tooltip/>                
                         <Bar dataKey="value" onClick={this.handleClick.bind(this)}>                    
                             {chartData.map((entry,index) => {                            
-                                const active = entry.name === this.props.loc;
+                                const active = entry.name === this.props.fullContext.loc;
                                 return(
                                     <Cell cursor="pointer" stroke={"#ff8f31"} strokeWidth={active ? 2 : 0} fill={active ? '#ff8f31' : '#2c689c'} key={`cell-${index}`}/>);                            
                             })}
@@ -47,9 +47,9 @@ class EventCountryChart extends Component {
     }
 
     handleClick(item, index) {        
-        const { zoomInOut, contextUrl } = this.props;        
-        const dataHref = `${contextUrl}/risks/data_extraction/loc/${item.name}/`;
-        const geomHref = `${contextUrl}/risks/data_extraction/geom/${item.name}/`;
+        const { zoomInOut, contextUrl, fullContext } = this.props;        
+        const dataHref = `${contextUrl}/risks/data_extraction/reg/${fullContext.reg}/loc/${item.name}/`;
+        const geomHref = `${contextUrl}/risks/data_extraction/reg/${fullContext.reg}/geom/${item.name}/`;
         zoomInOut(dataHref, geomHref);
     }
 

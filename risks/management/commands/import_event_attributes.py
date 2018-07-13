@@ -120,7 +120,9 @@ class Command(BaseCommand):
                         setattr(event, 'people_affected', up_people_affected + attribute_value)
                         event.save()'''
                 except Event.DoesNotExist:                        
-                    raise ValueError('Incorrect Event ID: {}'.format(event_id))                      
+                    #raise ValueError('Incorrect Event ID: {}'.format(event_id))                      
+                    traceback.print_exc()
+                    pass
                 
                 if (attribute_value or allow_null_values) and any(x.value == dim1 for x in axis_x) and any(y.value == dim2 for y in axis_y):                    
                     x = axis_x.get(value=dim1)
@@ -128,7 +130,9 @@ class Command(BaseCommand):
                     try:
                         adm_div = AdministrativeDivision.objects.get(code=adm_code)  
                     except AdministrativeDivision.DoesNotExist:
-                        raise ValueError('No adm unit found with code: {}'.format(adm_code))                  
+                        #raise ValueError('No adm unit found with code: {}'.format(adm_code))                  
+                        traceback.print_exc()
+                        pass
                     params = {
                         'adm_div': adm_div,
                         'event': event,
