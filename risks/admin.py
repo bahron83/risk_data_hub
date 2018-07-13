@@ -81,7 +81,19 @@ class FurtherResourceAdmin(admin.ModelAdmin):
     model = FurtherResource
     list_display_links = ('resource',)
     list_display = ('resource',)
-    group_fieldsets = True
+    group_fieldsets = True  
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(FurtherResourceAdmin, self).get_form(request, obj, **kwargs)
+        if not request.user.is_superuser:
+            form.base_fields['resource'].queryset = form.base_fields['resource'].queryset.filter(owner=request.user)
+        return form
+
+    def get_queryset(self, request):
+        qs = super(FurtherResourceAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(owner=request.user)
 
 
 class RegionAdmin(admin.ModelAdmin):
@@ -113,6 +125,15 @@ class AnalysisTypeAdmin(admin.ModelAdmin):
     inlines = [FurtherResourceInline]
     group_fieldsets = True
 
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj: # editing an existing object
+            if not request.user.is_superuser:
+                return self.list_display + ('fa_icon',)
+        return self.readonly_fields
+
 
 class HazardTypeAdmin(admin.ModelAdmin):
     model = HazardType
@@ -124,6 +145,15 @@ class HazardTypeAdmin(admin.ModelAdmin):
     list_select_related = True
     group_fieldsets = True
 
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj: # editing an existing object
+            if not request.user.is_superuser:
+                return self.list_display + ('order', 'description', 'state', 'fa_class',)
+        return self.readonly_fields
+
 
 class DymensionInfoAdmin(admin.ModelAdmin):
     model = DymensionInfo
@@ -133,6 +163,20 @@ class DymensionInfoAdmin(admin.ModelAdmin):
     filter_vertical = ('risks_analysis',)
     inlines = [LinkedResourceInline, DymensionInfoInline]
     group_fieldsets = True
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj: # editing an existing object
+            if not request.user.is_superuser:
+                return self.list_display
+        return self.readonly_fields
+
+    def get_formsets_with_inlines(self, request, obj=None):
+        for inline in self.get_inline_instances(request, obj):
+            if obj and request.user.is_superuser:
+                yield inline.get_formset(request, obj), inline
 
 
 class RiskAnalysisAdmin(admin.ModelAdmin):

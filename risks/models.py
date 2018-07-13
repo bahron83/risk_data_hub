@@ -1164,7 +1164,7 @@ class HazardSet(Exportable, models.Model):
             self.country.name
 
 
-class FurtherResource(models.Model):
+class FurtherResource(OwnedModel, models.Model):
     """
     Additional GeoNode Resources which can be associated to:
     - A Region / Country

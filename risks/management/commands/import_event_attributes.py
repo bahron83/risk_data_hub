@@ -162,6 +162,9 @@ class Command(BaseCommand):
             '''
 
             conn.commit()
+            risk.region=region
+            risk.data_file = excel_file
+            risk.save()
         except Exception:
             try:
                 conn.rollback()

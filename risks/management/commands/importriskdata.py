@@ -213,6 +213,7 @@ class Command(BaseCommand):
                                             objects.\
                                             create(riskanalysis=risk, administrativedivision=adm_div)'''
                                     risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=risk, administrativedivision=adm_div)
+                                    
                         elif app.name == RiskApp.APP_COST_BENEFIT:
                             cell_obj = sheet.cell(rp_idx + 1, 0)
                             cell_type_str = ctype_text.get(cell_obj.ctype, 'unknown type')
@@ -270,6 +271,7 @@ class Command(BaseCommand):
 
         # Finalize
         risk.data_file = excel_file
+        risk.region = region
         if commit:
             risk.save()
 
