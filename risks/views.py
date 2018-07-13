@@ -1323,10 +1323,11 @@ class AuthorizationView(ContextAware, View):
             current_user_group_ids = current_user.groups.all().values_list('id', flat=True)
             user_group = rdh_settings.COUNTRY_ADMIN_USER_GROUP if rdh_settings.COUNTRY_ADMIN_USER_GROUP else None
 
-            if not current_user.is_superuser:            
-                if owner_groups.filter(name=rdh_settings.COUNTRY_ADMIN_USER_GROUP).exists():                
-                    if not owner_groups.filter(pk__in=current_user_group_ids).exists():
-                        return json_response(errors=['You are not allowed to access the requested resources'], status=403)
+            if not current_user.is_superuser:  
+                if owner_groups:
+                    if owner_groups.filter(name=rdh_settings.COUNTRY_ADMIN_USER_GROUP).exists():                
+                        if not owner_groups.filter(pk__in=current_user_group_ids).exists():
+                            return json_response(errors=['You are not allowed to access the requested resources'], status=403)
                         
         return json_response({'success': True})
 
