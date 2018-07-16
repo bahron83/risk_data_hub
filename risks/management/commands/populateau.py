@@ -25,7 +25,7 @@ from django.contrib.gis.gdal import DataSource
 from django.contrib.gis import geos
 from mptt.managers import TreeManager
 
-from risks.models import Region, AdministrativeDivision
+from risks.models import Region, AdministrativeDivision, RegionAdministrativeDivisionAssociation 
 
 
 class Command(BaseCommand):
@@ -136,18 +136,17 @@ is mandatory")
                             code=feat.get('HRPcode'),
                             defaults=dict(
                                 name=feat.get('HRname'),
-                                geom=geom.wkt,
-                                region=region_obj
+                                geom=geom.wkt                                
                             )
-                        )
+                        )                    
 
                     if not is_new_amdiv:
                         adm_division.name = feat.get('HRname')
-                        adm_division.geom = geom.wkt
-                        adm_division.region = region_obj
+                        adm_division.geom = geom.wkt                        
                         adm_division.save()
                     else:
-                        region_obj.administrative_divisions.add(adm_division)
+                        #region_obj.administrative_divisions.add(adm_division)
+                        RegionAdministrativeDivisionAssociation.objects.create(region=region_obj, administrativedivision=adm_division)                        
 
                 if adm_level == 1:                                        
                     adm_division_0 = \
@@ -158,20 +157,19 @@ is mandatory")
                             code=feat.get('HRpcode'),
                             defaults=dict(
                                 name=feat.get('HRname'),
-                                geom=geom.wkt,
-                                region=region_obj,
+                                geom=geom.wkt,                                
                                 parent=adm_division_0
                             )
                         )
 
                     if not is_new_amdiv:
                         adm_division.name = feat.get('HRname')
-                        adm_division.geom = geom.wkt
-                        adm_division.region = region_obj
+                        adm_division.geom = geom.wkt                        
                         adm_division.parent = adm_division_0
                         adm_division.save()
                     else:
-                        region_obj.administrative_divisions.add(adm_division)
+                        #region_obj.administrative_divisions.add(adm_division)                        
+                        RegionAdministrativeDivisionAssociation.objects.create(region=region_obj, administrativedivision=adm_division)                        
 
                 if adm_level == 2:
                     print('region = {}'.format(feat))
@@ -180,26 +178,26 @@ is mandatory")
                         code=feat.get('HRpcode'),
                         defaults=dict(
                             name=feat.get('HRname'),
-                            geom=geom.wkt,
-                            region=region_obj,
+                            geom=geom.wkt,                            
                             parent=adm_division_1
                         )
                     )
 
                     if not is_new_amdiv:
                         adm_division.name = feat.get('HRname')
-                        adm_division.geom = geom.wkt
-                        adm_division.region = region_obj
+                        adm_division.geom = geom.wkt                        
                         adm_division.parent = adm_division_1
                         adm_division.save()
                     else:
-                        region_obj.administrative_divisions.add(adm_division)
+                        #region_obj.administrative_divisions.add(adm_division)                        
+                        RegionAdministrativeDivisionAssociation.objects.create(region=region_obj, administrativedivision=adm_division)                        
                 
                 if adm_level == 3:
                     
                     
                      
                     print('adm = {}'.format(feat.get('HRpcode')))
+                    print('parent = {}'.format(feat.get('HRparent')))
                     adm_division_2 = AdministrativeDivision.objects.get(code=feat.get('HRparent'))
                     '''(adm_division, is_new_amdiv) = AdministrativeDivision.objects.get_or_create(
                         code=feat.get('HRpcode'),
@@ -226,28 +224,30 @@ is mandatory")
                     if lookup_obj.exists():
                         adm_division = AdministrativeDivision.objects.get(code=feat.get('HRpcode'))
                         adm_division.name = feat.get('HRname')
-                        adm_division.geom = geom.wkt
-                        adm_division.region = region_obj
+                        adm_division.geom = geom.wkt                        
                         adm_division.parent = adm_division_2
                         adm_division.save()
+                        association, created = RegionAdministrativeDivisionAssociation.objects.get_or_create(region=region_obj, administrativedivision=adm_division)                        
                         print('updated object {}'.format(feat.get('HRpcode')))
                     else:
                         adm_division = AdministrativeDivision(
                             code=feat.get('HRpcode'),
                             name=feat.get('HRname'),
-                            geom=geom.wkt,
-                            region=region_obj,
+                            geom=geom.wkt,                            
                             level=adm_level,
                             parent=adm_division_2,
                             lft=1,
                             rght=1,
                             tree_id=1,
-                        )
+                        )                        
                         adm_rows.append(adm_division)
 
                         if(len(adm_rows) > 9999):
                             print('bulk insert starting')
                             AdministrativeDivision.objects.bulk_create(adm_rows)
+                            for adm_code in adm_rows:
+                                adm_div = AdministrativeDivision.objects.get(code=adm_code)
+                                RegionAdministrativeDivisionAssociation.objects.create(region=region_obj, administrativedivision=adm_div)                        
                             print('bulk insert complete')
                             adm_rows[:] = []
 
@@ -256,6 +256,9 @@ is mandatory")
             if(len(adm_rows) > 0):                                
                 print('bulk insert starting')
                 AdministrativeDivision.objects.bulk_create(adm_rows)
+                for adm_code in adm_rows:
+                    adm_div = AdministrativeDivision.objects.get(code=adm_code)
+                    RegionAdministrativeDivisionAssociation.objects.create(region=region_obj, administrativedivision=adm_div)                        
                 print('bulk insert complete')
                 # region_obj.administrative_divisions.add(*adm_rows)
                 #print('rebuilding tree')
