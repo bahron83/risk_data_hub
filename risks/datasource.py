@@ -19,8 +19,8 @@ class GeoserverDataSource(object):
     WFCLASS = staticmethod(WebFeatureService)
 
     def __init__(self, url, output_format='application/json', **kwargs):
-        #self.wfs = GeoserverDataSource.WFCLASS(url=url, version='2.0.0', **kwargs)
-        self.wfs = GeoserverDataSource.WFCLASS(url=url, version='2.0.0')
+        self.wfs = GeoserverDataSource.WFCLASS(url=url, version='2.0.0', **kwargs)
+        #self.wfs = GeoserverDataSource.WFCLASS(url=url, version='2.0.0')
         self.output_format = output_format
 
     def prepare_vparams(self, vparams, separator=":"):
@@ -41,7 +41,7 @@ class GeoserverDataSource(object):
         #kwargs['dim'] = dim_name
         vparams_list = self.prepare_vparams(kwargs)
         vparams = {'viewparams': ';'.join(vparams_list)}
-        print(vparams)
+        #print(vparams)
         field_names = ['dim1_value', 'dim2_value', 'value'] if dim_name is None else dim_name
         r = self.wfs.getfeature('{}'.format(layer_name), propertyname=field_names, outputFormat=self.output_format, storedQueryParams=vparams, storedQueryID=1)
 
