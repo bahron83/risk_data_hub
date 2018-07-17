@@ -20,6 +20,8 @@
 
 from django.contrib import admin
 
+from risk_data_hub import local_settings
+
 from risks.models import RiskAnalysis
 from risks.models import Region, AdministrativeDivision
 from risks.models import AnalysisType, HazardType, DymensionInfo
@@ -46,6 +48,7 @@ from risks.forms import ImportDataEventForm
 from risks.forms import ImportDataEventAttributeForm
 
 admin.site.site_header = 'Risk Data Hub - Administration'
+admin.site.site_url = local_settings.SITEURL
 
 class DymensionInfoInline(admin.TabularInline):
     model = DymensionInfo.risks_analysis.through

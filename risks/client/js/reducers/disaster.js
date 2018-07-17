@@ -92,8 +92,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
         case SET_ANALYSIS_CLASS: {
             return assign({}, state, { analysisClass: action.value });
         }          
-        case SELECT_EVENT: {  
-            console.log('event detail flag in reducer:', state.showEventDetail);
+        case SELECT_EVENT: {              
             if(state.showEventDetail)
                 return assign({}, state, { eventDetails: {}, visibleEventDetail: true });
             const { events, isSelected } = action;                        
@@ -109,13 +108,10 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             return assign({}, state, { selectedEventIds: ids, zoomJustCalled: 1 });
         } 
         case SET_FILTERS: {
-            const { analysisFilters } = action;
-            //console.log("setting filters", analysisFilters);
+            const { analysisFilters } = action;            
             return assign({}, state, { analysisFilters });
         }  
-        case ADM_LOOKUP_LOADED: {   
-            //console.log('value to reduce', action.val);
-            //console.log('has property riskAnalysis:', action.val.hasOwnProperty('riskAnalysis'));
+        case ADM_LOOKUP_LOADED: {               
             const newState = action.detail ? { lookupResultsDetail: action.val } : { lookupResults: action.val, lookupResultsDetail: [] };
             return assign({}, state, newState);
         }  

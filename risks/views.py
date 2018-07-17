@@ -792,7 +792,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
 
         #DETERMINE USER PERMISSIONS
         if not self.is_user_allowed(request, risk):
-            return json_response(errors=['Data not available for current user'], status=404) 
+            return json_response(errors=['Data not available for current user'], status=403) 
 
         out = {'riskAnalysisData': risk.get_risk_details()}
         
@@ -956,15 +956,20 @@ class EventDetailsView(DataExtractionView):
         #location = self.get_location_exact(event.iso2)
         locations = self.get_location_range(event.nuts3.split(';') + [event.iso2])
         hazard_type = self.get_hazard_type(event.region, locations[0], **kwargs)
-        an_group = self.get_risk_analysis_group(hazard_type, **kwargs)
+        risk_analysis = self.get_risk_analysis(**kwargs)
+        an_group = self.get_risk_analysis_group(hazard_type, **kwargs)        
         data = {}        
         if an_group and event:
             
             #administrative data
             administrative_data = {}            
+            risk_analysis_mapping = {}
             adm_data_entries = AdministrativeData.objects.all()
             location_adm_data = AdministrativeDivisionDataAssociation.objects.filter(adm__in=locations)
-            for adm_data_entry in adm_data_entries:                
+            for adm_data_entry in adm_data_entries:                 
+                ra_match = RiskAnalysis.objects.filter(hazard_type=hazard_type, region=risk_analysis.region, analysis_type__name__contains=adm_data_entry.indicator_type).first()
+                if ra_match:
+                    risk_analysis_mapping[adm_data_entry.name] = ra_match.analysis_type.name
                 administrative_data[adm_data_entry.name] = {
                         'unitOfMeasure': adm_data_entry.unit_of_measure,
                         'values': {}
@@ -978,7 +983,8 @@ class EventDetailsView(DataExtractionView):
 
             overview = {                
                 'event': event.get_event_plain(),
-                'administrativeData': administrative_data
+                'administrativeData': administrative_data,
+                'riskAnalysisMapping': risk_analysis_mapping
             }
 
             for an_event in an_group:                

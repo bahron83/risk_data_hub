@@ -213,8 +213,7 @@ function setAnalysisClass(value) {
     };    
 }
 
-function selectEvent(events, isSelected = true, loc = null) {                         
-    console.log('called action select_event', events);
+function selectEvent(events, isSelected = true, loc = null) {                             
     return {
         type: SELECT_EVENT,  
         events,

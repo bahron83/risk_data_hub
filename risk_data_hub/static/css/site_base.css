@@ -1137,3 +1137,14 @@ footer {
 .align-right {
   text-align:right;
 }
+
+
+.right {
+  float: right;
+}
+.blue {
+  color: blue;
+}
+.red { 
+  color: red;
+}

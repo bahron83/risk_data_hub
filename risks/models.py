@@ -1817,6 +1817,7 @@ class EventImportAttributes(models.Model):
 class AdministrativeData(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50)
+    indicator_type = models.CharField(max_length=50)
     unit_of_measure = models.CharField(max_length=10, blank=True, null=True)
 
     administrative_divisions = models.ManyToManyField(
