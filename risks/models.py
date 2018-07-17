@@ -477,6 +477,7 @@ class RiskAnalysis(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardT
                             db_index=True)
     unit_of_measure = models.CharField(max_length=255, null=True, blank=True)
     show_in_event_details = models.BooleanField(default=False)
+    tags = models.CharField(max_length=255, null=True, blank=True)
     descriptor_file = models.FileField(upload_to='descriptor_files', max_length=255)
     data_file = models.FileField(upload_to='metadata_files', max_length=255)
     metadata_file = models.FileField(upload_to='metadata_files', max_length=255)

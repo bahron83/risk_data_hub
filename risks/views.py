@@ -929,8 +929,14 @@ class EventDetailsView(DataExtractionView):
         except Event.DoesNotExist:
             pass
 
-    def get_related_ra(self, hazard_type, dym_values, analysis_type):        
-        ra = RiskAnalysis.objects.filter(hazard_type=hazard_type, dymensioninfo_associacion__value__in=dym_values, analysis_type=analysis_type, show_in_event_details=True)
+    def get_related_ra(self, hazard_type, dym_values, analysis_type, event):        
+        ra = RiskAnalysis.objects.filter(
+            hazard_type=hazard_type,
+            dymensioninfo_associacion__value__in=dym_values,
+            analysis_type=analysis_type,
+            show_in_event_details=True)
+        if event.event_type:
+            ra = ra.filter(tags__contains=event.event_type)
         return ra 
 
     def removekey(self, d, key):
@@ -1005,7 +1011,7 @@ class EventDetailsView(DataExtractionView):
                 dym_values = [v[0] for v in an_event_values['values']]
                 
                 #for every analysis bound to current event, find matching risk analysis (based on analysis type)
-                matching_ra = self.get_related_ra(hazard_type, dym_values, self.get_related_analysis_type(an_event))                        
+                matching_ra = self.get_related_ra(hazard_type, dym_values, self.get_related_analysis_type(an_event), event)                        
                 
                 #for every match, retrieve sum of values of administrative divisions affected
                 for an_risk in matching_ra:
