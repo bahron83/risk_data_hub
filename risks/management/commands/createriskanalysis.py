@@ -168,11 +168,11 @@ Loss Impact and Impact Analysis Types.'
 '--descriptor_file' is mandatory")
 
         Config.read(descriptor_file)
-        risk_name = Config.get('DEFAULT', 'name')
-        #analysis_class = Config.get('DEFAULT', 'analysis_class')
+        risk_name = Config.get('DEFAULT', 'name')        
         analysis_type_name = Config.get('DEFAULT', 'analysis_type')
         hazard_type_name = Config.get('DEFAULT', 'hazard_type')
         layer_name = Config.get('DEFAULT', 'layer')
+        tags = Config.get('DEFAULT', 'tags')
         try:
             app_name = Config.get('DEFAULT', 'app')
         except ConfigParser.NoOptionError:
@@ -208,7 +208,10 @@ Loss Impact and Impact Analysis Types.'
             analysis_type = analysis,
             hazard_type = hazard,
             layer = layer
-        )    
+        ) 
+
+        if tags:
+            RiskAnalysis.objects.filter(pk=risk.id).update(tags=tags)
 
         if created:
             print ("Created Risk Analysis [%s] (%s) - %s" %
