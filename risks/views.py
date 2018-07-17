@@ -936,7 +936,7 @@ class EventDetailsView(DataExtractionView):
             analysis_type=analysis_type,
             show_in_event_details=True)
         if event.event_type:
-            ra = ra.filter(tags__contains=event.event_type)
+            ra = ra.filter(tags__icontains=event.event_type)
         return ra 
 
     def removekey(self, d, key):
