@@ -998,7 +998,8 @@ class EventDetailsView(DataExtractionView):
             overview = {                
                 'event': event.get_event_plain(),
                 'administrativeData': administrative_data,
-                'riskAnalysisMapping': risk_analysis_mapping
+                'riskAnalysisMapping': risk_analysis_mapping,
+                'threshold': 1.5
             }
 
             for an_event in an_group:                

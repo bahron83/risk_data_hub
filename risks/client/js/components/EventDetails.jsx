@@ -32,11 +32,10 @@ class EventDetails extends Component {
     }
     
     renderAdministrativeData(overview, data) {  
-        const { administrativeData, riskAnalysisMapping, event } = overview || {};          
+        const { administrativeData, riskAnalysisMapping, event, threshold } = overview || {};          
         return Object.keys(administrativeData).map( key => {
             const { unitOfMeasure, values } = administrativeData[key];            
-            const nuts3List = event.nuts3.split(';');  
-            const threshold = 1.5;                        
+            const nuts3List = event.nuts3.split(';');              
             const eventAdminData = data[riskAnalysisMapping[key]] && data[riskAnalysisMapping[key]]["values"] && data[riskAnalysisMapping[key]]["values"][0] && this.formatNumber(data[riskAnalysisMapping[key]]["values"][0][2]);
             const countryAdminData = this.formatNumber(values[event.iso2]);  
             let nuts2AdminData = 0;          
@@ -50,26 +49,26 @@ class EventDetails extends Component {
             /*nuts3List.map(v => {
                 nuts3AdminData += this.formatNumber(values[v])
             })*/
-            const eventByCountry = eventAdminData ? `${this.formatNumber(eventAdminData / countryAdminData * 100)} %` : null;
-            const eventByNuts2 = eventAdminData ? `${this.formatNumber(eventAdminData / nuts2AdminData * 100)} %` : null;
-            const eventByNuts3 = eventAdminData ? `${this.formatNumber(eventAdminData / nuts3AdminData * 100)} %` : null;
+            const eventByCountry = eventAdminData ? this.formatNumber(eventAdminData / countryAdminData * 100) : null;
+            const eventByNuts2 = eventAdminData ? this.formatNumber(eventAdminData / nuts2AdminData * 100) : null;
+            const eventByNuts3 = eventAdminData ? this.formatNumber(eventAdminData / nuts3AdminData * 100) : null;
             
             return (
                 <ul className="list-group">
                     <li key={`${key}-country`} className="list-group-item">
                         <label>{key} of Country</label>
                         {`${countryAdminData} (${unitOfMeasure})`}
-                        <span className={`right ${eventByCountry > threshold ? 'red' : 'blue'}`}>{eventByCountry || ''}</span>
+                        <span className={`right ${eventByCountry > threshold ? 'red' : 'blue'}`}>{eventByCountry ? `${eventByCountry} %` : ''}</span>
                     </li>
                     <li key={`${key}-nuts2`} className="list-group-item">
                         <label>{key} of nuts2 affected</label>
                         {`${nuts2AdminData} (${unitOfMeasure})`}
-                        <span className={`right ${eventByNuts2 > threshold ? 'red' : 'blue'}`}>{eventByNuts2 || ''}</span>
+                        <span className={`right ${eventByNuts2 > threshold ? 'red' : 'blue'}`}>{eventByNuts2 ? `${eventByNuts2} %` : ''}</span>
                     </li>
                     <li key={`${key}-nuts3`} className="list-group-item">
                         <label>{key} of nuts3 affected</label>
                         {`${nuts3AdminData} (${unitOfMeasure})`}
-                        <span className={`right ${eventByNuts3 > threshold ? 'red' : 'blue'}`}>{eventByNuts3 || ''}</span>
+                        <span className={`right ${eventByNuts3 > threshold ? 'red' : 'blue'}`}>{eventByNuts3 ? `${eventByNuts3} %` : ''}</span>
                     </li>
                 </ul>
             )

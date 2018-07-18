@@ -99,9 +99,7 @@ class Command(BaseCommand):
         conn = db.get_db_conn()        
         first_call = True
         event_id = ''
-        parent_adm_div = None
-        adm_sub_units = None
-        people_affected = 0
+                
         try:
             for row_num in range(1, sheet.nrows):
                 event_id = str(sheet.cell(row_num, 0).value).strip()
@@ -111,14 +109,7 @@ class Command(BaseCommand):
                 attribute_value = str(sheet.cell(row_num, 4).value).strip()
                                                                 
                 try:
-                    event = Event.objects.get(event_id=event_id)
-                    event_adm_sub_units = event.nuts3.split(';')
-                    adm_sub_units = AdministrativeDivision.objects.filter(code__in=event_adm_sub_units)                    
-                    #update event people affected
-                    '''if dim1 == 'people_affected' or dim2 == 'people_affected':
-                        up_people_affected = 0 if row_num == 1 else event.people_affected                        
-                        setattr(event, 'people_affected', up_people_affected + attribute_value)
-                        event.save()'''
+                    event = Event.objects.get(event_id=event_id)                                        
                 except Event.DoesNotExist:                        
                     #raise ValueError('Incorrect Event ID: {}'.format(event_id))                      
                     traceback.print_exc()
@@ -180,8 +171,7 @@ class Command(BaseCommand):
             conn.close()   
 
     
-    def handle_row(self, params):         
-        #for adm_div in adm_sub_units:
+    def handle_row(self, params):                 
         db_values = {
             #'table': table_name,  # From rp.layer
             'the_geom': geos.fromstr(params['adm_div'].geom, srid=params['adm_div'].srid),
