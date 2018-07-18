@@ -26,7 +26,8 @@ from geonode.base.forms import ValuesListField
 from risks.models import (HazardType, AdministrativeDivision, Region,
                                           RiskAnalysisDymensionInfoAssociation,
                                           RiskAnalysis, DymensionInfo, AnalysisType,
-                                          FurtherResource, RiskApp, Event, AnalysisClass, AdministrativeData, AdministrativeDivisionDataAssociation)
+                                          FurtherResource, RiskApp, Event, AnalysisClass, 
+                                          AdministrativeData, AdministrativeDivisionDataAssociation, AdministrativeDivisionMappings)
 
 from risks.datasource import GeoserverDataSource
 from risks.pdf_helpers import generate_pdf
@@ -960,7 +961,13 @@ class EventDetailsView(DataExtractionView):
     def get(self, request, *args, **kwargs):        
         event = self.get_event(**kwargs)
         #location = self.get_location_exact(event.iso2)
-        locations = self.get_location_range(event.nuts3.split(';') + [event.iso2])
+        #retrieve data about nuts2 which are not in AdministrativeDivision models 
+        nuts3_adm_divs = AdministrativeDivision.objects.filter(level=2, code__in=event.nuts3.split(';'))
+        nuts3_ids = nuts3_adm_divs.values_list('id', flat=True)                   
+        nuts2_codes = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('code').values_list('code', flat=True).distinct()
+        nuts3_in_nuts2 = list(AdministrativeDivisionMappings.objects.filter(code__in=nuts2_codes).values_list('child__code', flat=True))
+        #locations = self.get_location_range(event.nuts3.split(';') + [event.iso2])
+        locations = self.get_location_range(nuts3_in_nuts2 + [event.iso2])
         hazard_type = self.get_hazard_type(event.region, locations[0], **kwargs)
         risk_analysis = self.get_risk_analysis(**kwargs)
         an_group = self.get_risk_analysis_group(hazard_type, **kwargs)        
@@ -971,7 +978,8 @@ class EventDetailsView(DataExtractionView):
             administrative_data = {}            
             risk_analysis_mapping = {}
             adm_data_entries = AdministrativeData.objects.all()
-            location_adm_data = AdministrativeDivisionDataAssociation.objects.filter(adm__in=locations)
+            location_adm_data = AdministrativeDivisionDataAssociation.objects.filter(adm__in=locations)            
+            
             for adm_data_entry in adm_data_entries:                 
                 ra_match = RiskAnalysis.objects.filter(hazard_type=hazard_type, region=risk_analysis.region, analysis_type__name__contains=adm_data_entry.indicator_type).first()
                 if ra_match:

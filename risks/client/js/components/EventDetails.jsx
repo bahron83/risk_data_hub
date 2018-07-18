@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import { toggleEventDetailVisibility } from '../actions/disaster';
 import { eventDetailsSelector } from '../selectors/disaster';
 import { Button, Modal, Panel } from 'react-bootstrap';
+import _ from 'lodash';
 import Chart from './Chart';
 
 class EventDetails extends Component {  
@@ -37,12 +38,20 @@ class EventDetails extends Component {
             const nuts3List = event.nuts3.split(';');  
             const threshold = 1.5;                        
             const eventAdminData = data[riskAnalysisMapping[key]] && data[riskAnalysisMapping[key]]["values"] && data[riskAnalysisMapping[key]]["values"][0] && this.formatNumber(data[riskAnalysisMapping[key]]["values"][0][2]);
-            const countryAdminData = this.formatNumber(values[event.iso2]);            
+            const countryAdminData = this.formatNumber(values[event.iso2]);  
+            let nuts2AdminData = 0;          
             let nuts3AdminData = 0;
-            nuts3List.map(v => {
+            _.forOwn(_.omit(values, event.iso2), (value, key) => {
+                const formattedValue = this.formatNumber(value);
+                nuts2AdminData += formattedValue;                
+                if(nuts3List.includes(key))
+                    nuts3AdminData += formattedValue;
+            });
+            /*nuts3List.map(v => {
                 nuts3AdminData += this.formatNumber(values[v])
-            })            
+            })*/
             const eventByCountry = eventAdminData ? `${this.formatNumber(eventAdminData / countryAdminData * 100)} %` : null;
+            const eventByNuts2 = eventAdminData ? `${this.formatNumber(eventAdminData / nuts2AdminData * 100)} %` : null;
             const eventByNuts3 = eventAdminData ? `${this.formatNumber(eventAdminData / nuts3AdminData * 100)} %` : null;
             
             return (
@@ -52,7 +61,12 @@ class EventDetails extends Component {
                         {`${countryAdminData} (${unitOfMeasure})`}
                         <span className={`right ${eventByCountry > threshold ? 'red' : 'blue'}`}>{eventByCountry || ''}</span>
                     </li>
-                    <li key={`${key}-nuts`} className="list-group-item">
+                    <li key={`${key}-nuts2`} className="list-group-item">
+                        <label>{key} of nuts2 affected</label>
+                        {`${nuts2AdminData} (${unitOfMeasure})`}
+                        <span className={`right ${eventByNuts2 > threshold ? 'red' : 'blue'}`}>{eventByNuts2 || ''}</span>
+                    </li>
+                    <li key={`${key}-nuts3`} className="list-group-item">
                         <label>{key} of nuts3 affected</label>
                         {`${nuts3AdminData} (${unitOfMeasure})`}
                         <span className={`right ${eventByNuts3 > threshold ? 'red' : 'blue'}`}>{eventByNuts3 || ''}</span>
@@ -79,6 +93,7 @@ class EventDetails extends Component {
                                 <li className="list-group-item"><label>Event ID</label>{event.event_id}</li>
                                 <li className="list-group-item"><label>Hazard Type</label>{event.hazard_type}</li>
                                 <li className="list-group-item"><label>Country</label>{event.iso2}</li>
+                                <li className="list-group-item"><label>Nuts2 affected</label>{event.nuts2_names}</li>
                                 <li className="list-group-item"><label>Nuts3 affected</label>{event.nuts3_names}</li>
                                 <li className="list-group-item"><label>Begin Date</label>{event.begin_date}</li>
                                 <li className="list-group-item"><label>End Date</label>{event.end_date}</li>

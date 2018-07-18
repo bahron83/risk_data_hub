@@ -732,6 +732,14 @@ class AdministrativeDivision(RiskAppAware, LocationAware, Exportable, MPTTModel)
         return out
 
 
+class AdministrativeDivisionMappings(models.Model):
+    id = models.AutoField(primary_key=True)    
+    code = models.CharField(max_length=50)
+    name = models.CharField(max_length=100)
+    parent = models.ForeignKey(AdministrativeDivision, related_name='mapping_child')
+    child = models.ForeignKey(AdministrativeDivision, related_name='mapping_parent')
+
+
 class DymensionInfo(RiskAnalysisAware, Exportable, models.Model):
     """
     Set of Dymensions (here we have the descriptors), to be used
@@ -1642,14 +1650,18 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
     
 
     def get_event_plain(self):
-        adm_div_nuts3 = AdministrativeDivision.objects.filter(code__in=self.nuts3.split(';')).values_list('name', flat=True)
+        nuts3_adm_divs = AdministrativeDivision.objects.filter(level=2, code__in=self.nuts3.split(';'))
+        nuts3_ids = nuts3_adm_divs.values_list('id', flat=True)        
+        nuts2_affected_names = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').values_list('name', flat=True).distinct()        
+        nuts3_affected_names = nuts3_adm_divs.values_list('name', flat=True)
         return {
             'event_id': self.event_id,
             'hazard_type': self.hazard_type.mnemonic,
             'region': self.region.name,
             'iso2': self.iso2,
+            'nuts2_names': ', '.join(nuts2_affected_names),
             'nuts3': self.nuts3,
-            'nuts3_names': ', '.join(adm_div_nuts3),
+            'nuts3_names': ', '.join(nuts3_affected_names),
             'begin_date': self.begin_date,
             'end_date': self.end_date,
             'year': self.year,
