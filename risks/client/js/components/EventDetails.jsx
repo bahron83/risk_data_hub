@@ -34,7 +34,7 @@ class EventDetails extends Component {
     
     renderAdministrativeData(overview, data) {  
         const { administrativeData, riskAnalysisMapping, event, threshold } = overview || {};          
-        return _.forOwn(administrativeData, (value, key) => {
+        return Object.keys(administrativeData).map(key => {
             const { unitOfMeasure, values } = administrativeData[key];            
             const nuts3List = event.nuts3.split(';');              
             const eventAdminData = data[riskAnalysisMapping[key]] && data[riskAnalysisMapping[key]]["values"] && data[riskAnalysisMapping[key]]["values"][0] && this.formatNumber(data[riskAnalysisMapping[key]]["values"][0][2]);
@@ -53,7 +53,7 @@ class EventDetails extends Component {
             const eventByNuts3 = eventAdminData ? this.formatNumber(eventAdminData / nuts3AdminData * 100) : null;
             
             return (
-                <ul className="list-group">
+                <ul key={key} className="list-group">
                     <li key={`${key}-country`} className="list-group-item">
                         <label>{key} of Country</label>
                         {`${countryAdminData} (${unitOfMeasure})`}
@@ -78,7 +78,7 @@ class EventDetails extends Component {
         const { eventDetails, showEventDetail, visibleEventDetail, riskAnalysisData, toggleEventDetailVisibility } = this.props;
         const { data, overview } = eventDetails;
         const { event } = overview || {};        
-        const showToggle = riskAnalysisData && riskAnalysisData.events ? true : false;
+        //const showToggle = riskAnalysisData && riskAnalysisData.events ? true : false;
         return (
             data && showEventDetail ?                 
                 <div>
