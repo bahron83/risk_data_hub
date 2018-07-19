@@ -57,7 +57,7 @@ class CreateRiskAnalysisForm(models.ModelForm):
         path = default_storage.save('tmp/'+file_ini.name,
                                     ContentFile(file_ini.read()))
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
-        create_risk_analysis(tmp_file, file_ini, self.current_user.id)
+        create_risk_analysis(tmp_file, file_ini, self.current_user.id)        
         return file_ini
 
 

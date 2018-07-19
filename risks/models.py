@@ -37,6 +37,17 @@ def get_default_region():
     region = Region.objects.get(name=rdh_settings.APP_DEFAULT_REGION)
     return region.id
 
+
+@models.CharField.register_lookup
+class UpperCase(models.Transform):
+    lookup_name = 'upper'    
+    bilateral = True
+
+    def as_sql(self, compiler, connection):
+        lhs, params = compiler.compile(self.lhs)
+        return "UPPER(%s)" % lhs, params
+
+
 class OwnedModel(models.Model):
     @staticmethod
     def get_owner_related_name():
@@ -1646,7 +1657,7 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         """
         """
         ordering = ['iso2']
-        db_table = 'risks_event'
+        db_table = 'risks_event'    
     
 
     def get_event_plain(self):

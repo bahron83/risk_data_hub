@@ -111,9 +111,7 @@ class Command(BaseCommand):
                 try:
                     event = Event.objects.get(event_id=event_id)                                        
                 except Event.DoesNotExist:                        
-                    #raise ValueError('Incorrect Event ID: {}'.format(event_id))                      
-                    traceback.print_exc()
-                    pass
+                    raise CommandError('Incorrect Event ID: {}'.format(event_id))                                          
                 
                 if (attribute_value or allow_null_values) and any(x.value == dim1 for x in axis_x) and any(y.value == dim2 for y in axis_y):                    
                     x = axis_x.get(value=dim1)
@@ -121,9 +119,8 @@ class Command(BaseCommand):
                     try:
                         adm_div = AdministrativeDivision.objects.get(code=adm_code)  
                     except AdministrativeDivision.DoesNotExist:
-                        #raise ValueError('No adm unit found with code: {}'.format(adm_code))                  
-                        traceback.print_exc()
-                        pass
+                        raise CommandError('No adm unit found with code: {}'.format(adm_code))                  
+                        
                     params = {
                         'adm_div': adm_div,
                         'event': event,
@@ -146,6 +143,7 @@ class Command(BaseCommand):
                             params['create_django_association'] = True if len(nuts3_list) == 1 else False
                             self.handle_row(params)
                         except AdministrativeDivision.DoesNotExist:
+                            traceback.print_exc()
                             pass
             
             #following lines are commented because values for every administrative division will be included in excel files

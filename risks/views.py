@@ -40,6 +40,8 @@ cost_benefit_index = TemplateView.as_view(template_name='risks/cost_benefit_inde
 
 log = logging.getLogger(__name__) 
 
+
+
 class AppAware(object):
     DEFAULT_APP = RiskApp.APP_DATA_EXTRACTION
 
@@ -933,7 +935,7 @@ class EventDetailsView(DataExtractionView):
     def get_related_ra(self, hazard_type, dym_values, analysis_type, event):        
         ra = RiskAnalysis.objects.filter(
             hazard_type=hazard_type,
-            dymensioninfo_associacion__value__in=dym_values,
+            dymensioninfo_associacion__value__upper__in=dym_values,
             analysis_type=analysis_type,
             show_in_event_details=True)
         if event.event_type:
