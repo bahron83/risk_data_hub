@@ -685,7 +685,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
 
     """
 
-    def reformat_features(self, risk, dimension, dimensions, features):
+    def reformat_features(self, risk, dimension, dimensions, features, capitalize=False):
         """
         Returns risk data as proper structure
 
@@ -733,6 +733,8 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             [line.append(p[f]) for f in fields]
             line.append(p['value'])
             line.append(make_order_val(feat))
+            if capitalize:
+                line = [str(item).capitalize() for item in line]
             values.append(line)
 
         values.sort(key=order_key)
@@ -1015,7 +1017,7 @@ class EventDetailsView(DataExtractionView):
                 features = self.get_features_base('geonode:risk_analysis_event_details', None, **feat_kwargs)                
                 dymlist = an_event.dymension_infos.all().distinct()
                 dimension = dymlist.filter(riskanalysis_associacion__axis=self.AXIS_X).distinct().get()                
-                an_event_values = self.reformat_features(an_event, dimension, dymlist, features['features'])  
+                an_event_values = self.reformat_features(an_event, dimension, dymlist, features['features'], True)  
                 data['{}'.format(an_event.analysis_type.name)] = an_event_values
                 data['{}'.format(an_event.analysis_type.name)]['riskAnalysis'] = an_event.get_risk_details()
 
@@ -1037,10 +1039,10 @@ class EventDetailsView(DataExtractionView):
                     else:
                         dimension = dymlist.filter(riskanalysis_associacion__axis=self.AXIS_X).distinct().get()                    
 
-                    an_risk_values = self.reformat_features(an_risk, dimension, dymlist, features['features'])                
+                    an_risk_values = self.reformat_features(an_risk, dimension, dymlist, features['features'], True)                
 
                     merged_values = an_event_values['values'] + an_risk_values['values']
-                    data['{}'.format(an_event.analysis_type.name)]['values'] = [[str(item).capitalize() for item in row] for row in merged_values]
+                    data['{}'.format(an_event.analysis_type.name)]['values'] = merged_values # [[str(item).capitalize() for item in row] for row in merged_values]
                     
         return json_response({ 'data': data, 'overview': overview })
 
