@@ -1851,7 +1851,7 @@ class AdministrativeData(models.Model):
 
 class AdministrativeDivisionDataAssociation(models.Model):
     id = models.AutoField(primary_key=True)
-    dimension = models.CharField(max_length=50)
+    dimension = models.CharField(max_length=50, db_index=True)
     value = models.CharField(max_length=50, blank=True, null=True)    
 
     #Relationships

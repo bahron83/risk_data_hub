@@ -975,7 +975,8 @@ class EventDetailsView(DataExtractionView):
         hazard_type = self.get_hazard_type(event.region, locations[0], **kwargs)
         risk_analysis = self.get_risk_analysis(**kwargs)
         an_group = self.get_risk_analysis_group(hazard_type, **kwargs)        
-        data = {}        
+        data = {}  
+        overview = {}      
         if an_group and event:
             
             #administrative data
@@ -993,11 +994,9 @@ class EventDetailsView(DataExtractionView):
                         'values': {}
                 }
                 for location in locations:
-                    data_filtered = location_adm_data.filter(data=adm_data_entry, adm=location)
-                    dimension = data_filtered.order_by('-dimension').values_list('dimension', flat=True).distinct()[0]
-                    data_exact = data_filtered.filter(dimension=dimension).first()
+                    data_exact = location_adm_data.filter(data=adm_data_entry, adm=location).order_by('-dimension').first()                                        
                     if data_exact:   
-                        administrative_data[adm_data_entry.name]['values'][data_exact.adm.code] = data_exact.value                                        
+                        administrative_data[adm_data_entry.name]['values'][data_exact.adm.code] = data_exact.value
 
             overview = {                
                 'event': event.get_event_plain(),
@@ -1043,7 +1042,7 @@ class EventDetailsView(DataExtractionView):
 
                     merged_values = an_event_values['values'] + an_risk_values['values']
                     data['{}'.format(an_event.analysis_type.name)]['values'] = merged_values # [[str(item).capitalize() for item in row] for row in merged_values]
-                    
+                   
         return json_response({ 'data': data, 'overview': overview })
 
 
