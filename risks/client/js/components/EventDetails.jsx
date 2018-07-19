@@ -16,7 +16,8 @@ class EventDetails extends Component {
         const { dim, riskAnalysisData } = this.props;        
         return Object.keys(data).map( key => {
             const { values, dimensions } = data[key];            
-            const val = dimensions[dim.dim1].values[dim.dim1Idx];
+            const currentDimension = dimensions[dim.dim1].values[dim.dim1Idx];
+            const val = currentDimension.charAt(0).toUpperCase() + currentDimension.substr(1);
             const { unitOfMeasure } = riskAnalysisData || 'Values';
             return (
                 <Panel key={val} className="panel-box">
@@ -33,22 +34,20 @@ class EventDetails extends Component {
     
     renderAdministrativeData(overview, data) {  
         const { administrativeData, riskAnalysisMapping, event, threshold } = overview || {};          
-        return Object.keys(administrativeData).map( key => {
+        return _.forOwn(administrativeData, (value, key) => {
             const { unitOfMeasure, values } = administrativeData[key];            
             const nuts3List = event.nuts3.split(';');              
             const eventAdminData = data[riskAnalysisMapping[key]] && data[riskAnalysisMapping[key]]["values"] && data[riskAnalysisMapping[key]]["values"][0] && this.formatNumber(data[riskAnalysisMapping[key]]["values"][0][2]);
             const countryAdminData = this.formatNumber(values[event.iso2]);  
             let nuts2AdminData = 0;          
             let nuts3AdminData = 0;
-            _.forOwn(_.omit(values, event.iso2), (value, key) => {
-                const formattedValue = this.formatNumber(value);
+            _.forOwn(_.omit(values, event.iso2), (v, k) => {
+                const formattedValue = this.formatNumber(v);
                 nuts2AdminData += formattedValue;                
-                if(nuts3List.includes(key))
+                if(nuts3List.includes(k))
                     nuts3AdminData += formattedValue;
             });
-            /*nuts3List.map(v => {
-                nuts3AdminData += this.formatNumber(values[v])
-            })*/
+            
             const eventByCountry = eventAdminData ? this.formatNumber(eventAdminData / countryAdminData * 100) : null;
             const eventByNuts2 = eventAdminData ? this.formatNumber(eventAdminData / nuts2AdminData * 100) : null;
             const eventByNuts3 = eventAdminData ? this.formatNumber(eventAdminData / nuts3AdminData * 100) : null;

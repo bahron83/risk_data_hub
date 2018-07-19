@@ -1040,7 +1040,7 @@ class EventDetailsView(DataExtractionView):
                     an_risk_values = self.reformat_features(an_risk, dimension, dymlist, features['features'])                
 
                     merged_values = an_event_values['values'] + an_risk_values['values']
-                    data['{}'.format(an_event.analysis_type.name)]['values'] = [[item.capitalize() if type(item) is str else item for item in row] for row in merged_values]
+                    data['{}'.format(an_event.analysis_type.name)]['values'] = [[str(item).capitalize() for item in row] for row in merged_values]
                     
         return json_response({ 'data': data, 'overview': overview })
 
