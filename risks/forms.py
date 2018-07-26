@@ -149,9 +149,13 @@ class ImportDataEventForm(models.ModelForm):
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
 
         risk_app = self.cleaned_data['riskapp']
-        region = self.cleaned_data['region']        
-        import_event_data(tmp_file, risk_app, region, file_xlsx)
-
+        region = self.cleaned_data['region']     
+        current_user = self.current_user.id   
+        try:            
+            import_event_data.delay(tmp_file, risk_app.name, region.name, file_xlsx.name, current_user)            
+        except ValueError, e:            
+            raise forms.ValidationError(e)
+        
         return file_xlsx
 
 class ImportDataEventAttributeForm(models.ModelForm):

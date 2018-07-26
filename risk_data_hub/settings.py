@@ -406,3 +406,10 @@ LOGGING = {
 
 APP_DEFAULT_REGION = 'Europe'
 COUNTRY_ADMIN_USER_GROUP = 'country_admin'
+
+#EMAIL SETTINGS
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtpconnector.jrc.ec.europa.eu'
+DEFAULT_FROM_EMAIL = 'EC-DRMKC-NOREPLY@ec.europa.eu'
+
+

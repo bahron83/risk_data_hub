@@ -264,45 +264,39 @@
             function handleClick(e) {
                 const publicRegions = ['EU', 'EW', 'SEE'];
                 const isUserAuthenticated = '{{ user.is_authenticated }}' === 'True';  
-                const appUrl = jQuery("#nav_risks a").attr("href").replace(/\/$/, "");                  
-                const urlContextObj = JSON.parse(localStorage.getItem("urlContext"));
-                let contextUrlPrefix = urlContextObj && urlContextObj.value || '';
-                if(urlContextObj == null) {
-                    let adjustedPathname = window.location.pathname;
-                    if(adjustedPathname.slice(-1) != "/")
-                        adjustedPathname += "/";
-                    contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
-                }                
                 const props = e.target.feature.properties;
-                const adm_code = props.HRpcode || 'EU';             
-                const adm_name = props.HRname || 'Europe';             
-                const disasterRisk = {app: {region: adm_code, regionName: adm_name, href: appUrl, geom: appUrl}, contextUrl: contextUrlPrefix, csrfmiddlewaretoken: '{{ csrf_token }}'};                
-                if(isUserAuthenticated || publicRegions.includes(adm_code)) {
-                    jQuery.ajax({
-                        url: `${contextUrlPrefix}/risks/data_extraction/countryauth/`,
-                        type: "POST",
-                        data: disasterRisk,
+                setLocalStorageItem(props);
+                
+                if(props.HRpcode) {
+                    if(publicRegions.includes(props.HRpcode)) {
+                        location.href = appUrl;
+                    }
+                    else {
+                        if(isUserAuthenticated) {
+                            jQuery.ajax({
+                            url: `${contextUrlPrefix}/risks/data_extraction/countryauth/`,
+                            type: "POST",
+                            data: disasterRisk,
 
-                    })
-                    .done(function(response){
-                        //console.log('errors: ', response && response.errors);
-                        if(response && response.success) {
-                            localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
-                            location.href = appUrl;
-                        }                            
-                        else if(response && response.errors) 
-                            alert(response.errors);
-                    })
-                    .fail(function(jqXHR, textStatus, errorThrown){                        
-                        const errorObj = JSON.parse(jqXHR.responseText);                        
-                        const errorMessage = errorObj && errorObj.errors[0] || "Error loading data";
-                        alert(errorMessage);
-                    });
-                    
-                }          
-                    
-                else
-                    (document.getElementById('user-login-link')).click();
+                            })
+                            .done(function(response){                                
+                                if(response && response.success) {                                
+                                    location.href = appUrl;
+                                }                            
+                                else if(response && response.errors) 
+                                    alert(response.errors);
+                            })
+                            .fail(function(jqXHR, textStatus, errorThrown){                        
+                                const errorObj = JSON.parse(jqXHR.responseText);                        
+                                const errorMessage = errorObj && errorObj.errors[0] || "Error loading data";
+                                alert(errorMessage);
+                            });
+                        }
+                        else {
+                            (document.getElementById('user-login-link')).click();
+                        }
+                    }
+                }                                                
             }
 
             function onEachFeature(feature, layer) {
@@ -316,12 +310,9 @@
         }                                                     
         
         jQuery.noConflict();
-        jQuery(document).ready(function(){  
-            const appUrl = jQuery("#nav_risks a").attr("href");  
-            //console.log('appUrl = ', appUrl);          
-            const adjustedPathname = window.location.pathname.slice(-1) == "/" ? window.location.pathname : window.location.pathname + "/";
-            const contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
-            localStorage.setItem("urlContext", JSON.stringify({'value': contextUrlPrefix}));
+        jQuery(document).ready(function(){              
+            setLocalStorageItem();
+
             jQuery('.partners-slide').slick({
                 arrows: true,
                 centerMode: true,                
@@ -330,6 +321,18 @@
                 slidesToScroll: 3
             });
         });
+
+        appUrl = jQuery("#nav_risks a").attr("href").replace(/\/$/, "");
+        
+        function setLocalStorageItem(props = null) {            
+            const adm_code = props && props.HRpcode || 'EU';             
+            const adm_name = props && props.HRname || 'Europe';              
+            const adjustedPathname = window.location.pathname.slice(-1) == "/" ? window.location.pathname : window.location.pathname + "/";
+            const contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
+            const disasterRisk = {app: {region: adm_code, regionName: adm_name, href: appUrl, geom: appUrl}, contextUrl: contextUrlPrefix, csrfmiddlewaretoken: '{{ csrf_token }}'};                                                      
+            localStorage.removeItem("disasteRisk");
+            localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
+        }
 
         //main map
         bootstrapMap('mapid', 'rdh_maskprj.json');

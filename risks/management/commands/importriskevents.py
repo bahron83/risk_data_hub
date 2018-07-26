@@ -13,11 +13,14 @@ from risks.models import RiskAnalysisDymensionInfoAssociation
 from risks.models import RiskAnalysisAdministrativeDivisionAssociation
 from risks.models import EventAdministrativeDivisionAssociation
 
+from risks.signals import complete_upload
+
 import xlrd
 from xlrd.sheet import ctype_text
 
 from dateutil.parser import parse
 import datetime
+import time
 
 
 class Command(BaseCommand):
@@ -44,11 +47,22 @@ class Command(BaseCommand):
             type=str,
             help='Input Risk Data Table as XLSX File.')        
         parser.add_argument(
+            '-f',
+            '--final-name',
+            dest='final_name',
+            type=str,
+            help='File name')        
+        parser.add_argument(
+            '-u',
+            '--current-user',
+            dest='current_user',
+            type=str,
+            help='Current user id.')  
+        parser.add_argument(
             '-a',
             '--risk-app',
             dest='risk_app',
-            type=str,
-            # nargs=1,
+            type=str,            
             default=RiskApp.APP_DATA_EXTRACTION,
             help="Name of Risk App, default: {}".format(RiskApp.APP_DATA_EXTRACTION),
             )
@@ -58,6 +72,8 @@ class Command(BaseCommand):
         commit = options.get('commit')
         region = options.get('region')
         excel_file = options.get('excel_file')
+        final_name = options.get('final_name')
+        current_user = options.get('current_user')
         #hazard_type = options.get('hazard_type')        
         risk_app =  options.get('risk_app')
         app = RiskApp.objects.get(name=risk_app)
@@ -88,19 +104,7 @@ class Command(BaseCommand):
             for row_num in range(1, sheet.nrows):  
                 obj = {}                
                 event_id = sheet.cell(row_num, 0).value
-                '''obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
-                obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
-                obj['nuts3'] = sheet.cell(row_num, 3).value                
-                obj['year'] = int(sheet.cell(row_num, 4).value)                                
-                begin_date_raw = str(sheet.cell(row_num, 6).value)
-                end_date_raw = str(sheet.cell(row_num, 7).value)                
-                obj['event_type'] = sheet.cell(row_num, 8).value
-                obj['event_source'] = sheet.cell(row_num, 9).value
-                obj['people_affected'] = int(self.try_parse_float(str(sheet.cell(row_num, 12).value), 0))
-                obj['cause'] = sheet.cell(row_num, 16).value
-                obj['notes'] = sheet.cell(row_num, 17).value
-                obj['sources'] = sheet.cell(row_num, 18).value'''
-
+                
                 obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
                 obj['region'] = region
                 obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
@@ -140,7 +144,8 @@ class Command(BaseCommand):
                         traceback.print_exc()
                         #print(adm_code)
                         pass                    
-                
+        
+        complete_upload(current_user, final_name, region.name)
         return str(n_events)
     
     def try_parse_int(self, s, base=10, default=None):

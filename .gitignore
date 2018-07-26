@@ -77,3 +77,6 @@ static/js/risksConfig.json
 risks/client/node_modules
 risks/client/dist
 .vscode
+
+#Other
+celerybeat-schedule

@@ -3,7 +3,7 @@
 
 import StringIO
 import traceback
-
+from celery import shared_task
 from celery.task import task
 from django.conf import settings
 from django.core.mail import send_mail
@@ -141,18 +141,21 @@ def _import_event_data(input_file, risk_app_name, hazard_type_name, region_name,
                 hazard.set_error()
             raise ValueError(error_message)'''
 
-def import_event_data(input_file, risk_app, region, final_name):    
-    _import_event_data.apply_async(args=(input_file, risk_app.name, region.name, final_name,))
+#def import_event_data(input_file, risk_app, region, final_name, current_user):    
+#    _import_event_data.apply_async(args=(input_file, risk_app.name, region.name, final_name, current_user,))    
 
-@task(name='risks.tasks.import_event_data')
-def _import_event_data(input_file, risk_app_name, region_name, final_name):
+#@task(name='risks.tasks.import_event_data')
+@shared_task
+def import_event_data(input_file, risk_app_name, region_name, final_name, current_user):
         out = StringIO.StringIO()        
         try:            
             call_command('importriskevents',
                          commit=False,
                          risk_app=risk_app_name,
                          region=region_name,
-                         excel_file=input_file,                         
+                         excel_file=input_file,
+                         final_name=final_name,                         
+                         current_user=current_user,
                          stdout=out)            
         except Exception, e:
             error_message = "Sorry, the input file is not valid: {}".format(e)            

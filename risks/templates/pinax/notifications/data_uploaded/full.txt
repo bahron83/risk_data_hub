@@ -1,0 +1,7 @@
+{% load i18n %}
+
+{% trans "Dear "%} {{ from_user.username }},
+{% trans "the file you recently uploaded on Risk Data Hub was succesfully processed" %}.
+
+Filename: {{ filename }} 
+Region: {{ region }}
