@@ -41,7 +41,7 @@ def create_risk_analysis(input_file, file_ini, current_user_id):
         raise ValueError(error_message)
 
 @shared_task
-def import_risk_data(filepath, risk_app_name, risk_analysis_name, region_name, filename_ori, current_user_id):
+def import_risk_data(filepath, risk_app_name, risk_analysis_name, region_name, final_name, current_user_id):
         try:
             risk_analysis = RiskAnalysis.objects.get(name=risk_analysis_name)
         except RiskAnalysis.DoesNotExist:
@@ -59,10 +59,10 @@ def import_risk_data(filepath, risk_app_name, risk_analysis_name, region_name, f
                          risk_analysis=risk_analysis_name,   
                          stdout=out)
             risk_analysis.refresh_from_db()
-            risk_analysis.data_file = filename_ori
+            risk_analysis.data_file = final_name
             risk_analysis.save()
             risk_analysis.set_ready()
-            complete_upload(current_user_id, filename_ori, region_name)
+            complete_upload(current_user_id, final_name, region_name)
         except Exception, e:
             error_message = "Sorry, the input file is not valid: {}".format(e)
             if risk_analysis is not None:
@@ -71,7 +71,7 @@ def import_risk_data(filepath, risk_app_name, risk_analysis_name, region_name, f
             raise ValueError(error_message)
 
 @shared_task
-def import_risk_metadata(filepath, risk_app_name, risk_analysis_name, region_name, filename_ori):        
+def import_risk_metadata(filepath, risk_app_name, risk_analysis_name, region_name, final_name):        
         try:
             risk_analysis = RiskAnalysis.objects.get(name=risk_analysis_name)
         except RiskAnalysis.DoesNotExist:
@@ -88,7 +88,7 @@ def import_risk_metadata(filepath, risk_app_name, risk_analysis_name, region_nam
                          risk_analysis=risk_analysis_name,
                          stdout=out)            
             risk_analysis.refresh_from_db()
-            risk_analysis.metadata_file = filename_ori
+            risk_analysis.metadata_file = final_name
             hazardsets = HazardSet.objects.filter(riskanalysis__name=risk_analysis_name,
                                                   country__name=region_name)
             if len(hazardsets) > 0:
@@ -145,7 +145,7 @@ def import_event_attributes(filepath, risk_app_name, risk_analysis_name, region_
             risk_analysis.data_file = final_name
             risk_analysis.save()
             risk_analysis.set_ready()            
-            complete_upload(current_user_id, final_name.name, region_name)
+            complete_upload(current_user_id, final_name, region_name)
         except Exception, e:
             error_message = "Sorry, the input file is not valid: {}".format(e)            
             raise ValueError(error_message)

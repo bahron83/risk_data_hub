@@ -27,11 +27,11 @@ from mptt.models import MPTTModel, TreeForeignKey
 from django.core import files
 from geonode.base.models import ResourceBase, TopicCategory
 from geonode.layers.models import Layer, Style
-
+from risks.customs.custom_storage import ReplacingFileStorage
 from jsonfield import JSONField
 import xlrd
 
-
+rfs = ReplacingFileStorage()
 
 def get_default_region():
     region = Region.objects.get(name=rdh_settings.APP_DEFAULT_REGION)
@@ -1464,7 +1464,7 @@ class RiskAnalysisCreate(models.Model):
 
 
 class RiskAnalysisImportData(models.Model):
-    data_file = models.FileField(upload_to='data_files', max_length=255)
+    data_file = models.FileField(upload_to='data_files', storage=rfs, max_length=255)
 
     # Relationships
     riskapp = models.ForeignKey(
@@ -1511,7 +1511,7 @@ class RiskAnalysisImportData(models.Model):
 class RiskAnalysisImportMetadata(models.Model):
     """
     """
-    metadata_file = models.FileField(upload_to='metadata_files', max_length=255)
+    metadata_file = models.FileField(upload_to='metadata_files', storage=rfs, max_length=255)
 
     # Relationships
     riskapp = models.ForeignKey(
@@ -1741,7 +1741,7 @@ class EventAdministrativeDivisionAssociation(models.Model):
         db_table = 'risks_eventlayerassociation'
 '''
 class EventImportData(models.Model):
-    data_file = models.FileField(upload_to='data_files', max_length=255)
+    data_file = models.FileField(upload_to='data_files', storage=rfs, max_length=255)
 
     # Relationships
     riskapp = models.ForeignKey(
@@ -1789,7 +1789,7 @@ class EventImportData(models.Model):
 
 
 class EventImportAttributes(models.Model):
-    data_file = models.FileField(upload_to='data_files', max_length=255)
+    data_file = models.FileField(upload_to='data_files', storage=rfs, max_length=255)
 
     # Relationships
     riskapp = models.ForeignKey(

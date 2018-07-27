@@ -89,13 +89,14 @@ class ImportDataRiskAnalysisForm(models.ModelForm):
         path = default_storage.save('tmp/'+file_xlsx.name,
                                     ContentFile(file_xlsx.read()))
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
+        final_name = os.path.join('data_files', file_xlsx.name)
 
         risk_app = self.cleaned_data['riskapp']
         region = self.cleaned_data['region']
         risk = self.cleaned_data['riskanalysis']
         current_user = self.current_user   
                 
-        import_risk_data.delay(tmp_file, risk_app.name, risk.name, region.name, file_xlsx.name, current_user.id)        
+        import_risk_data.delay(tmp_file, risk_app.name, risk.name, region.name, final_name, current_user.id)        
 
         return file_xlsx
 
@@ -123,13 +124,14 @@ class ImportMetadataRiskAnalysisForm(models.ModelForm):
         path = default_storage.save('tmp/'+file_xlsx.name,
                                     ContentFile(file_xlsx.read()))
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
+        final_name = os.path.join('metadata_files', file_xlsx.name)
 
         risk_app = self.cleaned_data['riskapp']
         region = self.cleaned_data['region']
         risk = self.cleaned_data['riskanalysis']
 
         try:
-            import_risk_metadata(tmp_file, risk_app.name, risk.name, region.name, file_xlsx.name)
+            import_risk_metadata(tmp_file, risk_app.name, risk.name, region.name, final_name)
         except ValueError, e:
             raise forms.ValidationError(e)
 
@@ -156,12 +158,13 @@ class ImportDataEventForm(models.ModelForm):
         path = default_storage.save('tmp/'+file_xlsx.name,
                                     ContentFile(file_xlsx.read()))
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
+        final_name = os.path.join('data_files', file_xlsx.name)
 
         risk_app = self.cleaned_data['riskapp']
         region = self.cleaned_data['region']     
         current_user = self.current_user   
         
-        import_event_data.delay(tmp_file, risk_app.name, region.name, file_xlsx.name, current_user.id)                    
+        import_event_data.delay(tmp_file, risk_app.name, region.name, final_name, current_user.id)                    
         
         return file_xlsx
 
@@ -188,6 +191,7 @@ class ImportDataEventAttributeForm(models.ModelForm):
         path = default_storage.save('tmp/'+file_xlsx.name,
                                     ContentFile(file_xlsx.read()))
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
+        final_name = os.path.join('data_files', file_xlsx.name)
 
         risk_app = self.cleaned_data['riskapp']
         region = self.cleaned_data['region']  
@@ -195,6 +199,6 @@ class ImportDataEventAttributeForm(models.ModelForm):
         allow_null_values = False#self.cleaned_data['allow_null_values']
         current_user = self.current_user
                 
-        import_event_attributes.delay(tmp_file, risk_app.name, risk.name, region.name, allow_null_values, file_xlsx, current_user.id)        
+        import_event_attributes.delay(tmp_file, risk_app.name, risk.name, region.name, allow_null_values, final_name, current_user.id)        
 
         return file_xlsx

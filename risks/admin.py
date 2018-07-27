@@ -304,7 +304,7 @@ class RiskAnalysisImportDataAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
-        super(EventImportDataAdmin, self).save_model(request, obj, form, change)
+        super(RiskAnalysisImportDataAdmin, self).save_model(request, obj, form, change)
 
 
 class RiskAnalysisImportMetaDataAdmin(admin.ModelAdmin):
@@ -420,7 +420,7 @@ class EventImportAttributeDataAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
-        super(EventImportDataAdmin, self).save_model(request, obj, form, change)
+        super(EventImportAttributeDataAdmin, self).save_model(request, obj, form, change)
 
 class AnalysisClassAdmin(admin.ModelAdmin):
     model = AnalysisClass
