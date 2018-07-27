@@ -8,22 +8,18 @@ from celery.task import task
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.management import call_command
-
 from django.db import IntegrityError, transaction
-
-from risks.models import RiskAnalysis, HazardSet, HazardType
-
-def create_risk_analysis(input_file, file_ini, current_user):
-    _create_risk_analysis.apply_async(args=(input_file, file_ini, current_user))
+from risks.models import Region, RiskAnalysis, HazardSet, HazardType
+from risks.signals import complete_upload
 
 
-@task(name='risks.tasks.create_risk_analysis')
-def _create_risk_analysis(input_file, file_ini, current_user):
+@shared_task
+def create_risk_analysis(input_file, file_ini, current_user_id):
     out = StringIO.StringIO()
     risk = None
     try:
         call_command('createriskanalysis',
-                     descriptor_file=str(input_file).strip(), current_user=current_user, stdout=out)
+                     descriptor_file=str(input_file).strip(), current_user=current_user_id, stdout=out)
         value = out.getvalue()
 
         risk = RiskAnalysis.objects.get(name=str(value).strip())
@@ -36,7 +32,7 @@ def _create_risk_analysis(input_file, file_ini, current_user):
             #new_risk = RiskAnalysis()
             #new_risk = risk
             #new_risk.save()
-	    pass
+	        pass
     except Exception, e:
         value = None
         if risk is not None:
@@ -44,138 +40,112 @@ def _create_risk_analysis(input_file, file_ini, current_user):
         error_message = "Sorry, the input file is not valid: {}".format(e)
         raise ValueError(error_message)
 
-
-def import_risk_data(input_file, risk_app, risk_analysis, region, final_name):
-    risk_analysis.set_queued()
-    _import_risk_data.apply_async(args=(input_file, risk_app.name, risk_analysis.name, region.name, final_name,))
-
-@task(name='risks.tasks.import_risk_data')
-def _import_risk_data(input_file, risk_app_name, risk_analysis_name, region_name, final_name):
-        out = StringIO.StringIO()
-        risk = None
+@shared_task
+def import_risk_data(filepath, risk_app_name, risk_analysis_name, region_name, filename_ori, current_user_id):
         try:
-            risk = RiskAnalysis.objects.get(name=risk_analysis_name)
-            risk.set_processing()
-            # value = out.getvalue()
+            risk_analysis = RiskAnalysis.objects.get(name=risk_analysis_name)
+        except RiskAnalysis.DoesNotExist:
+            raise ValueError("Risk Analysis not found")
+        risk_analysis.set_queued()
+        out = StringIO.StringIO()        
+        try:            
+            risk_analysis.set_processing()
+            
             call_command('importriskdata',
                          commit=False,
                          risk_app=risk_app_name,
                          region=region_name,
-                         excel_file=input_file,
-                         risk_analysis=risk_analysis_name,
+                         excel_file=filepath,
+                         risk_analysis=risk_analysis_name,   
                          stdout=out)
-            risk.refresh_from_db()
-            risk.data_file = final_name
-            risk.save()
-            risk.set_ready()
+            risk_analysis.refresh_from_db()
+            risk_analysis.data_file = filename_ori
+            risk_analysis.save()
+            risk_analysis.set_ready()
+            complete_upload(current_user_id, filename_ori, region_name)
         except Exception, e:
             error_message = "Sorry, the input file is not valid: {}".format(e)
-            if risk is not None:
-                risk.save()
-                risk.set_error()
+            if risk_analysis is not None:
+                risk_analysis.save()
+                risk_analysis.set_error()
             raise ValueError(error_message)
 
-def import_risk_metadata(input_file, risk_app, risk_analysis, region, final_name):
-    risk_analysis.set_queued()
-    _import_risk_metadata.apply_async(args=(input_file, risk_app.name, risk_analysis.name, region.name, final_name,))
-
-
-@task(name='risks.tasks.import_risk_metadata')
-def _import_risk_metadata(input_file, risk_app_name, risk_analysis_name, region_name, final_name):
-        out = StringIO.StringIO()
-        risk = None
+@shared_task
+def import_risk_metadata(filepath, risk_app_name, risk_analysis_name, region_name, filename_ori):        
         try:
-            risk = RiskAnalysis.objects.get(name=risk_analysis_name)
-            risk.set_processing()
+            risk_analysis = RiskAnalysis.objects.get(name=risk_analysis_name)
+        except RiskAnalysis.DoesNotExist:
+            raise ValueError("Risk Analysis not found")
+        risk_analysis.set_queued()
+        out = StringIO.StringIO()
+        try:            
+            risk_analysis.set_processing()
             call_command('importriskmetadata',
                          commit=False,
                          risk_app=risk_app_name,
                          region=region_name,
-                         excel_file=input_file,
+                         excel_file=filepath,
                          risk_analysis=risk_analysis_name,
-                         stdout=out)
-            # value = out.getvalue()
-            risk.refresh_from_db()
-            risk.metadata_file = final_name
+                         stdout=out)            
+            risk_analysis.refresh_from_db()
+            risk_analysis.metadata_file = filename_ori
             hazardsets = HazardSet.objects.filter(riskanalysis__name=risk_analysis_name,
                                                   country__name=region_name)
             if len(hazardsets) > 0:
                 hazardset = hazardsets[0]
-                risk.hazardset = hazardset
+                risk_analysis.hazardset = hazardset
 
-            risk.save()
-            risk.set_ready()
+            risk_analysis.save()
+            risk_analysis.set_ready()
         except Exception, e:
             error_message = "Sorry, the input file is not valid: {}".format(e)
-            if risk is not None:
-                risk.set_error()
+            if risk_analysis is not None:
+                risk_analysis.set_error()
             raise ValueError(error_message)
 
-
-'''def import_event_data(input_file, risk_app, hazard_type, region, final_name):
-    hazard_type.set_queued()
-    _import_event_data.apply_async(args=(input_file, risk_app.name, hazard_type.mnemonic, region.name, final_name,))
-
-@task(name='risks.tasks.import_event_data')
-def _import_event_data(input_file, risk_app_name, hazard_type_name, region_name, final_name):
-        out = StringIO.StringIO()
-        hazard = None
-        try:
-            hazard = HazardType.objects.get(mnemonic=hazard_type_name)
-            hazard.set_processing()
-            call_command('importriskevents',
-                         commit=False,
-                         risk_app=risk_app_name,
-                         region=region_name,
-                         excel_file=input_file,
-                         hazard_type=hazard_type_name,
-                         stdout=out)
-            hazard.refresh_from_db()
-            hazard.data_file = final_name
-            hazard.save()
-            hazard.set_ready()
-        except Exception, e:
-            error_message = "Sorry, the input file is not valid: {}".format(e)
-            if hazard is not None:
-                hazard.save()
-                hazard.set_error()
-            raise ValueError(error_message)'''
-
-#def import_event_data(input_file, risk_app, region, final_name, current_user):    
-#    _import_event_data.apply_async(args=(input_file, risk_app.name, region.name, final_name, current_user,))    
-
-#@task(name='risks.tasks.import_event_data')
 @shared_task
-def import_event_data(input_file, risk_app_name, region_name, final_name, current_user):
+def import_event_data(filepath, risk_app_name, region_name, filename_ori, current_user_id):
         out = StringIO.StringIO()        
         try:            
             call_command('importriskevents',
                          commit=False,
                          risk_app=risk_app_name,
                          region=region_name,
-                         excel_file=input_file,
-                         final_name=final_name,                         
-                         current_user=current_user,
-                         stdout=out)            
+                         excel_file=filepath,                         
+                         stdout=out) 
+            complete_upload(current_user_id, filename_ori, region_name)           
         except Exception, e:
             error_message = "Sorry, the input file is not valid: {}".format(e)            
             raise ValueError(error_message)
 
-def import_event_attributes(input_file, risk_app, risk_analysis, region, allow_null_values, final_name):    
-    _import_event_attributes.apply_async(args=(input_file, risk_app.name, risk_analysis.name, region.name, allow_null_values, final_name,))
-
-@task(name='risks.tasks.import_event_attributes')
-def _import_event_attributes(input_file, risk_app_name, risk_analysis_name, region_name, allow_null_values, final_name):
-        out = StringIO.StringIO()        
-        try:            
+@shared_task
+def import_event_attributes(filepath, risk_app_name, risk_analysis_name, region_name, allow_null_values, final_name, current_user_id):
+        try:
+            risk_analysis = RiskAnalysis.objects.get(name=risk_analysis_name)
+        except RiskAnalysis.DoesNotExist:
+            raise ValueError("Risk Analysis not found")
+        try:
+            region = Region.objects.get(name=region_name)
+        except Region.DoesNotExist:
+            raise ValueError("Region not found")
+        risk_analysis.set_queued()      
+        out = StringIO.StringIO()          
+        try:  
+            risk_analysis.set_processing()          
             call_command('import_event_attributes',
                          commit=False,
                          risk_app=risk_app_name,                         
                          region=region_name,
                          allow_null_values=allow_null_values,
-                         excel_file=input_file,
-                         risk_analysis=risk_analysis_name,                        
-                         stdout=out)            
+                         excel_file=filepath,
+                         risk_analysis=risk_analysis_name,  
+                         stdout=out) 
+            risk_analysis.refresh_from_db()
+            risk_analysis.region=region
+            risk_analysis.data_file = final_name
+            risk_analysis.save()
+            risk_analysis.set_ready()            
+            complete_upload(current_user_id, final_name.name, region_name)
         except Exception, e:
             error_message = "Sorry, the input file is not valid: {}".format(e)            
             raise ValueError(error_message)

@@ -293,8 +293,7 @@ class Command(BaseCommand):
         #check adm divisions
         select_template = """SELECT fid FROM adm_divisions WHERE                                        
                 adm_code = '{adm_code}' AND
-                level = {adm_level} AND
-                region = '{region}'"""
+                level = {adm_level}"""
 
         curs.execute(select_template.format(**values))
         id_of_new_row = curs.fetchone()
@@ -317,15 +316,14 @@ class Command(BaseCommand):
                 insert_template = """INSERT INTO adm_divisions (
                                 the_geom,                          
                                 adm_name, adm_code,
-                                region, parent_adm_code, level)
+                                parent_adm_code, level)
                         SELECT '{the_geom}',                          
                                 '{adm_name}', '{adm_code}',
-                                '{region}', '{parent_adm_code}', {adm_level}
+                                '{parent_adm_code}', {adm_level}
                         WHERE
                         NOT EXISTS (SELECT fid FROM adm_divisions WHERE                                        
                             adm_code = '{adm_code}' AND
-                            level = {adm_level} AND
-                            region = '{region}')
+                            level = {adm_level})
                         RETURNING fid;"""
 
                 curs.execute(insert_template.format(**values))

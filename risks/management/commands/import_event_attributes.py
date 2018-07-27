@@ -64,7 +64,7 @@ class Command(BaseCommand):
             dest='allow_null_values',            
             default=False,
             help="Allow null values: if no, rows with null values will be skipped",
-            )
+            )        
         return parser
 
     def handle(self, **options):
@@ -73,7 +73,7 @@ class Command(BaseCommand):
         excel_file = options.get('excel_file')
         risk_analysis = options.get('risk_analysis')        
         risk_app =  options.get('risk_app')
-        allow_null_values = options.get('allow_null_values')
+        allow_null_values = options.get('allow_null_values')        
         app = RiskApp.objects.get(name=risk_app)
 
         if region_name is None:
@@ -154,10 +154,7 @@ class Command(BaseCommand):
             risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=risk, administrativedivision=region_adm_div)
             '''
 
-            conn.commit()
-            risk.region=region
-            risk.data_file = excel_file
-            risk.save()
+            conn.commit()            
         except Exception:
             try:
                 conn.rollback()

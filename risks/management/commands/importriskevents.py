@@ -13,8 +13,6 @@ from risks.models import RiskAnalysisDymensionInfoAssociation
 from risks.models import RiskAnalysisAdministrativeDivisionAssociation
 from risks.models import EventAdministrativeDivisionAssociation
 
-from risks.signals import complete_upload
-
 import xlrd
 from xlrd.sheet import ctype_text
 
@@ -45,19 +43,7 @@ class Command(BaseCommand):
             '--excel-file',
             dest='excel_file',
             type=str,
-            help='Input Risk Data Table as XLSX File.')        
-        parser.add_argument(
-            '-f',
-            '--final-name',
-            dest='final_name',
-            type=str,
-            help='File name')        
-        parser.add_argument(
-            '-u',
-            '--current-user',
-            dest='current_user',
-            type=str,
-            help='Current user id.')  
+            help='Input Risk Data Table as XLSX File.')                
         parser.add_argument(
             '-a',
             '--risk-app',
@@ -71,9 +57,7 @@ class Command(BaseCommand):
     def handle(self, **options):
         commit = options.get('commit')
         region = options.get('region')
-        excel_file = options.get('excel_file')
-        final_name = options.get('final_name')
-        current_user = options.get('current_user')
+        excel_file = options.get('excel_file')        
         #hazard_type = options.get('hazard_type')        
         risk_app =  options.get('risk_app')
         app = RiskApp.objects.get(name=risk_app)
@@ -144,8 +128,7 @@ class Command(BaseCommand):
                         traceback.print_exc()
                         #print(adm_code)
                         pass                    
-        
-        complete_upload(current_user, final_name, region.name)
+                
         return str(n_events)
     
     def try_parse_int(self, s, base=10, default=None):

@@ -1,6 +1,5 @@
 from django.dispatch import Signal, receiver
 from geonode.notifications_helper import send_now_notification
-#from django.core.mail import send_mail
 from geonode.people.models import Profile
 
 
@@ -23,12 +22,4 @@ def notify_user_data_uploaded(sender, **kwargs):
             label="data_uploaded",
             extra_context={"from_user": user, "filename": filename, "region": region}
         )
-
-        '''send_mail(
-            'Data Uploaded',
-            'Finished uploading file {}'.format(filename),
-            'EC-DRMKC-NOREPLY@ec.europa.eu',
-            [user.email],
-            fail_silently=False
-        )'''
-
+        

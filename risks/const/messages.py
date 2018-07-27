@@ -1,0 +1,1 @@
+FILE_UPLOADED_EMAIL = 'You will receive an email notification when file processing is complete.'

@@ -19,6 +19,7 @@
 #########################################################################
 
 from django.contrib import admin
+from django.contrib import messages
 
 from risk_data_hub import local_settings
 
@@ -46,6 +47,8 @@ from risks.forms import ImportDataRiskAnalysisForm
 from risks.forms import ImportMetadataRiskAnalysisForm
 from risks.forms import ImportDataEventForm
 from risks.forms import ImportDataEventAttributeForm
+
+from risks.const.messages import *
 
 admin.site.site_header = 'Risk Data Hub - Administration'
 admin.site.site_url = local_settings.SITEURL
@@ -299,6 +302,10 @@ class RiskAnalysisImportDataAdmin(admin.ModelAdmin):
         risk_analysis_owned = RiskAnalysis.objects.filter(owner=request.user)
         return qs.filter(riskanalysis__in=risk_analysis_owned)
 
+    def save_model(self, request, obj, form, change):
+        messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
+        super(EventImportDataAdmin, self).save_model(request, obj, form, change)
+
 
 class RiskAnalysisImportMetaDataAdmin(admin.ModelAdmin):
     model = RiskAnalysisImportMetadata
@@ -378,6 +385,11 @@ class EventImportDataAdmin(admin.ModelAdmin):
         regions_owned = Region.objects.filter(owner=request.user)
         return qs.filter(region__in=regions_owned)
 
+    def save_model(self, request, obj, form, change):
+        messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
+        super(EventImportDataAdmin, self).save_model(request, obj, form, change)
+
+
 class EventImportAttributeDataAdmin(admin.ModelAdmin):
     model = EventImportAttributes
     list_display = ('data_file', 'riskapp', 'region', 'riskanalysis')
@@ -405,6 +417,10 @@ class EventImportAttributeDataAdmin(admin.ModelAdmin):
             return qs
         regions_owned = Region.objects.filter(owner=request.user)
         return qs.filter(region__in=regions_owned)
+
+    def save_model(self, request, obj, form, change):
+        messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
+        super(EventImportDataAdmin, self).save_model(request, obj, form, change)
 
 class AnalysisClassAdmin(admin.ModelAdmin):
     model = AnalysisClass
