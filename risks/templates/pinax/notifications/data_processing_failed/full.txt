@@ -1,0 +1,7 @@
+{% load i18n %}
+
+{% trans "Dear "%} {{ from_user.username }},
+{% trans "the file you recently uploaded on Risk Data Hub could not be processed. Here follow the details of the error:" %}
+
+File: {{ filename }}
+Error: {{ error_message }}

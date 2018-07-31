@@ -155,13 +155,14 @@ class Command(BaseCommand):
             '''
 
             conn.commit()            
-        except Exception:
+        except Exception, e:
             try:
                 conn.rollback()
             except:
                 pass
 
-            traceback.print_exc()
+            #traceback.print_exc()
+            raise CommandError(e)
         finally:
             conn.close()   
 

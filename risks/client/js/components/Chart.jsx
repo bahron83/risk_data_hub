@@ -13,7 +13,7 @@ const CustomizedYLable = (props) => {
 
 class Chart extends Component {    
     shouldComponentUpdate(nextProps, nextState) {        
-        if((this.props.dim.dim1Idx !== nextProps.dim.dim1Idx) || (this.props.dim.dim2Idx !== nextProps.dim.dim2Idx) || (this.props.val !== nextProps.val))
+        if((this.props.dim.dim1Idx !== nextProps.dim.dim1Idx) || (this.props.dim.dim2Idx !== nextProps.dim.dim2Idx) || (this.props.val !== nextProps.val) || (this.props.values !== nextProps.values))
             return true;
 
         return false;

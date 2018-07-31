@@ -97,8 +97,7 @@ class Command(BaseCommand):
             raise CommandError("Input Destination Region '--region' is mandatory")
 
         if risk_analysis is None:
-            raise CommandError("Input Risk Analysis associated to the File \
-'--risk_analysis' is mandatory")
+            raise CommandError("Input Risk Analysis associated to the File '--risk_analysis' is mandatory")
 
         if not excel_file or len(excel_file) == 0:
             raise CommandError("Input Risk Data Table '--excel_file' is mandatory")
@@ -255,8 +254,8 @@ class Command(BaseCommand):
                             conn.rollback()
                         except:
                             pass
-
-                        traceback.print_exc()
+                        raise CommandError(e)
+                        #traceback.print_exc()
                     finally:
                         conn.close()
 

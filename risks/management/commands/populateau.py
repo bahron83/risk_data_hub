@@ -172,7 +172,7 @@ is mandatory")
                         RegionAdministrativeDivisionAssociation.objects.create(region=region_obj, administrativedivision=adm_division)                        
 
                 if adm_level == 2:
-                    print('region = {}'.format(feat))
+                    print('region = {}'.format(feat.get('HRpcode')))
                     adm_division_1 = AdministrativeDivision.objects.get(code=feat.get('HRparent'))
                     (adm_division, is_new_amdiv) = AdministrativeDivision.objects.get_or_create(
                         code=feat.get('HRpcode'),

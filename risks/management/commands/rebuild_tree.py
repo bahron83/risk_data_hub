@@ -14,7 +14,7 @@ from risks.models import EventAdministrativeDivisionAssociation
 
 
 class Command(BaseCommand):
-    help = 'Import Risk Data: Loss Impact and Impact Analysis Types.'
+    help = 'Rebuild tree for selected table.'
 
     def add_arguments(self, parser):
         parser.add_argument(

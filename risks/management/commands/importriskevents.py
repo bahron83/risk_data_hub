@@ -84,52 +84,59 @@ class Command(BaseCommand):
         n_events = 0
         for idx, cell_obj in enumerate(row_headers):
             col_num += 1
-        if col_num >= 0:  
-            for row_num in range(1, sheet.nrows):  
-                obj = {}                
-                event_id = sheet.cell(row_num, 0).value
-                
-                obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
-                obj['region'] = region
-                obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
-                obj['nuts3'] = sheet.cell(row_num, 3).value                
-                obj['year'] = int(sheet.cell(row_num, 4).value)                                
-                begin_date_raw = str(sheet.cell(row_num, 5).value)
-                end_date_raw = str(sheet.cell(row_num, 6).value)                
-                obj['event_type'] = sheet.cell(row_num, 7).value
-                obj['event_source'] = sheet.cell(row_num, 8).value                
-                obj['cause'] = sheet.cell(row_num, 9).value
-                obj['notes'] = sheet.cell(row_num, 10).value
-                obj['sources'] = sheet.cell(row_num, 11).value                                                                                                                    
+        if col_num >= 0:
+            try:  
+                for row_num in range(1, sheet.nrows):  
+                    obj = {}                
+                    event_id = sheet.cell(row_num, 0).value
+                    
+                    obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
+                    obj['region'] = region
+                    obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
+                    obj['nuts3'] = sheet.cell(row_num, 3).value                
+                    obj['year'] = int(sheet.cell(row_num, 4).value)                                
+                    begin_date_raw = str(sheet.cell(row_num, 5).value)
+                    end_date_raw = str(sheet.cell(row_num, 6).value)                
+                    obj['event_type'] = sheet.cell(row_num, 7).value
+                    obj['event_source'] = sheet.cell(row_num, 8).value                
+                    obj['cause'] = sheet.cell(row_num, 9).value
+                    obj['notes'] = sheet.cell(row_num, 10).value
+                    obj['sources'] = sheet.cell(row_num, 11).value 
 
-                try:
-                    obj['begin_date'] = parse(begin_date_raw)
-                    obj['end_date'] = parse(end_date_raw)
-                except:
-                    obj['begin_date'] = datetime.date(obj['year'], 1, 1)
-                    obj['end_date'] = datetime.date(obj['year'], 1, 1)              
-                try:
-                    event = Event.objects.get(event_id=event_id, region=region)
-                    for key, value in obj.items():
-                        setattr(event, key, value)                    
-                    event.save()
-                except Event.DoesNotExist:
-                    obj['event_id'] = event_id
-                    event = Event(**obj)
-                    event.save()                                                                               
-                
-                n_events += 1         
-
-                for adm_code in event.nuts3.split(';'):                    
                     try:
-                        adm_div = AdministrativeDivision.objects.get(regions__id__exact=region.id, code=adm_code)
-                        adm_link = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=adm_div)                        
-                    except AdministrativeDivision.DoesNotExist:
-                        traceback.print_exc()
-                        #print(adm_code)
-                        pass                    
-                
-        return str(n_events)
+                        country = AdministrativeDivision.objects.get(code=obj['iso2'], level=1)
+                    except:
+                        AdministrativeDivision.DoesNotExist:
+                        raise CommandError("Could not find adm unit with code {}".format(obj['iso2']))
+
+                    try:
+                        obj['begin_date'] = parse(begin_date_raw)
+                        obj['end_date'] = parse(end_date_raw)
+                    except:
+                        obj['begin_date'] = datetime.date(obj['year'], 1, 1)
+                        obj['end_date'] = datetime.date(obj['year'], 1, 1)              
+                    try:
+                        event = Event.objects.get(event_id=event_id, region=region)
+                        for key, value in obj.items():
+                            setattr(event, key, value)                    
+                        event.save()
+                    except Event.DoesNotExist:
+                        obj['event_id'] = event_id
+                        event = Event(**obj)
+                        event.save()                                                                               
+                    
+                    n_events += 1         
+
+                    for adm_code in event.nuts3.split(';'):                    
+                        try:
+                            adm_div = AdministrativeDivision.objects.get(regions__id__exact=region.id, code=adm_code)
+                            adm_link = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=adm_div)                        
+                        except AdministrativeDivision.DoesNotExist:
+                            traceback.print_exc()
+                            #print(adm_code)
+                            pass  
+            except Exception, e:
+                raise CommandError(e)                          
     
     def try_parse_int(self, s, base=10, default=None):
         try:

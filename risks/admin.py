@@ -23,7 +23,7 @@ from django.contrib import messages
 
 from risk_data_hub import local_settings
 
-from risks.models import RiskAnalysis
+from risks.models import RiskAnalysis, RiskAnalysisDymensionInfoAssociation
 from risks.models import Region, AdministrativeDivision
 from risks.models import AnalysisType, HazardType, DymensionInfo
 from risks.models import PointOfContact, HazardSet
@@ -49,6 +49,8 @@ from risks.forms import ImportDataEventForm
 from risks.forms import ImportDataEventAttributeForm
 
 from risks.const.messages import *
+
+from django.core.management import call_command
 
 admin.site.site_header = 'Risk Data Hub - Administration'
 admin.site.site_url = local_settings.SITEURL
@@ -224,6 +226,10 @@ class RiskAnalysisAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+    def log_change(self, request, obj, message):
+        call_command('fix_diminfo_relations', risk_analysis_id=obj.id)
+        super(RiskAnalysisAdmin, self).log_change(request, obj, message)
 
 
 class PointOfContactAdmin(admin.ModelAdmin):

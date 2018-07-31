@@ -935,6 +935,8 @@ class EventDetailsView(DataExtractionView):
             pass
 
     def get_related_ra(self, hazard_type, dym_values, analysis_type, event):        
+        #if 'TOTAL' not in [d.upper() for d in dym_values]:
+        #    dym_value.append('total')
         ra = RiskAnalysis.objects.filter(
             hazard_type=hazard_type,
             dymensioninfo_associacion__value__upper__in=dym_values,

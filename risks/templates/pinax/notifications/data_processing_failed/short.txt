@@ -1,0 +1,3 @@
+{% load i18n %}
+
+{% trans "An error occured processing uploaded data" %}
