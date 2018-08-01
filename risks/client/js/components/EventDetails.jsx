@@ -13,16 +13,16 @@ class EventDetails extends Component {
     }
     
     renderChart(data) {        
-        const { dim, riskAnalysisData } = this.props;        
+        const { dim } = this.props;        
         return Object.keys(data).map( key => {
-            const { values, dimensions } = data[key];            
+            const { values, dimensions, riskAnalysis } = data[key];            
             const currentDimension = dimensions[dim.dim1].values[dim.dim1Idx];
-            const val = currentDimension.charAt(0).toUpperCase() + currentDimension.substr(1);
-            const { unitOfMeasure } = riskAnalysisData || 'Values';
+            const val = currentDimension.charAt(0).toUpperCase() + currentDimension.substr(1);            
+            const { unit_of_measure: unitOfMeasure } = riskAnalysis;
             return (
                 <Panel key={val} className="panel-box">
                     <h5>{val}</h5>
-                    <Chart dim={dim} values={values} val={val} dimension={dimensions} uOm={unitOfMeasure} selectRP={function(){}}/>
+                    <Chart dim={dim} values={values} val={val} dimension={dimensions} uOm={unitOfMeasure} skipLabel='event' selectRP={function(){}}/>
                 </Panel>
             )
         });        

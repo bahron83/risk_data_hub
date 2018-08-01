@@ -481,7 +481,8 @@ class RiskAnalysis(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardT
                               ('referenceLayer', 'get_reference_layer_data',),
                               ('referenceStyle', 'get_reference_style',),
                               ('additionalTables', 'get_additional_data',),
-                              ('hazardSet', 'get_hazard_set_extended',))
+                              ('hazardSet', 'get_hazard_set_extended',),
+                              ('unit_of_measure', 'unit_of_measure',))
 
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, null=False, blank=False,
