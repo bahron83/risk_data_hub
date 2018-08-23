@@ -105,8 +105,7 @@ class Command(BaseCommand):
 
                     try:
                         country = AdministrativeDivision.objects.get(code=obj['iso2'], level=1)
-                    except:
-                        AdministrativeDivision.DoesNotExist:
+                    except AdministrativeDivision.DoesNotExist:                        
                         raise CommandError("Could not find adm unit with code {}".format(obj['iso2']))
 
                     try:

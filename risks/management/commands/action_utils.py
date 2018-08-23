@@ -190,5 +190,5 @@ class DbUtils:
         insert_dimension_value_template = "INSERT INTO risk_dimensions(adm_fid, risk_analysis_id, dim1_id, dim2_id, dim3_id, dim4_id, dim5_id, event_id, value) " +\
                                           "SELECT {fid}, {ra_id}, {dim1}, {dim2}, {dim3}, {dim4}, {dim5}, '{event_id}', '{value}' " +\
                                           "ON CONFLICT (adm_fid, dim1_id, dim2_id, risk_analysis_id, event_id) DO UPDATE " +\
-                                          "SET value = '{value}';"
+                                          "SET value = '{value}';"       
         curs.execute(insert_dimension_value_template.format(**dim_ids))

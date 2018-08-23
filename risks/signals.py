@@ -1,10 +1,10 @@
 from django.dispatch import Signal, receiver
-from django.db.models.signals import m2m_changed, post_save
+#from django.db.models.signals import m2m_changed, post_save
 from risks.models import RiskAnalysis, RiskAnalysisDymensionInfoAssociation
 from geonode.notifications_helper import send_now_notification
 from geonode.people.models import Profile
-from django.core.management import call_command
-import inspect
+#from django.core.management import call_command
+#import inspect
 
 
 #SIGNALS RELATED TO ASYNCHRONOUS TASKS

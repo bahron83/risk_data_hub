@@ -101,7 +101,7 @@ class Command(BaseCommand):
         event_id = ''
                 
         try:
-            for row_num in range(1, sheet.nrows):
+            for row_num in range(1, sheet.nrows):                
                 event_id = str(sheet.cell(row_num, 0).value).strip()
                 adm_code = str(sheet.cell(row_num, 1).value).strip()
                 dim1 = str(sheet.cell(row_num, 2).value).strip()

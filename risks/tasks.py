@@ -111,7 +111,7 @@ def import_event_data(filepath, risk_app_name, region_name, filename_ori, curren
                          excel_file=filepath,                         
                          stdout=out)             
         except Exception, e:
-            report_processing_error(current_user_id, final_name, region_name, e)    
+            report_processing_error(current_user_id, filename_ori, region_name, e)    
             return None
         
         complete_upload(current_user_id, filename_ori, region_name)           
