@@ -39,7 +39,7 @@ _urls = (
     (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/load/(?P<load>[\w\-]+)/$', views.data_extraction, 'analysis_all',),
     (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/from/(?P<from>[\w\-]+)/to/(?P<to>[\w\-]+)/$', views.data_extraction, 'analysis_daterange',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/dym/(?P<dym>[\w\-]+)$', views.data_extraction, 'analysis_dym',),
-    (r'apps/(?P<apps>[\w\-]+)/?$', views.apps_view, 'apps',),
+    #(r'apps/(?P<apps>[\w\-]+)/?$', views.apps_view, 'apps',),
     (r'countryauth/?$', views.auth_view, 'countryauth',),
     (r'admlookup/(?P<admlookup>[\w\-]+)/?$', views.adm_lookup_view, 'admlookup',),
     (r'loc/(?P<loc>[\w\-]+)/detail/(?P<detail>[\w\-]+)/?$', views.adm_lookup_view, 'admlookup',),    

@@ -23,13 +23,22 @@
     {% block hero %}
     <div class="jumbotron">
         <div class="container no-padding">                                                
-            <div class="col-sm-6">                    
-                <h1>Risk Data Hub</h1>        
-                <p>The Disaster Risk Management Knowledge Centre (DRMKC) makes available a GIS web-platform – the Risk Data Hub – intended to improve the access and sharing of curated European-wide (EU, EFTA  and IPA  countries) risk data, tools and methodologies for fostering Disaster Risk Managemet (DRM) related actions.</p>                
+            <div class="row">
+                <div class="col-sm-6">                    
+                    <h1>Risk Data Hub</h1>        
+                    <p>The Disaster Risk Management Knowledge Centre (DRMKC) makes available a GIS web-platform – the Risk Data Hub – intended to improve the access and sharing of curated European-wide (EU, EFTA  and IPA  countries) risk data, tools and methodologies for fostering Disaster Risk Managemet (DRM) related actions.</p>                                    
+                </div>
+                <div class="col-sm-6">
+                    <img style="max-width: 100%" alt="Disaster Risk Management Cycle"  src="{{ STATIC_URL }}img/rdh_home_presentation_img.png" />
+                </div>                            
             </div>
-            <div class="col-sm-6">
-                <img style="max-width: 100%" alt="Disaster Risk Management Cycle"  src="{{ STATIC_URL }}img/rdh_home_presentation_img.png" />
-            </div>                            
+            <div class="row">
+                <div class="col-sm-12">
+                    <p>
+                        >> Join the event: <a href="https://drmkc.jrc.ec.europa.eu/partnership/Scientific-Partnerships/Risk-Data-Hub/Risk-Data-Hub-Austrian-Disaster-Network-Days">Risk Data Hub & Austrian Disaster Network Days</a> <<
+                    </p>                    
+                </div>
+            </div>
         </div>
     </div>
     {% endblock %}
@@ -329,7 +338,7 @@
             const adm_name = props && props.HRname || 'Europe';              
             const adjustedPathname = window.location.pathname.slice(-1) == "/" ? window.location.pathname : window.location.pathname + "/";
             const contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
-            const disasterRisk = {app: {region: adm_code, regionName: adm_name, href: appUrl, geom: appUrl}, contextUrl: contextUrlPrefix, csrfmiddlewaretoken: '{{ csrf_token }}'};                                                      
+            const disasterRisk = {app: {region: adm_code, regionName: adm_name, href: appUrl, geom: appUrl}, requestContext: 'region', contextUrl: contextUrlPrefix, csrfmiddlewaretoken: '{{ csrf_token }}'};                                                      
             localStorage.removeItem("disasteRisk");
             localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));
         }

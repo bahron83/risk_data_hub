@@ -41,6 +41,7 @@ from risks.models import AdditionalData
 from risks.models import Event
 from risks.models import EventImportAttributes
 from risks.models import AnalysisClass
+from risks.models import SendaiTarget
 
 from risks.forms import CreateRiskAnalysisForm
 from risks.forms import ImportDataRiskAnalysisForm
@@ -434,6 +435,12 @@ class AnalysisClassAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
 
 
+class SendaiTargetAdmin(admin.ModelAdmin):
+    model = SendaiTarget
+    list_display = ('code', 'description',)
+    list_display_links = ('code',)
+
+
 @admin.register(RiskApp)
 class RiskAppAdmin(admin.ModelAdmin):
     list_display = ('name',)
@@ -455,6 +462,7 @@ admin.site.register(HazardSet, HazardSetAdmin)
 admin.site.register(FurtherResource, FurtherResourceAdmin)
 admin.site.register(Event, EventAdmin)
 admin.site.register(AnalysisClass, AnalysisClassAdmin)
+admin.site.register(SendaiTarget, SendaiTargetAdmin)
 
 admin.site.register(RiskAnalysisCreate, RiskAnalysisCreateAdmin)
 admin.site.register(RiskAnalysisImportData, RiskAnalysisImportDataAdmin)

@@ -28,7 +28,7 @@ User = get_user_model()
 from geonode.layers.models import Layer
 from risks.models import RiskAnalysis, HazardType, RiskApp
 from risks.models import AnalysisType, DymensionInfo
-from risks.models import RiskAnalysisDymensionInfoAssociation
+from risks.models import RiskAnalysisDymensionInfoAssociation, SendaiTarget
 
 from django.db import IntegrityError, transaction
 
@@ -142,7 +142,7 @@ Loss Impact and Impact Analysis Types.'
         return parser
     
     @transaction.atomic
-    def create_relation(self, value, dymensioninfo, riskanalysis, order, axis, layer_attribute):
+    def create_relation(self, value, dymensioninfo, riskanalysis, order, axis, layer_attribute, sendai_target):
         res = None
         try:
             with transaction.atomic():
@@ -152,7 +152,8 @@ Loss Impact and Impact Analysis Types.'
                     riskanalysis = riskanalysis,
                     order = order,
                     axis = axis,
-                    layer_attribute = layer_attribute
+                    layer_attribute = layer_attribute,
+                    sendai_target=sendai_target
                 )  
                 res = rd              
         except IntegrityError:
@@ -224,13 +225,24 @@ Loss Impact and Impact Analysis Types.'
                                     (x.strip() for x in
                                     dimension_values['values'].splitlines())))
 
+                sendai_targets = list(filter(None,
+                                    (x.strip() for x in
+                                    dimension_values['sendai_targets'].splitlines())))
+
                 dim_name = dimension_values['dymensioninfo']
+                i = 0
                 for counter, dim_value in enumerate(values):                        
-                    diminfo = DymensionInfo.objects.get(name=dim_name)                                                 
-                    rd = self.create_relation(dim_value, diminfo, risk, counter, dimension_values['axis'], dimension_values['layer_attribute'])                       
+                    diminfo = DymensionInfo.objects.get(name=dim_name)  
+                    sendai_target = None
+                    try:
+                        sendai_target = SendaiTarget.objects.get(code=sendai_targets[i])
+                    except SendaiTarget.DoesNotExist:
+                        pass
+                    rd = self.create_relation(dim_value, diminfo, risk, counter, dimension_values['axis'], dimension_values['layer_attribute'], sendai_target)                       
                     if rd is not None:
                         print ("Created Risk Analysis Dym %s [%s] (%s) - axis %s" %
                         (rd.order, dim_value, dim_name, rd.axis))            
+                    i += 1
 
         return risk_name    
 

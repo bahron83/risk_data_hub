@@ -4,6 +4,7 @@ import { dataContainerSelector, chartSelector, eventTableSelector, sChartSelecto
 import { getAnalysisData, getData, setDimIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent, setFilters } from '../actions/disaster';
 import Chart from '../components/Chart';
 import EventCountryChart from '../components/EventCountryChart';
+import SendaiCountryChart from '../components/SendaiCountryChart';
 import SChart from '../components/ScatterChart';
 import EventTable from '../components/EventTable';
 import Paginator from '../components/Paginator';
@@ -165,10 +166,18 @@ class DataContainer extends Component {
                     
                     {fullContext.analysis_class == 'event' ? (                        
                         <div>
-                            <Panel className="panel-box">   
-                                <h4 className="text-center">{'Historical Events Chart'}</h4>                             
-                                <EventCountryChart data={eventDataGroup} fullContext={fullContext} zoomInOut={zoomInOut} contextUrl={contextUrl}/>
-                            </Panel>
+                            {fullContext.adm_level > 0 ? (
+                                <Panel className="panel-box">   
+                                    <h4 className="text-center">{'Sendai Target Indicator'}</h4>                             
+                                    <SendaiCountryChart dim={dim} data={data}/>
+                                </Panel>
+                            ) : (
+                                <Panel className="panel-box">   
+                                    <h4 className="text-center">{'Historical Events Chart'}</h4>                             
+                                    <EventCountryChart data={eventDataGroup} fullContext={fullContext} zoomInOut={zoomInOut} contextUrl={contextUrl}/>
+                                </Panel>
+                            )}
+                            
                             <Panel className="panel-box">                                
                                 <h4>Filter by date</h4>                                
                                 <DatePickerRange fullContext={fullContext} setFilters={setFilters} loading={loading}/>

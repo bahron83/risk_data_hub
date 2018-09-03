@@ -187,6 +187,8 @@ class Command(BaseCommand):
             'adm_level': params['adm_div'].level,
             'parent_adm_code': params['adm_div'].parent.code,
             'event_id': params['event'].event_id,
+            'begin_date': params['event'].begin_date,
+            'end_date': params['event'].end_date,
             'value': params['attribute_value']
         }
         db = DbUtils()

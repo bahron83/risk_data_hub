@@ -85,7 +85,7 @@ class Command(BaseCommand):
     def insert_data(self, conn, values):        
         curs = conn.cursor()
         '''insert_template = """WITH data AS (SELECT '{geo_json}'::json AS fc)
-                            INSERT INTO events_geometry (the_geom, event_id)
+                            INSERT INTO events (the_geom, event_id)
                             SELECT                        
                                 ST_SetSRID(ST_Multi(ST_GeomFromGeoJSON(feat->>'geometry')), 4326) AS the_geom,
                                 replace(cast((feat->'properties')->'EventID' as text), '"', '') as event_id
@@ -95,7 +95,7 @@ class Command(BaseCommand):
                             ) AS f
                             ON CONFLICT (event_id) DO UPDATE SET the_geom = excluded.the_geom;"""
                             '''
-        insert_template = """INSERT INTO events_geometry (the_geom, event_id)
+        insert_template = """INSERT INTO events (the_geom, event_id)
                             SELECT                        
                                 ST_SetSRID(ST_Multi(ST_GeomFromGeoJSON('{geometry}')), 4326) AS the_geom,
                                 replace(cast('{event_id}' as text), '"', '') as event_id                            
