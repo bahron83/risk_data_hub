@@ -1,3 +1,4 @@
+import os
 import datetime
 from django.conf import settings
 from risk_data_hub import settings as rdh_settings
@@ -102,18 +103,24 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
 
     def calculate_sendai_indicator(self, loc, indicator, events_total, output_type = 'sum', n_of_years = 1):
         result = None   
-        if indicator:             
+        log = ''
+        if indicator: 
+            log += 'indicator code: {}'.format(indicator.code)            
             if indicator.code.startswith('A') or indicator.code.startswith('B'):
                 adm_data = AdministrativeData.objects.get(name='Population')
-            if indicator.code.startswith('C'):
+            elif indicator.code.startswith('C'):
                 adm_data = AdministrativeData.objects.get(name='GDP')
+            log += ' - adm_data: {}'.format(adm_data)            
             if adm_data:
                 adm_data_row = adm_data.set_location(loc).get_by_association()
+                log += ' - adm_data_row: {}'.format(adm_data_row)
                 if adm_data_row:
                     adm_data_value = float(adm_data_row.value)
                     result = events_total / adm_data_value * 100000
                     if output_type == 'average' and n_of_years > 0:
                         result = result / n_of_years
+        with open("log.txt", "w") as f:
+            f.write(log)                
         return result
 
     def get(self, request, *args, **kwargs):   
