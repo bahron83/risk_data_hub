@@ -109,8 +109,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             elif indicator.code.startswith('C'):
                 adm_data = AdministrativeData.objects.get(name='GDP')            
             if adm_data:
-                adm_data_row = adm_data.set_location(loc).get_by_association()
-                log += ' - adm_data_row: {}'.format(adm_data_row)
+                adm_data_row = adm_data.set_location(loc).get_by_association()                
                 if adm_data_row:
                     adm_data_value = float(adm_data_row.value)
                     result = events_total / adm_data_value * 100000
