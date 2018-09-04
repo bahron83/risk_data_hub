@@ -225,9 +225,10 @@ Loss Impact and Impact Analysis Types.'
                                     (x.strip() for x in
                                     dimension_values['values'].splitlines())))
 
-                sendai_targets = list(filter(None,
-                                    (x.strip() for x in
-                                    dimension_values['sendai_targets'].splitlines())))
+                if 'sendai_targets' in dimension_values:
+                    sendai_targets = list(filter(None,
+                                        (x.strip() for x in
+                                        dimension_values['sendai_targets'].splitlines())))
 
                 dim_name = dimension_values['dymensioninfo']
                 i = 0
@@ -236,7 +237,7 @@ Loss Impact and Impact Analysis Types.'
                     sendai_target = None
                     try:
                         sendai_target = SendaiTarget.objects.get(code=sendai_targets[i])
-                    except SendaiTarget.DoesNotExist:
+                    except:
                         pass
                     rd = self.create_relation(dim_value, diminfo, risk, counter, dimension_values['axis'], dimension_values['layer_attribute'], sendai_target)                       
                     if rd is not None:

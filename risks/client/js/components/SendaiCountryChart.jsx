@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import { ComposedChart, BarChart, Bar, Line, XAxis, Cell, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
 
+const DECIMAL_POINTS = 3;
+
 class SendaiCountryChart extends Component {
     getChartData() {
         const { data } = this.props;
@@ -10,9 +12,9 @@ class SendaiCountryChart extends Component {
         if(values) {              
             return (
                 values.map(v => {                    
-                    const value = this.round(parseFloat(v[1]), 2);
+                    const value = this.round(parseFloat(v[1], DECIMAL_POINTS));
                     const baseline = this.getRefValue();
-                    const percentDiff = this.round((value - baseline) / baseline * 100, 2);
+                    const percentDiff = this.round((value - baseline) / baseline * 100, DECIMAL_POINTS);
                     return {'name': v[0], 'value': value, 'baseline': baseline, 'percentDiff': percentDiff}
                 })
             )
@@ -27,7 +29,7 @@ class SendaiCountryChart extends Component {
     getRefValue() {
         const { data } = this.props;
         const { sendaiValues } = data;        
-        return sendaiValues && sendaiValues.length > 0 ? this.round(parseFloat(sendaiValues[0][1]), 2) : null;
+        return sendaiValues && sendaiValues.length > 0 ? this.round(parseFloat(sendaiValues[0][1]), DECIMAL_POINTS) : null;
     }
 
     getSendaiIndicator() {

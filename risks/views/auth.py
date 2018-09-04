@@ -1,3 +1,4 @@
+import json
 from risk_data_hub import settings as rdh_settings
 from geonode.utils import json_response
 from django.views.generic import View
@@ -51,12 +52,13 @@ class UserAuth(object):
             'message': message
         }
     
-    def validate_request(self, request, **kwargs):        
-        if not 'requestContext' in kwargs:
+    def validate_request(self, request, **kwargs):   
+        data = json.loads(request.body)     
+        if not 'requestContext' in data:
             return self.prepare_response('error', 400, 'No context specified in the request')
-        elif kwargs['requestContext'] == 'region':
+        elif data['requestContext'] == 'region':
             if 'app' in kwargs:            
-                region_name = request.POST.get("app[regionName]", "")                
+                region_name = data['app']['regionName']
                 try:
                     region = Region.objects.get(name=region_name)                    
                 except Region.DoesNotExist:    

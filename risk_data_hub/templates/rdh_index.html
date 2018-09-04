@@ -274,7 +274,9 @@
                 const publicRegions = ['EU', 'EW', 'SEE'];
                 const isUserAuthenticated = '{{ user.is_authenticated }}' === 'True';  
                 const props = e.target.feature.properties;
+                const contextUrlPrefix = getUrlPrefix();
                 setLocalStorageItem(props);
+                const disasterRisk = localStorage.getItem("disasterRisk");
                 
                 if(props.HRpcode) {
                     if(publicRegions.includes(props.HRpcode)) {
@@ -286,7 +288,8 @@
                             url: `${contextUrlPrefix}/risks/data_extraction/countryauth/`,
                             type: "POST",
                             data: disasterRisk,
-
+                            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                            dataType: "json"
                             })
                             .done(function(response){                                
                                 if(response && response.success) {                                
@@ -332,12 +335,16 @@
         });
 
         appUrl = jQuery("#nav_risks a").attr("href").replace(/\/$/, "");
+
+        function getUrlPrefix() {
+            const adjustedPathname = window.location.pathname.slice(-1) == "/" ? window.location.pathname : window.location.pathname + "/";
+            return adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
+        }
         
         function setLocalStorageItem(props = null) {            
             const adm_code = props && props.HRpcode || 'EU';             
-            const adm_name = props && props.HRname || 'Europe';              
-            const adjustedPathname = window.location.pathname.slice(-1) == "/" ? window.location.pathname : window.location.pathname + "/";
-            const contextUrlPrefix = adjustedPathname.split('/').length > 2 ? '/' + adjustedPathname.split('/')[1] : '';
+            const adm_name = props && props.HRname || 'Europe';                          
+            const contextUrlPrefix = getUrlPrefix();
             const disasterRisk = {app: {region: adm_code, regionName: adm_name, href: appUrl, geom: appUrl}, requestContext: 'region', contextUrl: contextUrlPrefix, csrfmiddlewaretoken: '{{ csrf_token }}'};                                                      
             localStorage.removeItem("disasteRisk");
             localStorage.setItem("disasterRisk", JSON.stringify(disasterRisk));

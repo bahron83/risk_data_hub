@@ -102,15 +102,12 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         return self.features_to_object(features, field_list, object_key)
 
     def calculate_sendai_indicator(self, loc, indicator, events_total, output_type = 'sum', n_of_years = 1):
-        result = None   
-        log = ''
-        if indicator: 
-            log += 'indicator code: {}'.format(indicator.code)            
+        result = None           
+        if indicator:             
             if indicator.code.startswith('A') or indicator.code.startswith('B'):
                 adm_data = AdministrativeData.objects.get(name='Population')
             elif indicator.code.startswith('C'):
-                adm_data = AdministrativeData.objects.get(name='GDP')
-            log += ' - adm_data: {}'.format(adm_data)            
+                adm_data = AdministrativeData.objects.get(name='GDP')            
             if adm_data:
                 adm_data_row = adm_data.set_location(loc).get_by_association()
                 log += ' - adm_data_row: {}'.format(adm_data_row)
@@ -118,9 +115,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                     adm_data_value = float(adm_data_row.value)
                     result = events_total / adm_data_value * 100000
                     if output_type == 'average' and n_of_years > 0:
-                        result = result / n_of_years
-        with open("log.txt", "w") as f:
-            f.write(log)                
+                        result = result / n_of_years        
         return result
 
     def get(self, request, *args, **kwargs):   
