@@ -12,7 +12,7 @@ from risks.signals import complete_upload, report_processing_error
 
 
 @shared_task
-def create_risk_analysis(input_file, file_ini, current_user_id):
+def create_risk_analysis(input_file, final_name, current_user_id):
     out = StringIO.StringIO()
     risk = None
     try:
@@ -22,15 +22,15 @@ def create_risk_analysis(input_file, file_ini, current_user_id):
 
         risk = RiskAnalysis.objects.get(name=str(value).strip())
         print('risk found: {}'.format(risk.name))
-        try:
+        '''try:
             with transaction.atomic():
                 risk.descriptor_file = file_ini
-                risk.save()
-        except IntegrityError:
-            #new_risk = RiskAnalysis()
-            #new_risk = risk
-            #new_risk.save()
-	        pass
+                risk.save()            
+        except IntegrityError:            
+	        pass'''
+        risk.descriptor_file = final_name
+        risk.save()
+
     except Exception, e:
         value = None
         if risk is not None:

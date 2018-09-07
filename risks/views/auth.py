@@ -6,7 +6,7 @@ from risks.views.base import ContextAware
 from risks.models import Region
 
 
-UNRESTRICTED_REGIONS = ['Europe']
+UNRESTRICTED_REGIONS = ['Europe', 'EUWaters', 'South_Eastern_Europe']
 
 class UserAuth(object):
     
@@ -15,9 +15,10 @@ class UserAuth(object):
             return True
         
         owner_groups = None            
-        if kwargs['requestContext'] == 'region':
-            if 'app' in kwargs:            
-                region_name = request.POST.get("app[regionName]", "")                    
+        data = json.loads(request.body)     
+        if data['requestContext'] == 'region':
+            if 'app' in data:            
+                region_name = data['app']['regionName']
                 try:
                     region = Region.objects.get(name=region_name)                        
                 except Region.DoesNotExist:
@@ -56,11 +57,15 @@ class UserAuth(object):
         data = json.loads(request.body)     
         if not 'requestContext' in data:
             return self.prepare_response('error', 400, 'No context specified in the request')
+        if not 'app' in data:
+            return self.prepare_response('error', 400, 'No app specified in the request')
         elif data['requestContext'] == 'region':
-            if 'app' in kwargs:            
-                region_name = data['app']['regionName']
+            if 'app' in kwargs:                            
                 try:
+                    region_name = data['app']['regionName']
                     region = Region.objects.get(name=region_name)                    
+                except KeyError, e:
+                    return self.prepare_response('error', 400, e)
                 except Region.DoesNotExist:    
                     return self.prepare_response('error', 404, 'No data available for selected country')
         return self.prepare_response('ok', 200)

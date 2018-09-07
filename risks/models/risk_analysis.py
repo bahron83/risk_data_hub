@@ -199,7 +199,7 @@ class RiskAnalysis(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardT
 
 
 class RiskAnalysisCreate(models.Model):
-    descriptor_file = models.FileField(upload_to='descriptor_files', max_length=255)
+    descriptor_file = models.FileField(upload_to='descriptor_files', storage=rfs, max_length=255)
 
     def file_link(self):
         if self.descriptor_file:

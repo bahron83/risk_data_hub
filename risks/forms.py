@@ -57,13 +57,14 @@ class CreateRiskAnalysisForm(models.ModelForm):
         path = default_storage.save('tmp/'+file_ini.name,
                                     ContentFile(file_ini.read()))
         tmp_file = os.path.join(settings.MEDIA_ROOT, path)
+        final_name = os.path.join('descriptor_files', file_ini.name)
         
         try:
-            create_risk_analysis(tmp_file, file_ini, self.current_user.id)        
+            create_risk_analysis(tmp_file, final_name, self.current_user.id)        
         except ValueError, e:
             raise forms.ValidationError(e)
 
-        return file_ini
+        return file_ini        
 
 
 class ImportDataRiskAnalysisForm(models.ModelForm):

@@ -280,6 +280,13 @@ class RiskAnalysisCreateAdmin(admin.ModelAdmin):
         form.current_user = request.user
         return form
 
+    def get_queryset(self, request):
+        qs = super(RiskAnalysisCreateAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        risk_analysis_owned_files = RiskAnalysis.objects.filter(owner=request.user).values_list('descriptor_file', flat=True)
+        return qs.filter(descriptor_file__in=risk_analysis_owned_files).distinct()        
+
 
 class RiskAnalysisImportDataAdmin(admin.ModelAdmin):
     model = RiskAnalysisImportData
