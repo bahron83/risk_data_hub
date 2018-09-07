@@ -197,10 +197,11 @@ class EventDetailsView(DataExtractionView):
                 dym_values = [v[0] for v in an_event_values['values']]
                 
                 #for every analysis bound to current event, find matching risk analysis (based on analysis type)
-                matching_ra = self.get_related_ra(hazard_type, dym_values, self.get_related_analysis_type(an_event), event)                        
+                matching_ra = self.get_related_ra(hazard_type, dym_values, self.get_related_analysis_type(an_event), event)                                        
                 
                 #for every match, retrieve sum of values of administrative divisions affected
                 for an_risk in matching_ra:
+                    data['{}'.format(an_event.analysis_type.name)]['relatedRiskAnalysis'] = an_risk.get_risk_details()
                     adjusted_kwargs['an'] = an_risk.name
                     adjusted_kwargs['loc'] = event.nuts3.replace(';', '__')
                     feat_kwargs = self.url_kwargs_to_query_params(**self.removekey(adjusted_kwargs, 'evt'))

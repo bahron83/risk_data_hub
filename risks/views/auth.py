@@ -14,27 +14,29 @@ class UserAuth(object):
         if request.user.is_superuser:
             return True
         
-        owner_groups = None            
-        data = json.loads(request.body)     
-        if data['requestContext'] == 'region':
-            if 'app' in data:            
-                region_name = data['app']['regionName']
-                try:
-                    region = Region.objects.get(name=region_name)                        
-                except Region.DoesNotExist:
-                    pass
-                if region.name in UNRESTRICTED_REGIONS:
-                    return True
-                if region.owner:
-                    owner_groups = region.owner.groups.all()                        
-        elif kwargs['requestContext'] == 'risk_analysis':
-            if 'risk_analysis' in kwargs:
-                risk_analysis = kwargs['risk_analysis']
-                if risk_analysis.region:
-                    if risk_analysis.region.name in UNRESTRICTED_REGIONS:
+        owner_groups = None    
+        if request.method == 'POST':        
+            data = json.loads(request.body)             
+            if data['requestContext'] == 'region':
+                if 'app' in data:            
+                    region_name = data['app']['regionName']
+                    try:
+                        region = Region.objects.get(name=region_name)                        
+                    except Region.DoesNotExist:
+                        pass
+                    if region.name in UNRESTRICTED_REGIONS:
                         return True
-                if risk_analysis.owner:
-                    owner_groups = risk_analysis.owner.groups.all()        
+                    if region.owner:
+                        owner_groups = region.owner.groups.all()                        
+        elif request.method == 'GET':        
+            if kwargs['requestContext'] == 'risk_analysis':
+                if 'risk_analysis' in kwargs:
+                    risk_analysis = kwargs['risk_analysis']
+                    if risk_analysis.region:
+                        if risk_analysis.region.name in UNRESTRICTED_REGIONS:
+                            return True
+                    if risk_analysis.owner:
+                        owner_groups = risk_analysis.owner.groups.all()        
         if owner_groups:
             current_user = request.user
             current_user_group_ids = current_user.groups.all().values_list('id', flat=True)            
