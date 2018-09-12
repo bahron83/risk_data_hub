@@ -107,7 +107,7 @@ class EventDetails extends Component {
                             
                             <hr />
                             <h4>Comparison Charts</h4>
-                            <p>Impact of the event vs potential impact based on models (per return period)</p>
+                            <p>Impact of the event vs potential impact based on models (per return period expressed in years)</p>
                             {this.renderChart(data)}
                         </Modal.Body>
                         <Modal.Footer>
