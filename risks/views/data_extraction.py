@@ -231,10 +231,10 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                     return json_response(errors=['Invalid date format'], status=400)
             
             events = events.order_by('-begin_date')
-            total = events.count()
+            total_events = events.count()
             
             # Limit number of results
-            if events and 'load' not in kwargs and 'from' not in kwargs and total > EVENTS_TO_LOAD:
+            if events and 'load' not in kwargs and 'from' not in kwargs and total_events > EVENTS_TO_LOAD:
                 events = events[:EVENTS_TO_LOAD]
             
             # Build final event list (~ [Django] LEFT JOIN [Geoserver])
@@ -293,7 +293,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             #out['riskAnalysisData']['eventsLayer']['layerStyle']['url'] = out['riskAnalysisData']['layer']['layerStyle']['url']
             out['riskAnalysisData']['eventsLayer']['layerTitle'] = '{}_events'.format(out['riskAnalysisData']['layer']['layerTitle'])
             out['riskAnalysisData']['data']['event_group_country'] = event_group_country
-            out['riskAnalysisData']['data']['total_events'] = total            
+            out['riskAnalysisData']['data']['total_events'] = total_events         
             out['riskAnalysisData']['events'] = ev_list
             out['riskAnalysisData']['data']['sendaiValues'] = sendai_final_array
         
