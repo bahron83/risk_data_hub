@@ -102,7 +102,7 @@ class EventDetails extends Component {
                             </ul>
                             <hr />
                             <h4>Administrative data for country</h4>
-                            
+                            <p>Census data from Eurostat and percentage value of the event</p>
                             {this.renderAdministrativeData(overview, data)} 
                             
                             <hr />
