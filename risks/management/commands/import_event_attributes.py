@@ -116,10 +116,10 @@ class Command(BaseCommand):
                 if (attribute_value or allow_null_values) and any(x.value == dim1 for x in axis_x) and any(y.value == dim2 for y in axis_y):                    
                     x = axis_x.get(value=dim1)
                     y = axis_y.get(value=dim2)                                        
-                    try:
-                        adm_div = AdministrativeDivision.objects.get(code=adm_code)  
+                    try:                        
+                        adm_div = AdministrativeDivision.objects.get(code=event.iso2)
                     except AdministrativeDivision.DoesNotExist:
-                        raise CommandError('No adm unit found with code: {}'.format(adm_code))                  
+                        raise CommandError('Event associated with non existing Administrative unit (code: {})'.format(event.iso2))                  
                         
                     params = {
                         'adm_div': adm_div,
@@ -195,5 +195,5 @@ class Command(BaseCommand):
         db.insert_db(params['conn'], db_values, params['first_call'])
         if params['create_django_association']:
             risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=params['risk'], administrativedivision=params['adm_div'])
-            event_adm, created = EventAdministrativeDivisionAssociation.objects.get_or_create(event=params['event'], adm=params['adm_div'])
+            #event_adm, created = EventAdministrativeDivisionAssociation.objects.get_or_create(event=params['event'], adm=params['adm_div'])
     

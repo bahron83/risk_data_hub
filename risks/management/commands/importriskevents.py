@@ -124,12 +124,13 @@ class Command(BaseCommand):
                         event = Event(**obj)
                         event.save()                                                                               
                     
+                    adm_link, created = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=country)
                     n_events += 1         
 
                     for adm_code in event.nuts3.split(';'):                    
                         try:
                             adm_div = AdministrativeDivision.objects.get(regions__id__exact=region.id, code=adm_code)
-                            adm_link = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=adm_div)                        
+                            adm_link, created = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=adm_div)                        
                         except AdministrativeDivision.DoesNotExist:
                             traceback.print_exc()
                             #print(adm_code)
