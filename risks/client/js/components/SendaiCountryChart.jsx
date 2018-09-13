@@ -7,12 +7,11 @@ class SendaiCountryChart extends Component {
     getChartData() {
         const { data } = this.props;
         const { sendaiValues } = data;        
-        const values = [...sendaiValues.slice(1, sendaiValues.length)];
-        
+        const values = [...sendaiValues.slice(1, sendaiValues.length)];        
         if(values) {              
             return (
-                values.map(v => {                    
-                    const value = this.round(parseFloat(v[1], DECIMAL_POINTS));
+                values.map(v => {                                        
+                    const value = this.round(parseFloat(v[1]), DECIMAL_POINTS);                    
                     const baseline = this.getRefValue();
                     const percentDiff = this.round((value - baseline) / baseline * 100, DECIMAL_POINTS);
                     return {'name': v[0], 'value': value, 'baseline': baseline, 'percentDiff': percentDiff}
