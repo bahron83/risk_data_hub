@@ -205,14 +205,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         out['fullContext'] = full_context
 
         # Handling of events
-        if risk.analysis_type.analysis_class.name == 'event':            
-            
-            # Retrieve values for events aggregated by country from Geoserver
-            field_list = ['adm_code', 'dim1_value', 'dim2_value', 'value', 'event_id']
-            field_list_group = ['adm_code', 'dim1_value', 'dim2_value', 'value']
-            feat_kwargs['level'] = loc.level            
-            event_group_country = self.get_features_list('geonode:risk_analysis_event_group', field_list_group, **feat_kwargs)
-            values_events = self.get_features_obj('geonode:risk_analysis_event_details', field_list, 'event_id', **feat_kwargs)
+        if risk.analysis_type.analysis_class.name == 'event':                                    
 
             # Retrieve events from Django
             events = Event.objects.filter(hazard_type=hazard_type, region=reg)
@@ -236,6 +229,15 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             # Limit number of results
             if events and 'load' not in kwargs and 'from' not in kwargs and total_events > EVENTS_TO_LOAD:
                 events = events[:EVENTS_TO_LOAD]
+                #set limit also for Geoserver query
+                feat_kwargs['limit'] = EVENTS_TO_LOAD
+
+            # Retrieve values for events aggregated by country from Geoserver
+            field_list = ['adm_code', 'dim1_value', 'dim2_value', 'value', 'event_id']
+            field_list_group = ['adm_code', 'dim1_value', 'dim2_value', 'value']
+            feat_kwargs['level'] = loc.level                        
+            event_group_country = self.get_features_list('geonode:risk_analysis_event_group', field_list_group, **feat_kwargs)
+            values_events = self.get_features_obj('geonode:risk_analysis_event_details', field_list, 'event_id', **feat_kwargs)
             
             # Build final event list (~ [Django] LEFT JOIN [Geoserver])
             ev_list = []
