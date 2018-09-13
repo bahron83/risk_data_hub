@@ -131,8 +131,8 @@ class DbUtils:
             next_ra_id = None
                 
         if first_call and next_ra_id is None:
-            insert_risk_analysis_template = """INSERT INTO risk_analysis (id, name, hazard_type, region)
-                SELECT {risk_analysis_id}, '{risk_analysis}', '{hazard_type}', '{region}'
+            insert_risk_analysis_template = """INSERT INTO risk_analysis (name, hazard_type, region)
+                SELECT '{risk_analysis}', '{hazard_type}', '{region}'
                 WHERE
                 NOT EXISTS (SELECT id FROM risk_analysis WHERE
                     name = '{risk_analysis}' AND
@@ -150,7 +150,7 @@ class DbUtils:
                 raise CommandError("Could not find any suitable Risk Analysis on target DB!")
             
         rel_ids = {
-            'risk_analysis_id': values['risk_analysis_id'],
+            'risk_analysis_id': next_ra_id,
             'adm_fid': next_table_fid
         }
         
