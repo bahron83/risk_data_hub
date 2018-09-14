@@ -30,7 +30,13 @@ const DownloadBtn = connect(({disaster, report}) => {
 }, {downloadAction: generateReport})(require('../components/DownloadBtn'));
 
 
+const DEFAULT_DECIMAL_POINTS = 3;
+
 class DataContainer extends Component {            
+    
+    round(value, decimals = DEFAULT_DECIMAL_POINTS) {
+        return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+    }
     
     getRandomColor() {
         const letters = '0123456789ABCDEF';
@@ -174,7 +180,7 @@ class DataContainer extends Component {
                             {fullContext.adm_level > 0 ? (
                                 <Panel className="panel-box">   
                                     <h4 className="text-center">{'Sendai Target Indicator'}</h4>                             
-                                    <SendaiCountryChart dim={dim} data={data}/>
+                                    <SendaiCountryChart dim={dim} data={data} round={this.round.bind(this)}/>
                                 </Panel>
                             ) : (
                                 <Panel className="panel-box">   

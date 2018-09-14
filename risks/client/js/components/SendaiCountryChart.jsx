@@ -1,20 +1,18 @@
 import React, { Component } from 'react';
 import { ComposedChart, Bar, Line, XAxis, Cell, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
-import round from '../utils/DisasterUtils';
-import DEFAULT_DECIMAL_POINTS from '../utils/DisasterUtils';
 
 
 class SendaiCountryChart extends Component {
     getChartData() {
-        const { data } = this.props;
+        const { data, round } = this.props;
         const { sendaiValues } = data;        
         const values = [...sendaiValues.slice(1, sendaiValues.length)];        
         if(values) {              
             return (
                 values.map(v => {                                        
-                    const value = round(parseFloat(v[1]), DEFAULT_DECIMAL_POINTS);                    
+                    const value = round(v[1]);                    
                     const baseline = this.getRefValue();
-                    const percentDiff = round((value - baseline) / baseline * 100, DEFAULT_DECIMAL_POINTS);
+                    const percentDiff = round((value - baseline) / baseline * 100);
                     return {'name': v[0], 'value': value, 'baseline': baseline, 'percentDiff': percentDiff}
                 })
             )
@@ -23,9 +21,9 @@ class SendaiCountryChart extends Component {
     }    
 
     getRefValue() {
-        const { data } = this.props;
+        const { data, round } = this.props;
         const { sendaiValues } = data;        
-        return sendaiValues && sendaiValues.length > 0 ? round(parseFloat(sendaiValues[0][1]), DEFAULT_DECIMAL_POINTS) : null;
+        return sendaiValues && sendaiValues.length > 0 ? round(parseFloat(sendaiValues[0][1])) : null;
     }
 
     getSendaiIndicator() {

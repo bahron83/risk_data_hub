@@ -117,7 +117,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                     adm_data_value = float(adm_data_row.value)
                     result = events_total / adm_data_value * 100000
                     if output_type == 'average' and n_of_years > 0:
-                        result = result / n_of_years        
+                        result = round(Decimal(result / n_of_years), DEFAULT_DECIMAL_POINTS)
         return result
 
     def get(self, request, *args, **kwargs):   
@@ -283,7 +283,8 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                                 total += s[1]
                                 n_of_years += 1
                             else:
-                                sendai_final_array.append([s[0], self.calculate_sendai_indicator(loc, sendai_indicator, s[1])])
+                                rounded_value = round(Decimal(s[1]), DEFAULT_DECIMAL_POINTS)
+                                sendai_final_array.append([s[0], self.calculate_sendai_indicator(loc, sendai_indicator, rounded_value)])
                     sendai_final_array.insert(0, ['{}_{}'.format(SENDAI_FROM_YEAR, SENDAI_TO_YEAR), self.calculate_sendai_indicator(loc, sendai_indicator, total, 'average', n_of_years)])
                         
             # Finishing building output            
