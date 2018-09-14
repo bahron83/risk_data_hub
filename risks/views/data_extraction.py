@@ -1,5 +1,6 @@
 import os
 import datetime
+from decimal import *
 from dateutil.parser import parse
 from django.conf import settings
 from risk_data_hub import settings as rdh_settings
@@ -14,6 +15,7 @@ EVENTS_TO_LOAD = 50
 SENDAI_FROM_YEAR = 2005
 SENDAI_TO_YEAR = 2015
 SENDAI_YEARS_TIME_SPAN = 10
+DEFAULT_DECIMAL_POINTS = 3
 
 class DataExtractionView(FeaturesSource, HazardTypeView):   
 
@@ -246,8 +248,8 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             for event in events:
                 e = event.get_event_plain()                
                 value_arr = values_events[e['event_id']] if e['event_id'] in values_events else None
-                try:                    
-                    e[data_key] = float(value_arr[3]) if value_arr is not None else None
+                try:                                        
+                    e[data_key] = round(Decimal(value_arr[3]), DEFAULT_DECIMAL_POINTS) if value_arr is not None else None
                 except:
                     e[data_key] = None
                 e['data_key'] = data_key                

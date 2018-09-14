@@ -15,14 +15,15 @@ class SChart extends Component {
     } 
     
     render () {        
-        const { selectedEventIds, data } = this.props;     
+        const { selectedEventIds, data, unitOfMeasure } = this.props;   
+        console.log(data);
         if(data.length == 0)
             return null;           
         const dataKey = data[0]['data_key'];
         return (
           <ScatterChart width={500} height={400} margin={{top: 20, right: 0, bottom: 20, left: 0}}>
             <XAxis domain={['auto', 'auto']} dataKey={'year'} type="number" name='Year' unit=''/>
-            <YAxis dataKey={dataKey} type="number" name={dataKey} unit=''/>
+            <YAxis dataKey={dataKey} type="number" name={dataKey} unit={unitOfMeasure}/>
             <CartesianGrid />
             <Scatter onClick={this.handleClick.bind(this)} data={data} name='Events'>
                 {data.map((entry, index) => {

@@ -104,7 +104,8 @@ class DataContainer extends Component {
         const description = data.dimensions[dim.dim1].layers && data.dimensions[dim.dim1].layers[val] && data.dimensions[dim.dim1].layers[val].description ? data.dimensions[dim.dim1].layers[val].description : '';
         const eventData = this.prepareEventData();               
         const { event_group_country: eventDataGroup, dimensions: dimension } = this.props.riskAnalysisData && this.props.riskAnalysisData.data;        
-        let selectedAnalysisType = analysisType;    
+        let selectedAnalysisType = analysisType;                 
+
         if(this.props.analysisClass == (analysisTypeE && analysisTypeE.analysisClass && analysisTypeE.analysisClass.name))            
             selectedAnalysisType = analysisTypeE;
         return (
@@ -159,10 +160,14 @@ class DataContainer extends Component {
                     </div>
                     )}
 
-                    <Panel className="panel-box">
+                    {(contextUrl == null || contextUrl == '') ? (
+                        <Panel className="panel-box">
                         <h4>Search a name (country, nuts3 or city)</h4>
                         <Search />                        
                     </Panel>
+                    ) : null
+                    }
+                    
                     
                     {fullContext.analysis_class == 'event' ? (                        
                         <div>
@@ -174,7 +179,7 @@ class DataContainer extends Component {
                             ) : (
                                 <Panel className="panel-box">   
                                     <h4 className="text-center">{'Historical Events Chart'}</h4>                             
-                                    <EventCountryChart data={eventDataGroup} fullContext={fullContext} zoomInOut={zoomInOut} contextUrl={contextUrl}/>
+                                    <EventCountryChart data={eventDataGroup} uOm={unitOfMeasure} fullContext={fullContext} zoomInOut={zoomInOut} contextUrl={contextUrl}/>
                                 </Panel>
                             )}
                             
@@ -184,12 +189,12 @@ class DataContainer extends Component {
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Chart'}</h4>
-                                <SChart data={eventData} selectEvent={selectEvent} selectedEventIds={selectedEventIds} fullContext={fullContext}/>  
+                                <SChart data={eventData} unitOfMeasure={unitOfMeasure} selectEvent={selectEvent} selectedEventIds={selectedEventIds} fullContext={fullContext}/>  
                                 <Paginator total={data.total_events} showing={eventData.length} fullContext={fullContext} getAnalysisData={getAnalysis} loading={loading}/>                               
                             </Panel>
                             <Panel className="panel-box">
                                 <h4 className="text-center">{'Historical Events Resume'}</h4>
-                                <EventTable data={eventData} selectEvent={selectEvent} selectedEventIds={selectedEventIds} fullContext={fullContext}/>
+                                <EventTable data={eventData} unitOfMeasure={unitOfMeasure} selectEvent={selectEvent} selectedEventIds={selectedEventIds} fullContext={fullContext}/>
                                 <Paginator total={data.total_events} showing={eventData.length} fullContext={fullContext} getAnalysisData={getAnalysis} loading={loading}/>
                             </Panel>                                                                               
                         </div>

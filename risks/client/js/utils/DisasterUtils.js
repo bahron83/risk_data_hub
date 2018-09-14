@@ -168,4 +168,10 @@ function makeNotificationBody(data, title, head) {
     );
 }
 
-module.exports = {configLayer, getViewParam, getLayerName, getStyle, getStyleRef, configRefLayer, getLayerTitle, getLayerTitleEvents, makeNotificationBody};
+function round(value, decimals) {
+    return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+}
+
+const DEFAULT_DECIMAL_POINTS = 3;
+
+module.exports = {configLayer, getViewParam, getLayerName, getStyle, getStyleRef, configRefLayer, getLayerTitle, getLayerTitleEvents, makeNotificationBody, round, DEFAULT_DECIMAL_POINTS};

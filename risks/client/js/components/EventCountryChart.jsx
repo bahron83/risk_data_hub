@@ -23,6 +23,7 @@ class EventCountryChart extends Component {
     }  
 
     render() {          
+        const { uOm, skipLabel } = this.props;
         const chartData = this.getChartData(); 
         if(chartData.length > 0) {
             const dimensionX = 'Country';        
@@ -32,7 +33,7 @@ class EventCountryChart extends Component {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name"/>
                         <YAxis/> 
-                        <Tooltip/>                
+                        <Tooltip content={<ChartTooltip xAxisLabel={dimensionX} xAxisUnit='' uOm={uOm} skipLabel={skipLabel}/>}/>
                         <Bar dataKey="value" onClick={this.handleClick.bind(this)}>                    
                             {chartData.map((entry,index) => {                            
                                 const active = entry.name === this.props.fullContext.loc;
