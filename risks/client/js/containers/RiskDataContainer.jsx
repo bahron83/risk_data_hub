@@ -168,9 +168,9 @@ class DataContainer extends Component {
 
                     {(contextUrl == null || contextUrl == '') ? (
                         <Panel className="panel-box">
-                        <h4>Search a name (country, nuts3 or city)</h4>
-                        <Search />                        
-                    </Panel>
+                            <h4>Search a name (country, nuts3 or city)</h4>
+                            <Search />                        
+                        </Panel>
                     ) : null
                     }
                     

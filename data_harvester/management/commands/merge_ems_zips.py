@@ -14,7 +14,7 @@ from django.conf import settings
 
 ###############################################################################
 #input ZIP files (default current path)
-folder_input_zip = os.path.join(settings.BASE_DIR,'data_harvester/downloaded/')
+folder_input_zip = os.path.join(settings.DOWNLOAD_ROOT,'ems/')
 #temporary ZIP files
 folder_output_zip = os.path.join(folder_input_zip, 'temp/')
 if not os.path.exists(folder_output_zip):

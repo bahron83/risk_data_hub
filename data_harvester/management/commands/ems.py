@@ -33,59 +33,37 @@ class Command(BaseCommand):
     def handle(self, **options):
 
         #configure
-        conf=configure(os.path.join(settings.BASE_DIR, 'data_harvester/management/commands/conf.csv'))
+        conf=configure(os.path.join(settings.LOCAL_ROOT, '../data_harvester/management/commands/conf.csv'))
         emergency_tags=conf[0]
-        elements=conf[1]
-        pics_conf=conf[2]
+        #elements=conf[1]
+        #pics_conf=conf[2]        
 
-        #initialise db connection
-        db = DbUtils()
-        conn = db.get_db_conn()
-        curs = conn.cursor()        
+        elements = ['observed_event_a']
 
         #look for updates from feed
-        data_from_feed = ems_feed_reader.parse_feed(ems_feed_reader.RAPID_MAPPING_URL)        
-        emergency_tags_from_feed = [d['copernicus_id'] for d in data_from_feed]        
-        ems_string = "', '".join(emergency_tags_from_feed)
-        select_template = "SELECT asset_id FROM flows WHERE name = 'ems' AND asset_id IN ('{}')".format(ems_string)
-        curs.execute(select_template)
-        already_imported = []
-        while True:
-            row = curs.fetchone()
-            if row == None:
-                break
-            already_imported.append(row)
-        emergency_tags = emergency_tags_from_feed - already_imported
-        conn.close()
+        print('start parsing feed...')
+        data_from_feed = ems_feed_reader.parse_feed('rapid')
+        print('resolves events to import...')
+        #emergency_tags = ems_feed_reader.get_ems_to_import('rapid', data_from_feed)
 
         #download data
+        print('start downloading zip files...')
         get_ems_zips.get_ems_zips(emergency_tags)
 
         #download pics
         #get_ems_pics.get_ems_pics(emergency_tags, pics_conf)
 
         #merging shapefiles
+        print('start merging zip files...')
         merge_ems_zips.merge_ems_zips(emergency_tags,elements)
 
+        #update events with geometry
+        print('import events in database...')
+        ems_feed_reader.import_events(data_from_feed)
+
         #set emergency tags as imported
-        conn = db.get_db_conn()
-        curs = conn.cursor()        
-        insert_template = """INSERT INTO flows (name, asset_id) VALUES ('ems', '{asset_id}')
-                                ON CONFLICT (name, asset_id) DO UPDATE
-                                SET timestamp = now();"""
-        try:
-            for asset_id in emergency_tags:
-                parameters = {'asset_id': asset_id}
-                curs.execute(insert_template.format(**parameters))
-            conn.commit()        
-        except Exception, e:
-            try:
-                conn.rollback()
-            except:
-                pass
-            raise CommandError(e)
-        finally:
-            conn.close()
+        print('update flows...')
+        ems_feed_reader.set_tags_imported(emergency_tags)
 
 
 

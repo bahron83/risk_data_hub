@@ -69,6 +69,7 @@ INSTALLED_APPS += (PROJECT_NAME,)
 ROOT_URLCONF = os.getenv('ROOT_URLCONF', '{}.urls'.format(PROJECT_NAME))
 
 MEDIA_ROOT = os.getenv('MEDIA_ROOT', os.path.join(LOCAL_ROOT, "uploaded"))
+DOWNLOAD_ROOT = os.path.join(LOCAL_ROOT, "downloaded")
 
 STATIC_ROOT = os.getenv('STATIC_ROOT',
                         os.path.join(LOCAL_ROOT, "static_root")

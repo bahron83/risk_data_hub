@@ -33,7 +33,7 @@ def download_zip_series(zip_links):
     for link in zip_links:
 
         #obtain filename
-        file_name = os.path.join(settings.BASE_DIR, settings.DOWNLOAD_FOLDER, link.split('/')[-1]) 
+        file_name = os.path.join(settings.DOWNLOAD_ROOT, 'ems', link.split('/')[-1]) 
         filecheck = Path(file_name)        
 
         if not filecheck.exists():

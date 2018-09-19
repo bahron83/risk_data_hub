@@ -41,7 +41,7 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
     #fatalities = models.CharField(max_length=10, null=True)
     #people_affected = models.IntegerField()
     cause = models.CharField(max_length=255)
-    notes = models.CharField(max_length=255, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
     sources = models.CharField(max_length=255)
 
     administrative_divisions = models.ManyToManyField(
