@@ -38,9 +38,35 @@ class EventDetails extends Component {
         return Math.round(parseFloat(string) * 100) / 100        
     }
     
-    renderAdministrativeData(overview, data) {  
-        const { administrativeData, riskAnalysisMapping, event, threshold } = overview || {};          
-        return Object.keys(administrativeData).map(key => {
+    renderAdministrativeData(dataProcessed) {          
+        return Object.keys(dataProcessed).map(key => {               
+            const { unitOfMeasure, countryAdminData, nuts2AdminData, nuts3AdminData, countryAdminDataDim, nuts2AdminDataDim, nuts3AdminDataDim, eventByCountry, eventByNuts2, eventByNuts3, threshold } = dataProcessed[key];            
+            return (
+                <ul key={key} className="list-group">
+                    <li key={`${key}-country`} className="list-group-item">
+                        <label>{key} of Country</label>
+                        {`${countryAdminData.toLocaleString()} ${unitOfMeasure} (${countryAdminDataDim})`}
+                        <span className={`right ${eventByCountry > threshold ? 'eligible' : 'not-eligible'}`}>{eventByCountry ? `${eventByCountry} %` : ''}</span>
+                    </li>
+                    <li key={`${key}-nuts2`} className="list-group-item">
+                        <label>{key} of nuts2 affected</label>
+                        {`${nuts2AdminData.toLocaleString()} ${unitOfMeasure} (${nuts2AdminDataDim})`}
+                        <span className={`right ${eventByNuts2 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts2 ? `${eventByNuts2} %` : ''}</span>
+                    </li>
+                    <li key={`${key}-nuts3`} className="list-group-item">
+                        <label>{key} of nuts3 affected</label>
+                        {`${nuts3AdminData.toLocaleString()} ${unitOfMeasure} (${nuts3AdminDataDim})`}
+                        <span className={`right ${eventByNuts3 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts3 ? `${eventByNuts3} %` : ''}</span>
+                    </li>
+                </ul>
+            )
+        });
+    }
+
+    processAdministrativeData(overview, data) {
+        const { administrativeData, riskAnalysisMapping, event, threshold } = overview || {}; 
+        let dataProcessed = {};
+        Object.keys(administrativeData).map(key => {            
             const { unitOfMeasure, values } = administrativeData[key];            
             const nuts3List = event.nuts3.split(';');              
             const eventAdminData = data[riskAnalysisMapping[key]] && data[riskAnalysisMapping[key]]["values"] && data[riskAnalysisMapping[key]]["values"][0] && this.formatNumber(data[riskAnalysisMapping[key]]["values"][0][2]);
@@ -64,32 +90,27 @@ class EventDetails extends Component {
             const eventByNuts2 = eventAdminData ? this.formatNumber(eventAdminData / nuts2AdminData * 100) : null;
             const eventByNuts3 = eventAdminData ? this.formatNumber(eventAdminData / nuts3AdminData * 100) : null;
 
+            dataProcessed[key] = {
+                'unitOfMeasure': unitOfMeasure,
+                'countryAdminData': countryAdminData,
+                'nuts2AdminData': nuts2AdminData,
+                'nuts3AdminData': nuts3AdminData,
+                'eventByCountry': eventByCountry,
+                'eventByNuts2': eventByNuts2,
+                'eventByNuts3': eventByNuts3,
+                'countryAdminDataDim': countryAdminDataDim,
+                'nuts2AdminDataDim': nuts2AdminDataDim,
+                'nuts3AdminDataDim': nuts3AdminDataDim,
+                'threshold': threshold
+            }
+
             if(key == 'GDP' && calculationReady == null) {
+                console.log('eligibility = ', eventByNuts2 > threshold);
                 calculationReady = true;
                 eligible = eventByNuts2 > threshold;
             }
-                
-            
-            return (
-                <ul key={key} className="list-group">
-                    <li key={`${key}-country`} className="list-group-item">
-                        <label>{key} of Country</label>
-                        {`${countryAdminData.toLocaleString()} ${unitOfMeasure} (${countryAdminDataDim})`}
-                        <span className={`right ${eventByCountry > threshold ? 'eligible' : 'not-eligible'}`}>{eventByCountry ? `${eventByCountry} %` : ''}</span>
-                    </li>
-                    <li key={`${key}-nuts2`} className="list-group-item">
-                        <label>{key} of nuts2 affected</label>
-                        {`${nuts2AdminData.toLocaleString()} ${unitOfMeasure} (${nuts2AdminDataDim})`}
-                        <span className={`right ${eventByNuts2 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts2 ? `${eventByNuts2} %` : ''}</span>
-                    </li>
-                    <li key={`${key}-nuts3`} className="list-group-item">
-                        <label>{key} of nuts3 affected</label>
-                        {`${nuts3AdminData.toLocaleString()} ${unitOfMeasure} (${nuts3AdminDataDim})`}
-                        <span className={`right ${eventByNuts3 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts3 ? `${eventByNuts3} %` : ''}</span>
-                    </li>
-                </ul>
-            )
         });
+        return dataProcessed;        
     }
 
     isEligible() {
@@ -97,7 +118,7 @@ class EventDetails extends Component {
     }
     
     renderEligibleText(overview) {
-        const { threshold } = overview;
+        const { threshold } = overview;        
         if(this.isEligible()) {            
             return (
                 <div>
@@ -112,15 +133,16 @@ class EventDetails extends Component {
                 <span className="bigtext not-eligible">This event does not appear to be eligible for EU Solidarity Funds</span>
             </div>
         )
-    }
+    }        
     
     render() {   
         const { eventDetails, showEventDetail, visibleEventDetail, riskAnalysisData, toggleEventDetailVisibility } = this.props;
         const { data, overview } = eventDetails;
         const { event } = overview || {};        
-        //const showToggle = riskAnalysisData && riskAnalysisData.events ? true : false;
-        return (
-            data && showEventDetail ?                 
+        //const showToggle = riskAnalysisData && riskAnalysisData.events ? true : false;        
+        if(data && showEventDetail) {
+            const dataProcessed = this.processAdministrativeData(overview, data);
+            return (            
                 <div>
                     <Modal show={visibleEventDetail} onHide={toggleEventDetailVisibility}>
                         <Modal.Header closeButton>
@@ -146,8 +168,8 @@ class EventDetails extends Component {
                             <hr />
                             <h4>Administrative data for country</h4>
                             <p>Census data from Eurostat and percentage value of the event</p>
-                            {this.renderAdministrativeData(overview, data)}                                                                                     
-
+                            {this.renderAdministrativeData(dataProcessed)}                                                                                     
+    
                             <hr />
                             <h4>Comparison Charts</h4>
                             <p>Impact of the event vs potential impact based on models (per return period expressed in years)</p>
@@ -157,9 +179,10 @@ class EventDetails extends Component {
                             <Button onClick={toggleEventDetailVisibility}>Close</Button>
                         </Modal.Footer>
                     </Modal>                    
-                </div>
-            : null
-        );
+                </div>            
+            );
+        }
+        return null;
     }
 }
 
