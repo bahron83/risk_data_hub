@@ -8,7 +8,7 @@ import Chart from './Chart';
 
 
 let eligible = null;
-let calculationReady = null;
+let calculationReady = false;
 
 class EventDetails extends Component {  
     constructor(props) {
@@ -104,10 +104,12 @@ class EventDetails extends Component {
                 'threshold': threshold
             }
 
-            if(key == 'GDP' && calculationReady == null) {
+            if(key == 'GDP' && !calculationReady) {
                 console.log('eligibility = ', eventByNuts2 > threshold);
-                calculationReady = true;
+                console.log('eventbynuts', eventByNuts2);
+                console.log('threshold', threshold);
                 eligible = eventByNuts2 > threshold;
+                calculationReady = true;                
             }
         });
         return dataProcessed;        

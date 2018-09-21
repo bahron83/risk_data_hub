@@ -25,8 +25,7 @@ class Chart extends Component {
     }
 
     render() {        
-        const { dim, dimension, uOm, skipLabel, selectRP } = this.props;
-        console.log(this.props);
+        const { dim, dimension, uOm, skipLabel, selectRP } = this.props;        
         const chartData = this.getChartData();
         /*const colors = chromaJs.scale('OrRd').colors(chartData.length);*/
         return (
