@@ -140,7 +140,8 @@ class EventDetails extends Component {
     render() {   
         const { eventDetails, showEventDetail, visibleEventDetail, riskAnalysisData, toggleEventDetailVisibility } = this.props;
         const { data, overview } = eventDetails;
-        const { event } = overview || {};        
+        const { event } = overview || {}; 
+        calculationReady = false;       
         //const showToggle = riskAnalysisData && riskAnalysisData.events ? true : false;        
         if(data && showEventDetail) {
             const dataProcessed = this.processAdministrativeData(overview, data);
