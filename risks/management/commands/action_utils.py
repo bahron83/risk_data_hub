@@ -25,12 +25,11 @@ class DbUtils:
             "dbname='%s' user='%s' port='%s' host='%s' password='%s'" % (db_name, db_user, db_port, db_host, db_passwd)
         )
         return conn
-    
-    
-    #no longer used
-    def insert_aggregate_values(self, conn, values):
-        curs = conn.cursor()        
         
+            
+    def insert_aggregate_values(self, conn, params):
+        curs = conn.cursor()   
+
         insert_template = """INSERT INTO risk_dimensions (adm_fid, dim1_id, dim2_id, risk_analysis_id, value, event_id)
             select 
                 rfid.fid as adm_fid, 
@@ -45,15 +44,22 @@ class DbUtils:
             join adm_divisions adm on adm.fid = rd.adm_fid
             join risk_analysis ra on ra.id = rd.risk_analysis_id
             join (
-                select fid, region from adm_divisions where region = '{region}' and "level" = 0
-            ) rfid on rfid.region = adm.region 
+                select fid, adm_code from adm_divisions where adm_code = '{adm_code}' and "level" = {level}
+            ) rfid on rfid.adm_code = adm.parent_adm_code 
             where risk_analysis_id = {risk_analysis_id}
             and adm.fid <> rfid.fid
             group by rfid.fid, risk_analysis_id, dim1_id, dim2_id
             ON CONFLICT (adm_fid, dim1_id, dim2_id, risk_analysis_id, event_id) DO UPDATE
             SET value = excluded.value"""
-
-        curs.execute(insert_template.format(**values))
+        
+        for adm_div in params['adm_to_process']:
+            values = {
+                'risk_analysis_id': params['risk_analysis_id'],
+                'adm_code': adm_div.code,
+                'level': adm_div.level
+            }
+        
+            curs.execute(insert_template.format(**values))
     
     
     def insert_event(self, conn, values):
@@ -75,7 +81,7 @@ class DbUtils:
     def insert_db(self, conn, values, first_call):        
         curs = conn.cursor()
 
-        insert_template = """INSERT INTO events (
+        '''insert_template = """INSERT INTO events (
                                 event_id,
                                 begin_date,
                                 end_date)
@@ -85,7 +91,7 @@ class DbUtils:
                             ON CONFLICT (event_id) DO UPDATE
                             SET begin_date = '{begin_date}', end_date = '{end_date}'"""
         
-        curs.execute(insert_template.format(**values))
+        curs.execute(insert_template.format(**values))'''
 
         insert_template = """INSERT INTO adm_divisions (
                           the_geom,                          

@@ -55,7 +55,12 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         through='EventLayerAssociation',
         related_name='event_layer',
     )'''
-    related_layers = models.ManyToManyField(Layer, blank=True)       
+    related_layers = models.ManyToManyField(Layer, blank=True)  
+
+    risk_analysis = models.ManyToManyField(
+        'RiskAnalysis',
+        through='EventRiskAnalysisAssociation'        
+    )     
     
     class Meta:
         """
@@ -67,14 +72,17 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
     def get_event_plain(self):
         nuts3_adm_divs = AdministrativeDivision.objects.filter(level=2, code__in=self.nuts3.split(';'))
         nuts3_ids = nuts3_adm_divs.values_list('id', flat=True)        
-        nuts2_affected_names = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').values_list('name', flat=True).distinct()        
+        nuts2_adm_divs = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').distinct()        
+        #nuts2_affected_names = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').values_list('name', flat=True).distinct()        
         nuts3_affected_names = nuts3_adm_divs.values_list('name', flat=True)
         return {
             'event_id': self.event_id,
             'hazard_type': self.hazard_type.mnemonic,
+            'hazard_title': self.hazard_type.title,
             'region': self.region.name,
             'iso2': self.iso2,
-            'nuts2_names': ', '.join(nuts2_affected_names),
+            'nuts2': ', '.join(nuts2_adm_divs.values_list('code', flat=True)),
+            'nuts2_names': ', '.join(nuts2_adm_divs.values_list('name', flat=True)),
             'nuts3': self.nuts3,
             'nuts3_names': ', '.join(nuts3_affected_names),
             'begin_date': self.begin_date,
@@ -168,6 +176,10 @@ class EventImportAttributes(models.Model):
 
     allow_null_values = models.BooleanField(default=False)
 
+    adm_level_precision = models.CharField(max_length=10,
+                                    choices=(("1", "Country"), ("2", "Nuts3")),
+                                    default="1")
+
     def file_link(self):
         if self.data_file:
             return "<a href='%s'>download</a>" % (self.data_file.url,)
@@ -182,7 +194,7 @@ class EventImportAttributes(models.Model):
     class Meta:
         """
         """
-        ordering = ['riskapp', 'region', 'riskanalysis']
+        ordering = ['riskapp', 'region', 'riskanalysis', 'adm_level_precision']
         db_table = 'risks_attribute_event_files'
         verbose_name = 'Risks Analysis: Import Events Data (Attributes) from XLSX file'
         verbose_name_plural = 'Risks Analysis: Import Events Data (Atributes) from XLSX file'      
@@ -217,3 +229,28 @@ class EventAdministrativeDivisionAssociation(models.Model):
         """
         """
         db_table = 'risks_eventadministrativedivisionassociation'
+
+class EventRiskAnalysisAssociation(models.Model):
+    id = models.AutoField(primary_key=True)
+        
+    event = models.ForeignKey(
+        Event,        
+        on_delete=models.CASCADE,
+        blank=False,
+        null=False
+    )    
+    risk = models.ForeignKey(
+        RiskAnalysis,        
+        on_delete=models.CASCADE,
+        blank=False,
+        null=False
+    )          
+
+    def __unicode__(self):
+        return u"{0}".format(self.event.event_id + " - " +
+                             self.risk.name)
+
+    class Meta:
+        """
+        """
+        db_table = 'risks_eventriskanalysisassociation'

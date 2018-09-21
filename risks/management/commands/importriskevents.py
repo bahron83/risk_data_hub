@@ -12,6 +12,7 @@ from risks.models import HazardType, RiskApp
 from risks.models import RiskAnalysisDymensionInfoAssociation
 from risks.models import RiskAnalysisAdministrativeDivisionAssociation
 from risks.models import EventAdministrativeDivisionAssociation
+from action_utils import DbUtils
 
 import xlrd
 from xlrd.sheet import ctype_text
@@ -85,6 +86,9 @@ class Command(BaseCommand):
         for idx, cell_obj in enumerate(row_headers):
             col_num += 1
         if col_num >= 0:
+
+            db = DbUtils()
+            conn = db.get_db_conn()        
             try:  
                 for row_num in range(1, sheet.nrows):  
                     obj = {}                
@@ -134,9 +138,22 @@ class Command(BaseCommand):
                         except AdministrativeDivision.DoesNotExist:
                             traceback.print_exc()
                             #print(adm_code)
-                            pass  
+                            pass 
+
+                    #insert into geoserver db
+                    obj['event_id'] = event_id
+                    db.insert_event(conn, obj)
+                conn.commit()
             except Exception, e:
-                raise CommandError(e)                          
+                try:
+                    conn.rollback()
+                except:
+                    pass
+
+                #traceback.print_exc()
+                raise CommandError(e)
+            finally:
+                conn.close()                          
     
     def try_parse_int(self, s, base=10, default=None):
         try:

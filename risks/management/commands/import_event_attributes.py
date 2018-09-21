@@ -65,6 +65,14 @@ class Command(BaseCommand):
             default=False,
             help="Allow null values: if no, rows with null values will be skipped",
             )        
+        parser.add_argument(
+            '-p',
+            '--adm-level-precision',
+            dest='adm_level_precision', 
+            type=str,           
+            default='1',
+            help="Resolution of data loaded (level of country/nuts3/commune",
+            )        
         return parser
 
     def handle(self, **options):
@@ -73,7 +81,8 @@ class Command(BaseCommand):
         excel_file = options.get('excel_file')
         risk_analysis = options.get('risk_analysis')        
         risk_app =  options.get('risk_app')
-        allow_null_values = options.get('allow_null_values')        
+        allow_null_values = options.get('allow_null_values')     
+        adm_level_precision = int(options.get('adm_level_precision'))
         app = RiskApp.objects.get(name=risk_app)
 
         if region_name is None:
@@ -99,6 +108,7 @@ class Command(BaseCommand):
         conn = db.get_db_conn()        
         first_call = True
         event_id = ''
+        sample_adm_div = None
                 
         try:
             for row_num in range(1, sheet.nrows):                
@@ -117,9 +127,10 @@ class Command(BaseCommand):
                     x = axis_x.get(value=dim1)
                     y = axis_y.get(value=dim2)                                        
                     try:                        
-                        adm_div = AdministrativeDivision.objects.get(code=event.iso2)
+                        adm_div = AdministrativeDivision.objects.get(code=adm_code)
+                        sample_adm_div = adm_div
                     except AdministrativeDivision.DoesNotExist:
-                        raise CommandError('Event associated with non existing Administrative unit (code: {})'.format(event.iso2))                  
+                        raise CommandError('Event associated with non existing Administrative unit (code: {})'.format(adm_code))                  
                         
                     params = {
                         'adm_div': adm_div,
@@ -130,29 +141,36 @@ class Command(BaseCommand):
                         'x': x,
                         'y': y,
                         'first_call': first_call,
-                        'create_django_association': True,
+                        'create_django_association': True,                        
                         'conn': conn
                     }
                     self.handle_row(params)
                     first_call = False
-                    nuts3_list = event.nuts3.split(';')
-                    for nuts3 in nuts3_list:                        
-                        try:
-                            adm_div = AdministrativeDivision.objects.get(code=nuts3)
-                            params['adm_div'] = adm_div                            
-                            params['create_django_association'] = True if len(nuts3_list) == 1 else False
-                            self.handle_row(params)
-                        except AdministrativeDivision.DoesNotExist:
-                            traceback.print_exc()
-                            pass
+
+                    #execute this part only if resolution of data is at country level
+                    if adm_level_precision == 1:
+                        nuts3_list = event.nuts3.split(';')
+                        for nuts3 in nuts3_list:                        
+                            try:
+                                adm_div = AdministrativeDivision.objects.get(code=nuts3)
+                                params['adm_div'] = adm_div                            
+                                params['create_django_association'] = True if len(nuts3_list) == 1 else False
+                                self.handle_row(params)
+                            except AdministrativeDivision.DoesNotExist:
+                                traceback.print_exc()
+                                pass
+                        
+            #calculate aggregate values for Region (eg. Europe)
+            if sample_adm_div:
+                region_adm_div = [adm for adm in sample_adm_div.get_parents_chain() if adm.level == 0]
+                if region_adm_div:                    
+                    adm_to_process = region_adm_div
+                    if adm_level_precision == 2:
+                        adm_to_process.append(AdministrativeDivision.objects.filter(parent=region_adm_div[0], level=1))
+                    params = { 'adm_to_process': adm_to_process , 'risk_analysis_id': risk.id }
+                    db.insert_aggregate_values(conn, params)            
+                    risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=risk, administrativedivision=region_adm_div[0])
             
-            #following lines are commented because values for every administrative division will be included in excel files
-            '''calculate aggregate values for Region (eg. Europe)
-            params = { 'region': region.name, 'risk_analysis_id': risk.id }
-            db.insert_aggregate_values(conn, params)
-            region_adm_div = AdministrativeDivision.objects.get(region=region, level=0)
-            risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=risk, administrativedivision=region_adm_div)
-            '''
 
             conn.commit()            
         except Exception, e:

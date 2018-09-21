@@ -117,7 +117,7 @@ def import_event_data(filepath, risk_app_name, region_name, filename_ori, curren
         complete_upload(current_user_id, filename_ori, region_name)           
 
 @shared_task
-def import_event_attributes(filepath, risk_app_name, risk_analysis_name, region_name, allow_null_values, final_name, current_user_id):        
+def import_event_attributes(filepath, risk_app_name, risk_analysis_name, region_name, allow_null_values, final_name, current_user_id, adm_level_precision):        
         try:
             risk_analysis = RiskAnalysis.objects.get(name=risk_analysis_name)
         except RiskAnalysis.DoesNotExist:
@@ -136,7 +136,8 @@ def import_event_attributes(filepath, risk_app_name, risk_analysis_name, region_
                          region=region_name,
                          allow_null_values=allow_null_values,
                          excel_file=filepath,
-                         risk_analysis=risk_analysis_name,  
+                         risk_analysis=risk_analysis_name,
+                         adm_level_precision=adm_level_precision, 
                          stdout=out)            
         except Exception, e:    
             risk_analysis.save()

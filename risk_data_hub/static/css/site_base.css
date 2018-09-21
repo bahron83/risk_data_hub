@@ -1148,3 +1148,13 @@ footer {
 .red { 
   color: red;
 }
+.bigtext {
+  font-weight: bold;
+  font-size: 120%;
+}
+.eligible {
+  color: red;
+}
+.not-eligible {
+  color: blue;
+}

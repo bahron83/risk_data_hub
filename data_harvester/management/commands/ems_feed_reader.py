@@ -17,9 +17,12 @@ from risks.management.commands.action_utils import DbUtils
 #geolocator = Nominatim(user_agent="risk_data_hub", timeout=3)
 RAPID_MAPPING_URL = 'http://emergency.copernicus.eu/mapping/activations-rapid/feed'
 RISK_RECOVERY_URL = 'http://emergency.copernicus.eu/mapping/activations-risk-and-recovery/feed'
-SHAPEFILES_BASE_DIR = os.path.join(settings.LOCAL_ROOT, 'downloaded/ems')
+SHAPEFILES_BASE_DIR = os.path.join(settings.LOCAL_ROOT, 'downloaded', 'ems')
 
 def parse_feed(feed_type = 'rapid'):
+    """
+    Parses EMS feed and returns a list of dictionaries
+    """
     result = []
     url = ''
     if feed_type == 'rapid':
@@ -56,10 +59,13 @@ def parse_feed(feed_type = 'rapid'):
                 'link': entry.link#,            
                 #'location': location.raw                
             })
-            #break
+            #break    
     return result
 
-def get_ems_to_import(feed_type = 'rapid', data_from_feed = None):        
+def get_ems_to_import(feed_type = 'rapid', data_from_feed = None):
+    """
+    Determine which events are updates and returns list of id to be imported
+    """        
     if not data_from_feed:
         data_from_feed = parse_feed(feed_type)
     if data_from_feed:    
@@ -85,6 +91,9 @@ def get_ems_to_import(feed_type = 'rapid', data_from_feed = None):
     return []
 
 def set_tags_imported(emergency_tags):
+    """
+    Update flows table in Geoserver DB
+    """
     #initialise db connection
     db = DbUtils()
     conn = db.get_db_conn()
@@ -107,6 +116,9 @@ def set_tags_imported(emergency_tags):
         conn.close()
 
 def get_hazard_match(name):
+    """
+    Check for matching hazard type in Django DB, comparing hazard name found in EMS feed
+    """
     print('hazard name received = {}'.format(name))
     direct_match = HazardType.objects.filter(title__icontains=name).first()
     if not direct_match:
@@ -123,6 +135,9 @@ def get_hazard_match(name):
     return direct_match
 
 def get_country_match(name):
+    """
+    Check for matching country in Django DB, comparing country name found in EMS feed
+    """
     reg_europe = Region.objects.get(name='Europe')
     return AdministrativeDivision.objects.filter(name__icontains=name, regions__in=[reg_europe]).first()    
 
@@ -180,13 +195,16 @@ def get_event_from_feed(data_from_feed, ems):
     return ems_matches[0] if ems_matches else None
 
 def generate_event_from_feed(event, geom):
+    """
+    Create or update event in Django
+    """
     print('looking for event match in database')
     match, hazard_match, country_match = get_event_by_feed(event)
     event_obj = None
     if match:
         print('found existing event: {}'.format(match.event_id))
-        if 'copernicus' not in match.sources.lower():
-            params = {'sources': '{}; Copernicus {}'.format(match.sources, event['copernicus_id'])}
+        if 'EMS' not in match.sources:
+            params = {'sources': '{}; {} {}'.format(match.sources, event['copernicus_id'], event['link'])}
             updated = Event.objects.filter(pk=match.pk).update(**params)        
         event_obj = match
     else:        
@@ -202,10 +220,10 @@ def generate_event_from_feed(event, geom):
                 end_date=parse(event['begin_date']),
                 year=event['begin_date'][:4],
                 event_type=event['hazard'],
-                event_source='',
-                cause='',
+                event_source='Unknown',
+                cause='Unknown',
                 notes=event['description'],
-                sources='Copernicus {}'.format(event['copernicus_id'])
+                sources='{} {}'.format(event['copernicus_id'], event['link'])
             )         
             event_obj = new_event
     # Set relations
@@ -216,6 +234,10 @@ def generate_event_from_feed(event, geom):
     return event_obj
 
 def import_events(data_from_feed, tolerance = 0.0001):
+    """
+    For every shapefile in _merged folder, creates or updates event in Django DB and Geoserver DB. 
+    The geometry inserted in Geoserver DB is the union of all features found in layer.
+    """
     db = DbUtils()
     conn = db.get_db_conn()
     curs = conn.cursor()

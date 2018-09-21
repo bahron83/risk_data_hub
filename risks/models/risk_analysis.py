@@ -85,6 +85,11 @@ class RiskAnalysis(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardT
         through='RiskAnalysisDymensionInfoAssociation'
     )
 
+    events = models.ManyToManyField(
+        'Event',
+        through='EventRiskAnalysisAssociation'        
+    )     
+
     layer = models.ForeignKey(
         Layer,
         blank=False,

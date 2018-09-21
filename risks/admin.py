@@ -355,11 +355,12 @@ class EventAdmin(admin.ModelAdmin):
     list_display_links = ('event_id',)
     list_display = ('event_id', 'region', 'iso2', 'nuts3', 'begin_date', 'end_date',)
     search_fields = ('event_id',)
-    list_filter = ('region', 'iso2', 'year',) 
-    readonly_fields = ('administrative_divisions',)
+    list_filter = ('region', 'hazard_type', 'iso2', 'year',) 
+    readonly_fields = ('administrative_divisions', 'risk_analysis',)
     group_fieldsets = True  
     list_select_related = True
-    filter_horizontal = ('related_layers',)
+    filter_horizontal = ('related_layers',)    
+    #ordering = ('risks_count',)
 
     def get_queryset(self, request):
         qs = super(EventAdmin, self).get_queryset(request)
@@ -370,6 +371,9 @@ class EventAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+    def risks_count(self, obj):
+        return obj.risk_analysis.count()    
 
 class EventImportDataAdmin(admin.ModelAdmin):
     model = EventImportData
@@ -406,7 +410,7 @@ class EventImportDataAdmin(admin.ModelAdmin):
 
 class EventImportAttributeDataAdmin(admin.ModelAdmin):
     model = EventImportAttributes
-    list_display = ('data_file', 'riskapp', 'region', 'riskanalysis')
+    list_display = ('data_file', 'riskapp', 'region', 'riskanalysis', 'adm_level_precision')
     form = ImportDataEventAttributeForm
     group_fieldsets = True
 

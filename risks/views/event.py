@@ -169,8 +169,11 @@ class EventDetailsView(DataExtractionView):
                 }
                 for location in locations:
                     data_exact = location_adm_data.filter(data=adm_data_entry, adm=location).order_by('-dimension').first()                                        
-                    if data_exact:   
-                        administrative_data[adm_data_entry.name]['values'][data_exact.adm.code] = data_exact.value
+                    if data_exact:                           
+                        administrative_data[adm_data_entry.name]['values'][data_exact.adm.code] = {
+                            'value': data_exact.value,
+                            'dimension': data_exact.dimension
+                        }
 
             overview = {                
                 'event': event.get_event_plain(),
