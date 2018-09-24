@@ -7,6 +7,7 @@ import ems_feed_reader
 import csv
 from django.conf import settings
 from risks.management.commands.action_utils import DbUtils
+import json
 
 
 ###############################################################################
@@ -34,7 +35,7 @@ class Command(BaseCommand):
 
         #configure
         conf=configure(os.path.join(settings.LOCAL_ROOT, '../data_harvester/management/commands/conf.csv'))
-        emergency_tags=conf[0]
+        #emergency_tags=conf[0]
         #elements=conf[1]
         #pics_conf=conf[2]        
 
@@ -43,8 +44,9 @@ class Command(BaseCommand):
         #look for updates from feed
         print('start parsing feed...')
         data_from_feed = ems_feed_reader.parse_feed('rapid')
+        
         print('resolves events to import...')
-        #emergency_tags = ems_feed_reader.get_ems_to_import('rapid', data_from_feed)
+        emergency_tags = ems_feed_reader.get_ems_to_import('rapid', data_from_feed)
 
         #download data
         print('start downloading zip files...')

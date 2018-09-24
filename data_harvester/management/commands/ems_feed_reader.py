@@ -58,8 +58,7 @@ def parse_feed(feed_type = 'rapid'):
                 'description': description,
                 'link': entry.link#,            
                 #'location': location.raw                
-            })
-            #break    
+            })            
     return result
 
 def get_ems_to_import(feed_type = 'rapid', data_from_feed = None):

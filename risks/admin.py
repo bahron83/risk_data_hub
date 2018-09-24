@@ -19,9 +19,12 @@
 #########################################################################
 
 from django.contrib import admin
+from django.utils.translation import ugettext as _
 from django.contrib import messages
 
 from risk_data_hub import local_settings
+
+from django.db.models import Count
 
 from risks.models import RiskAnalysis, RiskAnalysisDymensionInfoAssociation
 from risks.models import Region, AdministrativeDivision
@@ -211,7 +214,7 @@ class RiskAnalysisAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
     list_display = ('name', 'state', 'app')
     search_fields = ('name',)
-    list_filter = ('state', 'hazard_type', 'analysis_type', 'app__name',)
+    list_filter = ('state', 'hazard_type', 'analysis_type', 'app__name', 'region',)
     readonly_fields = ('administrative_divisions', 'descriptor_file', 'data_file', 'metadata_file', 'state',)
     # inlines = [AdministrativeDivisionInline, DymensionInfoInline]
     inlines = [LinkedResourceInline, DymensionInfoInline]
@@ -353,17 +356,16 @@ class RiskAnalysisImportMetaDataAdmin(admin.ModelAdmin):
 class EventAdmin(admin.ModelAdmin):
     model= Event
     list_display_links = ('event_id',)
-    list_display = ('event_id', 'region', 'iso2', 'nuts3', 'begin_date', 'end_date',)
+    list_display = ('event_id', 'region', 'iso2', 'nuts3', 'begin_date', 'end_date', 'risks_count',)
     search_fields = ('event_id',)
     list_filter = ('region', 'hazard_type', 'iso2', 'year',) 
     readonly_fields = ('administrative_divisions', 'risk_analysis',)
     group_fieldsets = True  
     list_select_related = True
-    filter_horizontal = ('related_layers',)    
-    #ordering = ('risks_count',)
+    filter_horizontal = ('related_layers',)       
 
     def get_queryset(self, request):
-        qs = super(EventAdmin, self).get_queryset(request)
+        qs = super(EventAdmin, self).get_queryset(request).annotate(_risks_count=Count('risk_analysis')).order_by('_risks_count', 'iso2')      
         if request.user.is_superuser:
             return qs
         regions_owned = Region.objects.filter(owner=request.user)
@@ -372,8 +374,12 @@ class EventAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
-    def risks_count(self, obj):
-        return obj.risk_analysis.count()    
+    def risks_count(self, obj):        
+        return obj._risks_count
+
+    risks_count.short_description = _("Number of Risk Analysis")
+
+    risks_count.admin_order_field = '_risks_count'
 
 class EventImportDataAdmin(admin.ModelAdmin):
     model = EventImportData

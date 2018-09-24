@@ -65,7 +65,7 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
     class Meta:
         """
         """
-        ordering = ['iso2']
+        #ordering = ['iso2']
         db_table = 'risks_event'    
     
 
