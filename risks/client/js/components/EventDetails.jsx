@@ -36,11 +36,12 @@ class EventDetails extends Component {
 
     formatNumber(string) {
         return Math.round(parseFloat(string) * 100) / 100        
-    }
+    }        
     
-    renderAdministrativeData(dataProcessed) {          
+    renderAdministrativeData(overview, dataProcessed) {          
         return Object.keys(dataProcessed).map(key => {               
             const { unitOfMeasure, countryAdminData, nuts2AdminData, nuts3AdminData, countryAdminDataDim, nuts2AdminDataDim, nuts3AdminDataDim, eventByCountry, eventByNuts2, eventByNuts3, threshold } = dataProcessed[key];            
+            const cssClass = key == 'GDP' ? this.isEligible() ? 'outset eligible' : 'outset not-eligible' : '';
             return (
                 <ul key={key} className="list-group">
                     <li key={`${key}-country`} className="list-group-item">
@@ -48,13 +49,14 @@ class EventDetails extends Component {
                         {`${countryAdminData.toLocaleString()} ${unitOfMeasure} (${countryAdminDataDim})`}
                         <span className={`right ${eventByCountry > threshold ? 'eligible' : 'not-eligible'}`}>{eventByCountry ? `${eventByCountry} %` : ''}</span>
                     </li>
-                    <li key={`${key}-nuts2`} className="list-group-item">
-                        <label>{key} of nuts2 affected</label>
+                    <li key={`${key}-nuts2`} className={`list-group-item ${cssClass}`}>
+                        <label>{key} of NUTS2 affected</label>
                         {`${nuts2AdminData.toLocaleString()} ${unitOfMeasure} (${nuts2AdminDataDim})`}
                         <span className={`right ${eventByNuts2 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts2 ? `${eventByNuts2} %` : ''}</span>
+                        {this.renderGDPText(overview, key)}
                     </li>
                     <li key={`${key}-nuts3`} className="list-group-item">
-                        <label>{key} of nuts3 affected</label>
+                        <label>{key} of NUTS3 affected</label>
                         {`${nuts3AdminData.toLocaleString()} ${unitOfMeasure} (${nuts3AdminDataDim})`}
                         <span className={`right ${eventByNuts3 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts3 ? `${eventByNuts3} %` : ''}</span>
                     </li>
@@ -118,22 +120,30 @@ class EventDetails extends Component {
     isEligible() {
         return eligible == true;
     }
-    
-    renderEligibleText(overview) {
-        const { threshold } = overview;        
-        if(this.isEligible()) {            
-            return (
-                <div>
-                    <p>{`Economic losses exceed ${threshold}% of the GDP in regions (NUTS2) affected`}</p>
-                    <span className="bigtext eligible">This event appears to be eligible for EU Solidarity Funds</span>
-                </div>                
-            )
+
+    renderGDPText(overview, key) {
+        if(key == 'GDP') {
+            const { threshold } = overview;
+            if(this.isEligible()) 
+                return (                    
+                    <p>{`Economic losses exceed ${threshold}% of the GDP in regions (NUTS2) affected`}</p>                                            
+                )            
+            else 
+                return (                    
+                    <p>{`Economic losses DO NOT exceed ${threshold}% of the GDP in regions (NUTS2) affected or there is no data available`}</p>                                            
+                )            
         }
-        else return (
-            <div>
-                <p>{`Economic losses do not exceed ${threshold}% of the GDP in regions (NUTS2) affected or there is no data available`}</p>
-                <span className="bigtext not-eligible">This event does not appear to be eligible for EU Solidarity Funds</span>
-            </div>
+        return null;
+    }
+    
+    renderEligibleText(overview) {        
+        if(this.isEligible())             
+            return (                
+                <p className="bigtext eligible">This event appears to be eligible for EU Solidarity Funds</p>                
+            )
+        else 
+            return (            
+                <p className="bigtext not-eligible">This event DOES NOT appear to be eligible for EU Solidarity Funds</p>            
         )
     }        
     
@@ -156,8 +166,8 @@ class EventDetails extends Component {
                                 <li className="list-group-item"><label>Event ID</label>{event.event_id}</li>
                                 <li className="list-group-item"><label>Hazard Type</label>{event.hazard_title}</li>
                                 <li className="list-group-item"><label>Country</label>{event.iso2}</li>
-                                <li className="list-group-item"><label>Nuts2 affected</label>{event.nuts2_names}</li>
-                                <li className="list-group-item"><label>Nuts3 affected</label>{event.nuts3_names}</li>
+                                <li className="list-group-item"><label>NUTS2 affected</label>{event.nuts2_names}</li>
+                                <li className="list-group-item"><label>NUTS3 affected</label>{event.nuts3_names}</li>
                                 <li className="list-group-item"><label>Begin Date</label>{event.begin_date}</li>
                                 <li className="list-group-item"><label>End Date</label>{event.end_date}</li>
                                 <li className="list-group-item"><label>Event Source</label>{event.event_source}</li>
@@ -171,7 +181,7 @@ class EventDetails extends Component {
                             <hr />
                             <h4>Administrative data for country</h4>
                             <p>Census data from Eurostat and percentage value of the event</p>
-                            {this.renderAdministrativeData(dataProcessed)}                                                                                     
+                            {this.renderAdministrativeData(overview, dataProcessed)}                                                                                     
     
                             <hr />
                             <h4>Comparison Charts</h4>

@@ -1158,3 +1158,18 @@ footer {
 .not-eligible {
   color: blue;
 }
+.outset {
+  position:relative;
+  z-index:1000;
+  padding: 20px 15px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+  white-space: normal;
+}
+li.eligible {
+  border: 1px solid red;
+  color: inherit;
+}
+li.not-eligible {
+  border: 1px solid blue;
+  color: inherit;
+}
