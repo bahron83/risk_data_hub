@@ -31,6 +31,7 @@ const showEventDetailSel = ({disaster = {}}) => disaster.showEventDetail || fals
 const visibleEventDetailSel = ({disaster = {}}) => disaster.visibleEventDetail || false;
 const eventDetailsSel = ({disaster = {}}) => disaster.eventDetails || {};
 const contextUrlPrefixSel = ({disaster = {}}) => disaster.contextUrl || '';
+const activeRegionSel = ({disaster = {}}) => disaster.region || '';
 const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel, contextSel],
      (navItems, riskItems, hazardType, context) => ({
         navItems,
@@ -143,10 +144,12 @@ const additionalChartSelector = createSelector([riskAnalysisDataSel, additionalC
         currentSection: additionalCharts.currentSection,
         currentTable: additionalCharts.currentTable
     }));
-const lookupResultsSelector = createSelector([admLookupSel, admLookupDetailSel],
-    (lookupResults, lookupResultsDetail) => ({
+const lookupResultsSelector = createSelector([admLookupSel, admLookupDetailSel, contextUrlPrefixSel, activeRegionSel],
+    (lookupResults, lookupResultsDetail, contextUrl, region) => ({
         lookupResults,
-        lookupResultsDetail
+        lookupResultsDetail,
+        contextUrl,
+        region
     }));
 const eventDetailsSelector = createSelector([eventDetailsSel, dimSelector, riskAnalysisDataSel, showEventDetailSel, visibleEventDetailSel],
     (eventDetails, dim, riskAnalysisData, showEventDetail, visibleEventDetail) => ({

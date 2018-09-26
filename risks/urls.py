@@ -42,7 +42,7 @@ _urls = (
     #(r'apps/(?P<apps>[\w\-]+)/?$', views.apps_view, 'apps',),
     (r'countryauth/?$', views.auth_view, 'countryauth',),
     (r'admlookup/(?P<admlookup>[\w\-]+)/?$', views.adm_lookup_view, 'admlookup',),
-    (r'loc/(?P<loc>[\w\-]+)/detail/(?P<detail>[\w\-]+)/?$', views.adm_lookup_view, 'admlookup',),    
+    (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/detail/(?P<detail>[\w\-]+)/?$', views.adm_lookup_view, 'admlookup',),    
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/pdf/$', views.pdf_report, 'pdf_report',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/pdf/(?P<pdf_part>({}))/$'\
         .format('|'.join(views.PDFReportView.PDF_PARTS)), views.pdf_report, 'pdf_report_part',),)

@@ -308,8 +308,7 @@ class DataContainer extends Component {
     } 
 
     renderHazard() {
-        const {riskAnalysisData} = this.props;
-
+        const {riskAnalysisData} = this.props;        
         return (//<div className={this.props.className}>
                 <div className="disaster-header">
                   {riskAnalysisData.name ? (

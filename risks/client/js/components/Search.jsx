@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { admDivisionLookup, getAnalysisData } from '../actions/disaster';
+import { admDivisionLookup, getAnalysisData, switchContext } from '../actions/disaster';
 import { lookupResultsSelector } from '../selectors/disaster';
 
 class Search extends Component {
@@ -15,20 +15,20 @@ class Search extends Component {
         this.loadAnalysis = this.loadAnalysis.bind(this);          
     }
     
-    updateSearch(e) {        
+    updateSearch(e) {   
+        const { contextUrl, admDivisionLookup } = this.props;
         this.setState({term: e.target.value}, () => {            
             if(String(this.state.term).length > 5) {            
-                //call api
-                const { admDivisionLookup } = this.props;            
-                admDivisionLookup(`/risks/data_extraction/admlookup/${this.state.term}/`);
+                //call api                
+                admDivisionLookup(`${contextUrl}/risks/data_extraction/admlookup/${this.state.term}/`);
             }
         });        
         
     }
 
     handleClick(item) {        
-        const { admDivisionLookup } = this.props;        
-        admDivisionLookup(`/risks/data_extraction/loc/${item.admCode}/detail/yes/`, true);
+        const { admDivisionLookup, contextUrl, region } = this.props;        
+        admDivisionLookup(`${contextUrl}/risks/data_extraction/reg/${region}/loc/${item.admCode}/detail/yes/`, true);
     }
 
     renderResultList() {
@@ -40,7 +40,7 @@ class Search extends Component {
                 <div className="autocomplete-box">
                     <ul className="list-group">
                     {lookupResults.map(r => {
-                        return <li className="list-group-item" key={r.admCode} onClick={() => this.handleClick(r)}>{r.admName} ({r.country})</li>
+                        return <li className="list-group-item" key={r.admCode} onClick={() => this.handleClick(r)}>{`${r.admName} (${r.admCode} - Country: ${r.countryName})`}</li>
                     })}
                     </ul>
                 </div>       
@@ -50,7 +50,7 @@ class Search extends Component {
     }
 
     renderPreviewBox() {
-        const { lookupResultsDetail, getAnalysisData } = this.props;
+        const { lookupResultsDetail } = this.props;
         if (lookupResultsDetail.length > 0) {
             return (
                 <div className="autocomplete-box">
@@ -75,8 +75,9 @@ class Search extends Component {
     }    
     
     loadAnalysis(item) {
-        const { getAnalysisData } = this.props;        
-        this.setState({term: ''}, () => getAnalysisData(item.apiUrl));                
+        const { switchContext } = this.props; 
+        const { ht, at, an, reg, loc } = item && item.context;       
+        this.setState({term: ''}, () => switchContext(ht, at, an, reg, loc));        
     }
 
     render() {        
@@ -91,4 +92,4 @@ class Search extends Component {
 
 }
 
-export default connect(lookupResultsSelector, { admDivisionLookup, getAnalysisData })(Search);
+export default connect(lookupResultsSelector, { admDivisionLookup, switchContext })(Search);

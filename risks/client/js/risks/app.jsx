@@ -45,8 +45,13 @@ if (Cookies.get('csrftoken')) {
     axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
 }
 
+const loc = disasterRisk && disasterRisk.app && disasterRisk.app.region || 'EU';
+const reg = disasterRisk && disasterRisk.app && disasterRisk.app.regionName || 'Europe';
+const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/loc/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/reg/Europe/loc/EU/`;
+const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/geom/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/reg/Europe/geom/EU/`;
+
 const initDim = init && init.d || {};
-const newInitState = assign({}, initialState, {defaultState: {disaster: {dim: initDim, app: 'risks', contextUrl: contextUrlPrefix}, mapInfo: { infoFormat: "text/html"} }});
+const newInitState = assign({}, initialState, {defaultState: {disaster: {dim: initDim, app: 'risks', contextUrl: contextUrlPrefix, region: reg}, mapInfo: { infoFormat: "text/html"} }});
 const themeCfg = {
     path: `${contextUrlPrefix}/static/js`
 };
@@ -58,11 +63,6 @@ const StandardRouter = connect((state) => ({
 }))(require('../../MapStore2/web/client/components/app/StandardRouter'));
 
 export const appStore = require('../../MapStore2/web/client/stores/StandardStore').bind(null, newInitState, appReducers, {...dEpics, ...rEpics});
-
-const loc = disasterRisk && disasterRisk.app && disasterRisk.app.region || 'EU';
-const reg = disasterRisk && disasterRisk.app && disasterRisk.app.regionName || 'Europe';
-const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/loc/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/reg/Europe/loc/EU/`;
-const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/geom/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/reg/Europe/geom/EU/`;
 
 const initialActions = init ? [() => initState(init)] : [() => getData(dataPath), () => getFeatures(geomPath)];
 const appConfig = {

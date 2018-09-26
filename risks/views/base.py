@@ -1,5 +1,6 @@
 from django.conf import settings
 from django import forms
+from django.db.models import Q
 from django.views.generic import FormView
 from django.http import HttpResponse, FileResponse
 from geonode.layers.models import Layer
@@ -266,10 +267,18 @@ class LocationSource(object):
         return AdministrativeDivision.objects.filter(code__in=loc)        
     
     def location_lookup(self, **kwargs):
-        matches = AdministrativeDivision.objects.filter(name__contains=kwargs['admlookup'])
+        #matches = AdministrativeDivision.objects.filter(name__icontains=kwargs['admlookup'])
+        qstring = kwargs['admlookup']
+        matches = AdministrativeDivision.objects.filter(
+            Q(name=qstring) | Q(name__icontains=qstring)
+        ).extra(
+            select={'match': 'name = %s'},
+            select_params=(qstring,)
+        ).order_by('-match', 'name')
         loc_chains = []
-        for loc in matches:
-            loc_chains.append(loc.get_parents_chain() + [loc])
+        if matches:            
+            for loc in matches[:10]:
+                loc_chains.append(loc.get_parents_chain() + [loc])
         return loc_chains
 
 

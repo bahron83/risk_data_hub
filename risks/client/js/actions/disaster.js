@@ -134,11 +134,12 @@ function getFeatures(url) {
     };
 }
 
-function zoomInOut(dataHref, geomHref) {
+function zoomInOut(dataHref, geomHref, context = null) {
     return {
         type: ZOOM_IN_OUT,
         dataHref,
-        geomHref
+        geomHref,
+        context
     };
 }
 
@@ -253,12 +254,13 @@ function admLookupLoaded(val, detail = false) {
     }
 }
 
-function switchContext(ht, at, an, loc) {
+function switchContext(ht, at, an, reg, loc) {
     return {
         type: SWITCH_CONTEXT,
         ht,
         at,
         an,
+        reg,
         loc
     }
 }

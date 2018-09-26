@@ -191,8 +191,10 @@ const getEventDetailsEpic = (action$, store) =>
     
 const zoomInOutEpic = (action$, store) =>
     action$.ofType("ZOOM_IN_OUT").switchMap( action => {        
-        const { riskAnalysis, context } = (store.getState()).disaster;                        
-        const analysisHref = riskAnalysis && `${action.dataHref}${riskAnalysis.context}`;
+        let { riskAnalysis, context } = (store.getState()).disaster;         
+        const resolvedContext = action && action.context || riskAnalysis.context;
+        if(action.context != null) context = action.context.replace(/(ht\/\w+\/).*/, "$1");
+        const analysisHref = riskAnalysis && `${action.dataHref}${resolvedContext}`;
         return Rx.Observable.defer(() => Api.getData(`${action.dataHref}${context || ''}`))
             .retry(1).
             map(data => [dataLoaded(data), getFeatures(action.geomHref)].concat(analysisHref && getAnalysisData(analysisHref) || []))
@@ -243,7 +245,14 @@ const admLookupEpic = (action$, store) =>
     })
 
 const switchContextAnalysisEpic = (action$, store) =>
-    action$.ofType(SWITCH_CONTEXT)
+    action$.ofType(SWITCH_CONTEXT).map(action => {
+        const { contextUrl } = (store.getState()).disaster;         
+        const dataHref = `${contextUrl}/risks/data_extraction/reg/${action.reg}/loc/${action.loc}/`;
+        const geomHref = `${contextUrl}/risks/data_extraction/reg/${action.reg}/geom/${action.loc}/`;
+        const context = `ht/${action.ht}/at/${action.at}/an/${action.an}/`;
+        return [zoomInOut(dataHref, geomHref, context)];
+    })
+    .mergeAll();
 
 const initStateEpic = action$ =>
     action$.ofType(INIT_RISK_APP) // Wait untile map config is loaded
@@ -298,4 +307,4 @@ const chartSliderUpdateEpic = action$ =>
 
     );
 
-module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost};
+module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost, switchContextAnalysisEpic};
