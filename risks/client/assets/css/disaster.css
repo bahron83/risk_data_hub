@@ -81,9 +81,6 @@
   /*#disaster-risk-selector-menu {
   display: none;
 }*/
-  /*.disaster-breadcrumbs {
-  margin: 10px 0;
-}*/
   /* Leaflet custom style*/
   /* Slider */
   /* tutorial */
@@ -6384,16 +6381,19 @@ a.disaster .label:focus {
   clip: auto;
 }
 .disaster .container-main {
-  height: calc(100% - 160px);
+  height: calc(100% - 56px);
 }
 .disaster .drc {
   height: calc(100% - 44px);
 }
 .disaster #disaster-overview-list {
-  height: calc(100% - 358px);
+  height: calc(100% - 252px);
 }
 .disaster .disaster-header {
-  max-height: calc(100% - 358px);
+  max-height: calc(100% - 253px);
+}
+.disaster .autocomplete-box {
+  height: calc(100% - 193px);
 }
 .disaster .row,
 .disaster .col,
@@ -6409,6 +6409,9 @@ a.disaster .label:focus {
   left: 0;
   width: 100%;
   height: 100%;
+}
+.disaster .disaster-breadcrumbs {
+  margin: 15px 0 0 500px;
 }
 .disaster .disaster-breadcrumbs #disaster-navigation .btn {
   color: #2c689c;
@@ -6852,7 +6855,7 @@ a.disaster .label:focus {
 .disaster #disaster-overview-list,
 .disaster .disaster-header {
   position: absolute;
-  margin: 45px 0 0 15px;
+  margin: 44px 0 0 15px;
   z-index: 500;
   background: rgba(0, 0, 0, 0.6);
   max-width: 50%;
@@ -6915,6 +6918,7 @@ a.disaster .label:focus {
   .disaster #disaster-overview-list,
   .disaster .disaster-header {
     max-width: 600px;
+    min-width: 500px;
   }
 }
 .disaster .nav-pills > li > a {

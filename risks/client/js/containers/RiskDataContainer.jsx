@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { dataContainerSelector, chartSelector, eventTableSelector, sChartSelector, eventCountryChartSelector } from '../selectors/disaster';
 import { getAnalysisData, getData, setDimIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent, setFilters } from '../actions/disaster';
+import RiskSelector from '../components/RiskSelector';
 import Chart from '../components/Chart';
 import EventCountryChart from '../components/EventCountryChart';
 import SendaiCountryChart from '../components/SendaiCountryChart';
@@ -22,6 +23,7 @@ import { show, hide } from 'react-notification-system-redux';
 import { labelSelector } from '../selectors/disaster';
 const LabelResource = connect(labelSelector, { show, hide, getData: getSFurtherResourceData })(require('../components/LabelResource'));
 import { generateReport } from '../actions/report';
+import { isDate } from 'moment';
 const DownloadBtn = connect(({disaster, report}) => {
     return {
         active: disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData && true || false,
@@ -104,8 +106,8 @@ class DataContainer extends Component {
         const { dim, loading, fullContext, analysisType, analysisTypeE, selectedEventIds, cValues, zoomInOut, selectEvent, setFilters, getAnalysis, contextUrl } = this.props;                
         const { hazardSet, data } = this.props.riskAnalysisData;             
         const { unitOfMeasure } = this.props.riskAnalysisData || 'Values';
-        const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
-        const val = data.dimensions[dim.dim1].values[dim.dim1Idx];
+        const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);        
+        const val = data.dimensions[dim.dim1].values[dim.dim1Idx];        
         const header = data.dimensions[dim.dim1].name + ': ' + val;
         const description = data.dimensions[dim.dim1].layers && data.dimensions[dim.dim1].layers[val] && data.dimensions[dim.dim1].layers[val].description ? data.dimensions[dim.dim1].layers[val].description : '';
         const eventData = this.prepareEventData();               
@@ -164,16 +166,7 @@ class DataContainer extends Component {
                                 }}/>
                         </div>
                     </div>
-                    )}
-
-                    {(contextUrl == null || contextUrl == '') ? (
-                        <Panel className="panel-box">
-                            <h4>Search a name (country, nuts3 or city)</h4>
-                            <Search />                        
-                        </Panel>
-                    ) : null
-                    }
-                    
+                    )}                                        
                     
                     {fullContext.analysis_class == 'event' ? (                        
                         <div>
@@ -283,6 +276,21 @@ class DataContainer extends Component {
         });
     }
 
+    renderActiveRisk() {
+        const {showHazard, hazardType, riskItems, activeRisk, getData, overviewHref} = this.props;
+        if(showHazard) {            
+            let riskItem = [];
+            riskItems.map(r => {
+                if(r.mnemonic == activeRisk)
+                    riskItem.push(r);
+            })                            
+            return (
+                <RiskSelector riskItems={riskItem} overviewHref={overviewHref} activeRisk={activeRisk} getData={getData}/>
+            )
+        }
+        return null;
+    }
+
     renderAnalysisClass() {        
         const {hazardType} = this.props;
         let analysisClasses = [];
@@ -316,17 +324,22 @@ class DataContainer extends Component {
                         {this.renderAnalysisData()}
                     </div>
                   ) : (
-                    <div className="container-fluid">
+                    <div className="container-fluid">                        
+                        <h4>Hazard</h4>
+                        {this.renderActiveRisk()}
+                        <hr />
+                        <h4>Scope</h4>
                         <ul id="disaster-analysis-class-menu" className="nav nav-pills">
                             {this.renderAnalysisClass()}
                         </ul>                                                
                         
                         <hr />
+                        <h4>Analysis Type</h4>
                         <ul id="disaster-analysis-menu" className="nav nav-pills">
                             {this.renderAnalysisTab()}
                         </ul>
                         
-                        <hr></hr>
+                        <hr />
                         <div id="disaster-analysis-container" className="disaster-analysis">
                             <div className="container-fluid">
                                 {this.renderRiskAnalysis()}
@@ -340,6 +353,15 @@ class DataContainer extends Component {
         );
     }
 
+    renderFilters() {
+        return (
+            <div>
+                <h3>Explore datasets by:</h3>
+                <h5>Scope</h5>
+            </div>
+        )
+    }
+
     render() {
         const {showHazard, getData: loadData } = this.props;                
         return showHazard ? this.renderHazard() : (<Overview className={this.props.className} getData={loadData}/>);
@@ -351,13 +373,14 @@ class DataContainer extends Component {
 
     componentDidUpdate() {
         const { analysisType = {}, analysisTypeE = {}, selectedEventIds = [], fullContext, zoomJustCalled, analysisClass, setAnalysisClass, selectEvent } = this.props;        
-
+        console.log('analysis type r', analysisType);
+        console.log('analysis type e', analysisTypeE);
         let count = 0;
         if(analysisType.name == undefined)
             count += 1;
         if(analysisTypeE.name == undefined)
             count += 2;
-                
+        console.log('count', count);
         switch(count) {
             case 0:
                 if(analysisClass == '')
@@ -373,6 +396,10 @@ class DataContainer extends Component {
                 break;            
         } 
                         
+        /*console.log('zoomjustcalled ', zoomJustCalled);
+        console.log('selected event ids', selectedEventIds);
+        console.log('fullcontext', fullContext);*/
+        console.log('analysis class', analysisClass);
         if(selectedEventIds.length == 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
             const eventData = this.prepareEventData();                
             if(eventData.length > 0)                                 

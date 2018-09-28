@@ -103,30 +103,34 @@ article.tab-pane {
 #header-color-bar {
   position: absolute;
   width: 100%;
-  height: 5rem;
+  height: 3.2rem;
   background-color: #0065A2;
-  top: 86px;
+  top: 72px;
 }
 .banner-flag {
   position: relative;
-  float:left;
+  float: left;
   z-index: 100;
-  height:130px;
-  padding: 0 20px;
+  height: 104px;
+  padding: 0 15px;
+}
+.banner-flag img {
+  height: 100px;
 }
 #banner-title-text {
   position: relative;
   float:left;
-  top: 52px;
+  top: 45px;
   font-size: 2.5rem;
   z-index: 100;
   text-transform: uppercase;
   color: #0065A2;
+  line-height: 110%;
 }
 #banner-title-text span {
   color: #efefef;
   text-transform: none;
-  font-size: 2rem;
+  font-size: 1.8rem;
 }
 .navbar {
   margin-bottom: 0;
@@ -328,8 +332,11 @@ body.groups li#nav_groups a {
   }
   .risktools footer {
     position: relative;
-    top: -70px;
-  }
+    /*top: -70px;*/
+  }  
+}
+#header-wrap {
+  padding-top: 8px;
 }
 #header-wrap ul li {
   display: inline-block;
@@ -1173,3 +1180,59 @@ li.not-eligible {
   border: 1px solid blue;
   color: inherit;
 }
+
+/*SEARCH BOX*/
+.lookup-res li {
+  color: #333;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;  
+}
+.lookup-res-main li {
+  border: none;
+  border-bottom: 1px solid #ddd;
+}
+.lookup-res-main li:hover {
+  color: #0065A2;
+  cursor: pointer;
+}
+.lookup-res-group {
+  padding: 0 10px;
+}
+.lookup-res-group > li {
+  border: 1px solid #dddddd;
+  margin-bottom: 15px;
+}
+.lookup-res-group > li:hover {
+  border: 1px solid #0065A2;
+  cursor: pointer;
+}
+.lookup-reset-item {
+  position: relative;
+  float: right;
+  top: -30px;
+  right: 10px;
+  color: #333;
+}
+.lookup-reset-item:hover {
+  color: #0065A2;
+  cursor: pointer;
+}
+#main-search-widget {
+  float: left;
+  width: 500px;
+  margin-top: 15px;
+}
+.autocomplete-box {
+  position: absolute;
+  z-index: 1001;
+  min-width: 500px;  
+  background: white;
+  overflow-y: scroll;
+}
+.autocomplete-box > ul {
+  margin-bottom: 0;
+}
+/*.autocomplete-box > ul > li {
+  border: none;
+  margin-bottom: 15px;
+}*/

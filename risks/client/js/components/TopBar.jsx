@@ -11,6 +11,7 @@ const Navigation = require('./Navigation');
 const HelpBtn = require('./HelpBtn');
 
 const RiskSelector = require('./RiskSelector');
+import Search from './Search';
 const {shareUrlSelector} = require('../selectors/disaster');
 const SharingLink = connect(shareUrlSelector)(require('./ShareLink'));
 const TopBar = React.createClass({
@@ -37,18 +38,24 @@ const TopBar = React.createClass({
         const {navItems, context, riskItems, overviewHref, activeRisk, getData, zoom, toggleTutorial} = this.props;
         return (
             <div className="container-fluid">
+                <div id="main-search-widget" className="search-box">
+                    <Search />
+                </div>
                 <div className="disaster-breadcrumbs">
                     <Navigation items={navItems} zoom={zoom} context={context}/>
                     <div id="disaster-page-tools" className="pull-right btn-group">
                         <SharingLink bsSize=""/>
                         <HelpBtn toggleTutorial={toggleTutorial}/>
                     </div>
-                </div>
-                <div id="disaster-risk-selector-menu" className="disaster-risk-selector">
-                    <RiskSelector riskItems={riskItems} overviewHref={overviewHref} activeRisk={activeRisk} getData={getData}/>
-                </div>
+                </div>                
             </div>);
     }
 });
+
+/*removed
+<div id="disaster-risk-selector-menu" className="disaster-risk-selector">
+                    <RiskSelector riskItems={riskItems} overviewHref={overviewHref} activeRisk={activeRisk} getData={getData}/>
+                </div>
+*/
 
 module.exports = TopBar;

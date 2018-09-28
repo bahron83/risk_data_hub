@@ -47,19 +47,19 @@ class AdmLookupView(ContextAware, LocationSource, View):
             
         else:
             loc_chains = self.location_lookup(**kwargs)
-            if not loc_chains:
-                return json_response(errors=['Invalid location code'], status=404)
-                        
-            for loc_chain in loc_chains:
-                current_loc = loc_chain[-1] 
-                country = next((x for x in loc_chain if x.level == 1), None)    
-                current_chain_data = {
-                    'admCode': current_loc.code,
-                    'admName': current_loc.name,
-                    'level': current_loc.level,
-                    'country': country.code if country is not None else '',
-                    'countryName': country.name if country is not None else ''
-                }
-                lookup_data.append(current_chain_data)
+            if loc_chains:                        
+                for loc_chain in loc_chains:
+                    current_loc = loc_chain[-1] 
+                    country = next((x for x in loc_chain if x.level == 1), None)    
+                    current_chain_data = {
+                        'admCode': current_loc.code,
+                        'admName': current_loc.name,
+                        'level': current_loc.level,
+                        'country': country.code if country is not None else '',
+                        'countryName': country.name if country is not None else ''
+                    }
+                    lookup_data.append(current_chain_data)
+            else:
+                lookup_data.append({})
         
         return json_response(lookup_data) 

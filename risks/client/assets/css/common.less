@@ -1,14 +1,17 @@
 .container-main {
-  height: calc(~"100% - 160px");
+  height: calc(~"100% - 56px");
 }
 .drc {
   height: calc(~"100% - 44px");
 }
 #disaster-overview-list {
-  height: calc(~"100% - 358px");  
+  height: calc(~"100% - 252px");  
 }
 .disaster-header {
-  max-height: calc(~"100% - 358px");
+  max-height: calc(~"100% - 253px");
+}
+.autocomplete-box {
+  height: calc(~"100% - 193px");  
 }
 /*#disaster-risk-selector-menu {
   display: none;
@@ -24,9 +27,9 @@
     height: 100%;
 }
 
-/*.disaster-breadcrumbs {
-  margin: 10px 0;
-}*/
+.disaster-breadcrumbs {
+  margin: 15px 0 0 500px;
+}
 
 .disaster-breadcrumbs #disaster-navigation .btn {
   color: @brand-primary;
@@ -546,7 +549,7 @@
 }
 #disaster-overview-list, .disaster-header {
   position: absolute;
-  margin: 45px 0 0 15px;
+  margin: 44px 0 0 15px;
   z-index:500;
   background: rgba(0, 0, 0, 0.6);  
   max-width: 50%;
@@ -605,6 +608,7 @@ aside.disaster-level {
 @media (min-width: 1200px) {
   #disaster-overview-list, .disaster-header {
     max-width: 600px;
+    min-width: 500px;
   }
 }
 

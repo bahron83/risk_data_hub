@@ -6381,19 +6381,16 @@ a.disaster .label:focus {
   clip: auto;
 }
 .disaster .container-main {
-  height: calc(100% - 56px);
+  height: calc(100% - 89px);
 }
 .disaster .drc {
   height: calc(100% - 44px);
 }
 .disaster #disaster-overview-list {
-  height: calc(100% - 252px);
+  height: calc(100% - 286px);
 }
 .disaster .disaster-header {
-  max-height: calc(100% - 253px);
-}
-.disaster .autocomplete-box {
-  height: calc(100% - 193px);
+  max-height: calc(100% - 286px);
 }
 .disaster .row,
 .disaster .col,

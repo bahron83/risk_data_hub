@@ -10,6 +10,11 @@ class AnalysisType(RiskAppAware, HazardTypeAware, LocationAware, Exportable, mod
     and/or related resource useful to the users to get details on the
     Analysis type.
     """
+    EXPORT_FIELDS_BASIC = (('name', 'name',),
+                     ('title', 'title',),
+                     ('description', 'description',),
+                     ('faIcon', 'fa_icon',),)
+    
     EXPORT_FIELDS = (('name', 'name',),
                      ('title', 'title',),
                      ('description', 'description',),

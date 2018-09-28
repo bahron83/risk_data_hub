@@ -41,8 +41,12 @@ const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel,
         activeRisk: hazardType.mnemonic || "Overview",
         context
     }));
-const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analysisTypeSel, analysisTypeESel, riskAnalysisDataSel, dimSelector, loadingStateSelector, showChartSel, fullContextSel, analysisClassSelector, zoomJustCalledSel, chartValues, selectedEventsSelector, contextUrlPrefixSel],
-    (riskItems, hazardType, analysisType, analysisTypeE, riskAnalysisData, dim, loading, showChart, fullContext, analysisClass, zoomJustCalled, cValues, selectedEventIds, contextUrl) => ({
+const dataContainerSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel, analysisTypeSel, analysisTypeESel, riskAnalysisDataSel, dimSelector, loadingStateSelector, showChartSel, fullContextSel, analysisClassSelector, zoomJustCalledSel, chartValues, selectedEventsSelector, contextUrlPrefixSel],
+    (navItems, riskItems, hazardType, analysisType, analysisTypeE, riskAnalysisData, dim, loading, showChart, fullContext, analysisClass, zoomJustCalled, cValues, selectedEventIds, contextUrl) => ({
+        navItems,
+        overviewHref: (last(navItems) || {href: ''}).href,
+        riskItems,
+        activeRisk: hazardType.mnemonic || "Overview",
         showHazard: hazardType.mnemonic ? true : false,
         hazardTitle: hazardType.mnemonic ? head(riskItems.filter((hz) => hz.mnemonic === hazardType.mnemonic)).title || '' : '',
         hazardType,

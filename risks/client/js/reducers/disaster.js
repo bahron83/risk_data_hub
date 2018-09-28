@@ -36,7 +36,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             return assign({}, state, {
                 loading: true
             });
-        case DATA_LOADED: {
+        case DATA_LOADED: {                            
             return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app, analysisClass: state.analysisClass, contextUrl: state.contextUrl, region: state.region}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, selectedEventIds: state.selectedEventIds, analysisClass: state.analysisClass, analysisFilters: state.analysisFilters, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app, contextUrl: state.contextUrl, region: state.region}, action.data);
         }
         case ANALYSIS_DATA_LOADED: {
@@ -55,7 +55,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
         case TOGGLE_ADMIN_UNITS: {
             return assign({}, state, {showSubUnit: !state.showSubUnit});
         }
-        case SET_DIM_IDX: {
+        case SET_DIM_IDX: {            
             const newDim = assign({dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}, state.dim, {[action.dim]: action.idx});            
             return assign({}, state, {dim: newDim});
         }        
