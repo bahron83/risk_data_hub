@@ -198,7 +198,7 @@ class ImportDataEventAttributeForm(models.ModelForm):
         region = self.cleaned_data['region']  
         risk = self.cleaned_data['riskanalysis']
         allow_null_values = False#self.cleaned_data['allow_null_values']
-        adm_level_precision = self.cleaned_date['adm_level_precision']
+        adm_level_precision = self.cleaned_data['adm_level_precision']
         current_user = self.current_user
                 
         import_event_attributes.delay(tmp_file, risk_app.name, risk.name, region.name, allow_null_values, final_name, current_user.id, adm_level_precision)        
