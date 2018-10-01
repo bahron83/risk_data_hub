@@ -92,7 +92,7 @@ class Command(BaseCommand):
             try:  
                 for row_num in range(1, sheet.nrows):  
                     obj = {}                
-                    event_id = sheet.cell(row_num, 0).value
+                    event_id = str(sheet.cell(row_num, 0).value).replace('\n', '').replace('\r', '').strip()
                     
                     obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
                     obj['region'] = region
