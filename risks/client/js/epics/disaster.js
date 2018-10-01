@@ -192,7 +192,7 @@ const getEventDetailsEpic = (action$, store) =>
 const zoomInOutEpic = (action$, store) =>
     action$.ofType("ZOOM_IN_OUT").switchMap( action => {        
         let { riskAnalysis, context } = (store.getState()).disaster;         
-        const resolvedContext = action && action.context || riskAnalysis.context;
+        const resolvedContext = action && action.context || riskAnalysis && riskAnalysis.context;
         if(action.context != null) context = action.context.replace(/(ht\/\w+\/).*/, "$1");
         const analysisHref = riskAnalysis && `${action.dataHref}${resolvedContext}`;
         return Rx.Observable.defer(() => Api.getData(`${action.dataHref}${context || ''}`))
