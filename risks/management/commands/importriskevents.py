@@ -20,7 +20,15 @@ from xlrd.sheet import ctype_text
 from dateutil.parser import parse
 import datetime
 import time
+import re
 
+
+def is_int(string):
+    try:
+        n = int(string)
+        return True
+    except ValueError, e:
+        return False
 
 class Command(BaseCommand):
     help = 'Import Risk Data: Loss Impact and Impact Analysis Types.'
@@ -53,8 +61,9 @@ class Command(BaseCommand):
             default=RiskApp.APP_DATA_EXTRACTION,
             help="Name of Risk App, default: {}".format(RiskApp.APP_DATA_EXTRACTION),
             )
-        return parser
+        return parser    
 
+    
     def handle(self, **options):
         commit = options.get('commit')
         region = options.get('region')
@@ -76,7 +85,7 @@ class Command(BaseCommand):
 
         wb = xlrd.open_workbook(filename=excel_file)
         region = Region.objects.get(name=region)
-        #region_code = region.administrative_divisions.filter(parent=None)[0].code                
+        event_ids = []
 
         sheet = wb.sheet_by_index(0)
         row_headers = sheet.row(0)        
@@ -92,7 +101,8 @@ class Command(BaseCommand):
             try:  
                 for row_num in range(1, sheet.nrows):  
                     obj = {}                
-                    event_id = str(sheet.cell(row_num, 0).value).replace('\n', '').replace('\r', '').strip()
+                    event_id = str(sheet.cell(row_num, 0).value).replace('\n', '').replace('\r', '').strip()  
+                    duplicates = []                                  
                     
                     obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
                     obj['region'] = region
@@ -105,7 +115,7 @@ class Command(BaseCommand):
                     obj['event_source'] = sheet.cell(row_num, 8).value                
                     obj['cause'] = sheet.cell(row_num, 9).value
                     obj['notes'] = sheet.cell(row_num, 10).value
-                    obj['sources'] = sheet.cell(row_num, 11).value 
+                    obj['sources'] = sheet.cell(row_num, 11).value                     
 
                     try:
                         country = AdministrativeDivision.objects.get(code=obj['iso2'], level=1)
@@ -118,6 +128,11 @@ class Command(BaseCommand):
                     except:
                         obj['begin_date'] = datetime.date(obj['year'], 1, 1)
                         obj['end_date'] = datetime.date(obj['year'], 1, 1)              
+                    
+                    if not event_id:
+                        event_id, duplicates = Event.generate_event_id(obj['hazard_type'], country, obj['begin_date'])
+                        #sheet.put_cell(row_num, 0, xlrd.XL_CELL_TEXT, event_id, sheet.cell_xf_index(row_num, 0))
+                    
                     try:
                         event = Event.objects.get(event_id=event_id, region=region)
                         for key, value in obj.items():
@@ -143,6 +158,10 @@ class Command(BaseCommand):
                     #insert into geoserver db
                     obj['event_id'] = event_id
                     db.insert_event(conn, obj)
+
+                    #append event id to return list                        
+                    formatted_text_row = '{}\tSuspected duplicate of {}'.format(event_id, ';'.join(duplicates)) if duplicates else event_id
+                    event_ids.append(formatted_text_row)
                 conn.commit()
             except Exception, e:
                 try:
@@ -153,7 +172,8 @@ class Command(BaseCommand):
                 #traceback.print_exc()
                 raise CommandError(e)
             finally:
-                conn.close()                          
+                conn.close() 
+        return '\r\n'.join(event_ids)
     
     def try_parse_int(self, s, base=10, default=None):
         try:

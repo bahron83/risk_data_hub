@@ -209,8 +209,9 @@ def generate_event_from_feed(event, geom):
     else:        
         print('event to be created => hazard = {} - country = {}'.format(hazard_match, country_match))
         if hazard_match and country_match:
+            event_id, duplicates = Event.generate_event_id(hazard_match, country_match, parse(event['begin_date']))
             new_event = Event.objects.create(
-                event_id='{}_{}'.format(hazard_match.mnemonic, event['copernicus_id']),
+                event_id=event_id,
                 hazard_type=hazard_match,
                 region=Region.objects.get(name='Europe'),
                 iso2=country_match.code,
@@ -293,7 +294,14 @@ def import_events(data_from_feed, tolerance = 0.0001):
                                                             ON CONFLICT (event_id)
                                                             DO UPDATE SET the_geom = excluded.the_geom;"""
                                     curs.execute(update_template.format(**params))
-                    os.rename(os.path.join(SHAPEFILES_BASE_DIR, d, f), os.path.join(SHAPEFILES_BASE_DIR, d, 'archive', f))
+                    archive_path = os.path.join(SHAPEFILES_BASE_DIR, d, 'archive')
+                    if not os.path.exists(archive_path):
+                        os.makedirs(archive_path)
+                    for f2 in os.listdir(os.path.join(SHAPEFILES_BASE_DIR, d)):
+                        filepath = os.path.join(SHAPEFILES_BASE_DIR, d, f2) 
+                        if os.path.isfile(filepath):
+                            print('moving file {} to {}'.format(f2, archive_path))
+                            os.rename(filepath, os.path.join(archive_path, f2))
 
         conn.commit()        
     except Exception:

@@ -5,3 +5,8 @@
 
 Filename: {{ filename }} 
 Region: {{ region }}
+
+{% if additional_content %}
+Further details:
+{{ additional_content }}
+{% endif %}
