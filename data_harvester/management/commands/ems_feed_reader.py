@@ -1,5 +1,6 @@
 import os
 import operator
+import urllib2
 import feedparser
 import re
 from datetime import timedelta
@@ -30,7 +31,11 @@ def parse_feed(feed_type = 'rapid'):
     elif feed_type == 'risk':
         url = RISK_RECOVERY_URL        
     if url:
-        d = feedparser.parse(url)        
+        if os.getenv('http_proxy'):
+            proxy = urllib2.ProxyHandler({"http": os.getenv('http_proxy')})
+            d = feedparser.parse(url, handlers = [proxy])        
+        else:
+            d = feedparser.parse(url)
         for entry in d.entries:                
             hazard_pattern = r'<b>Type of Event:</b>\s?(.*);'
             country_pattern = r'<b>Affected Country:</b>\s?(.*);'
@@ -209,11 +214,12 @@ def generate_event_from_feed(event, geom):
     else:        
         print('event to be created => hazard = {} - country = {}'.format(hazard_match, country_match))
         if hazard_match and country_match:
-            event_id, duplicates = Event.generate_event_id(hazard_match, country_match, parse(event['begin_date']))
+            region_eu = Region.objects.get(name='Europe') 
+            event_id, duplicates = Event.generate_event_id(hazard_match, country_match, parse(event['begin_date']), region_eu)
             new_event = Event.objects.create(
                 event_id=event_id,
                 hazard_type=hazard_match,
-                region=Region.objects.get(name='Europe'),
+                region=region_eu,
                 iso2=country_match.code,
                 nuts3=';'.join([adm.code for adm in get_adm_units_intersected(event, geom)]),
                 begin_date=parse(event['begin_date']),

@@ -101,8 +101,10 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         return self.get_url('event', reg.name, loc.code, self.event_id)
 
     @staticmethod
-    def generate_event_id(hazard_type, country, begin_date):
-        events_to_check = Event.objects.filter(event_id__regex=r'^[A-Z]{4}[0-9]{12}$', hazard_type=hazard_type, year=begin_date.year)
+    def generate_event_id(hazard_type, country, begin_date, region):
+        suffix = 'R' if region.code != 'EU' else ''
+        pattern = r'^[A-Z]{4}[0-9]{12}' + re.escape(suffix) + r'$'
+        events_to_check = Event.objects.filter(event_id__regex=pattern, hazard_type=hazard_type, year=begin_date.year)
         next_serial = 1
         duplicates = Event.objects.none()
         if events_to_check:           
@@ -110,7 +112,8 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
             serials = [str(ev.event_id[-4:]) for ev in events_to_check]            
             serials.sort(reverse=True)
             next_serial = int(serials[0]) + 1
-        new_event_id = hazard_type.mnemonic + country.code + begin_date.strftime('%Y%m%d') + '{:>04d}'.format(next_serial)
+        new_event_id = hazard_type.mnemonic + country.code + begin_date.strftime('%Y%m%d') + '{:>04d}'.format(next_serial) + suffix
+
         duplicates = duplicates.exclude(event_id=new_event_id).values_list('event_id', flat=True)
         return new_event_id, duplicates
 

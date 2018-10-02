@@ -130,7 +130,7 @@ class Command(BaseCommand):
                         obj['end_date'] = datetime.date(obj['year'], 1, 1)              
                     
                     if not event_id:
-                        event_id, duplicates = Event.generate_event_id(obj['hazard_type'], country, obj['begin_date'])
+                        event_id, duplicates = Event.generate_event_id(obj['hazard_type'], country, obj['begin_date'], region)
                         #sheet.put_cell(row_num, 0, xlrd.XL_CELL_TEXT, event_id, sheet.cell_xf_index(row_num, 0))
                     
                     try:
