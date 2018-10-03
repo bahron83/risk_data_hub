@@ -84,14 +84,14 @@ def get_ems_to_import(feed_type = 'rapid', data_from_feed = None):
             row = curs.fetchone()
             if row == None:
                 break
-            already_imported.append(row)    
-        conn.close()
+            already_imported.append(str(row[0]))    
+        conn.close()        
         tags_from_feed = [d['copernicus_id'] for d in data_from_feed]  
 
         #check if Europe
         countries_needed = AdministrativeDivision.objects.filter(parent__code='EU').values_list('name', flat=True)
-        tags_filtered = [d['copernicus_id'] for d in data_from_feed if d['country'] in countries_needed]          
-        return list(set(tags_filtered) - set(already_imported))        
+        tags_filtered = [d['copernicus_id'] for d in data_from_feed if d['country'] in countries_needed]                   
+        return list(set(tags_filtered) - set(already_imported))                       
     return []
 
 def set_tags_imported(emergency_tags):
@@ -143,7 +143,7 @@ def get_country_match(name):
     Check for matching country in Django DB, comparing country name found in EMS feed
     """
     reg_europe = Region.objects.get(name='Europe')
-    return AdministrativeDivision.objects.filter(name__icontains=name, regions__in=[reg_europe]).first()    
+    return AdministrativeDivision.objects.filter(name__icontains=name, level=1, regions__in=[reg_europe]).first()    
 
 def get_event_by_feed(event):
     """
@@ -182,7 +182,7 @@ def get_adm_units_intersected(event, geom):
     For a given event from feed, returns list of NUTS3 whose geometry has positive intersection with geometry of event
     """
     adm_units_covered = []    
-    if event:        
+    if event and geom:        
         parent_adm = get_country_match(event['country'])
         if parent_adm:            
             for adm_unit in AdministrativeDivision.objects.filter(parent=parent_adm):
@@ -205,6 +205,7 @@ def generate_event_from_feed(event, geom):
     print('looking for event match in database')
     match, hazard_match, country_match = get_event_by_feed(event)
     event_obj = None
+    adm_units_intersected = get_adm_units_intersected(event, geom)
     if match:
         print('found existing event: {}'.format(match.event_id))
         if 'EMS' not in match.sources:
@@ -215,13 +216,13 @@ def generate_event_from_feed(event, geom):
         print('event to be created => hazard = {} - country = {}'.format(hazard_match, country_match))
         if hazard_match and country_match:
             region_eu = Region.objects.get(name='Europe') 
-            event_id, duplicates = Event.generate_event_id(hazard_match, country_match, parse(event['begin_date']), region_eu)
+            event_id, duplicates = Event.generate_event_id(hazard_match, country_match, parse(event['begin_date']), region_eu)            
             new_event = Event.objects.create(
                 event_id=event_id,
                 hazard_type=hazard_match,
                 region=region_eu,
                 iso2=country_match.code,
-                nuts3=';'.join([adm.code for adm in get_adm_units_intersected(event, geom)]),
+                nuts3=';'.join([adm.code for adm in adm_units_intersected]),
                 begin_date=parse(event['begin_date']),
                 end_date=parse(event['begin_date']),
                 year=event['begin_date'][:4],
@@ -233,8 +234,8 @@ def generate_event_from_feed(event, geom):
             )         
             event_obj = new_event
     # Set relations
-    if event_obj:        
-        for adm in get_adm_units_intersected(event, geom):
+    if event_obj and adm_units_intersected:        
+        for adm in adm_units_intersected:
             event_adm, created = EventAdministrativeDivisionAssociation.objects.get_or_create(event=event_obj, adm=adm)
 
     return event_obj
@@ -282,8 +283,12 @@ def import_events(data_from_feed, tolerance = 0.0001):
                                         polygon_union = geom.buffer(0)
                                     else:
                                         polygon_union = polygon_union.union(geom.buffer(0))
-                                    count += 1
-                                polygon_union = geos.fromstr(polygon_union.wkt, srid=4326)
+                                    count += 1                                
+                                try:
+                                    polygon_union = geos.fromstr(polygon_union.wkt, srid=4326)
+                                except:
+                                    break
+
                                 # Update event in Django
                                 event_from_feed = get_event_from_feed(data_from_feed, d.split('_')[0])
                                 new_event = generate_event_from_feed(event_from_feed, polygon_union)

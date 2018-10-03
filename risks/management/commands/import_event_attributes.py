@@ -12,7 +12,7 @@ from risks.models import Region, AdministrativeDivision, Event, RiskAnalysis
 from risks.models import HazardType, RiskApp
 from risks.models import RiskAnalysisDymensionInfoAssociation
 from risks.models import RiskAnalysisAdministrativeDivisionAssociation
-from risks.models import EventAdministrativeDivisionAssociation
+from risks.models import EventAdministrativeDivisionAssociation, EventRiskAnalysisAssociation
 
 import xlrd
 from xlrd.sheet import ctype_text
@@ -145,6 +145,7 @@ class Command(BaseCommand):
                         'conn': conn
                     }
                     self.handle_row(params)
+                    event_risk, created = EventRiskAnalysisAssociation.objects.get_or_create(risk=risk, event=event)
                     first_call = False
 
                     #execute this part only if resolution of data is at country level
