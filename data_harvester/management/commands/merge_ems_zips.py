@@ -48,8 +48,11 @@ def extract_zipped_files (file_name):
     #pass
     print file_name
     file_name_in=folder_input_zip+file_name
-    with zipfile.ZipFile(file_name_in, "r") as z:
-        z.extractall(folder_output_zip)
+    try:
+        with zipfile.ZipFile(file_name_in, "r") as z:
+            z.extractall(folder_output_zip)
+    except:
+        pass
 
 def move_merged_files (ems, extensions = None):
     if not extensions:
