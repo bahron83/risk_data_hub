@@ -99,7 +99,7 @@ def merge_ems_zips (emergency_tags,elements):
 
     # move files
     for file in sorted(os.listdir(folder_input_shp)):
-        for ems in emergency_tags:
+        for ems in emergency_tags:            
             if ems in file:
                 for category in elements:
                     if category in file:

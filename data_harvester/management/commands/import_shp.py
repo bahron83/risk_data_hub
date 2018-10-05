@@ -23,7 +23,7 @@ def insert_shape(new_record, table_name, names):
         'geom': text_geom
     }
     print(params['values'])
-    insert_template = """INSERT INTO {table_name} (the_geom, {fields}) VALUES ({geom}, {values});"""
+    insert_template = """INSERT INTO {table_name} (the_geom, {fields}) VALUES (ST_SimplifyPreserveTopology({geom}, 0.001), {values});"""
     return insert_template.format(**params)
     
 

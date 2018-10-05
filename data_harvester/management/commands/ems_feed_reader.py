@@ -330,7 +330,7 @@ def import_events(data_from_feed, tolerance = 0.0001):
                                 except:
                                     break'''                                                        
                             ems = d.split('_')[0]
-                            select_template = "SELECT ST_AsText(ST_Union(ARRAY(SELECT ST_Multi(ST_SetSRID(the_geom, 4326)) FROM {})))".format(ems)
+                            select_template = "SELECT ST_AsText(ST_Union(ARRAY(SELECT ST_Buffer(the_geom, 1e-5) FROM {})))".format(ems)
                             curs.execute(select_template)
                             row = curs.fetchone()
                             polygon_union = geos.GEOSGeometry('POINT (0 0)', srid=4326)
