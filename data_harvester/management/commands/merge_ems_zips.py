@@ -10,6 +10,8 @@ import glob
 import shapefile
 from subprocess import call
 from django.conf import settings
+import ems_feed_reader
+import import_shp
 
 
 ###############################################################################
@@ -129,8 +131,15 @@ def merge_ems_zips (emergency_tags,elements):
             for f in files:
                 shutil.copy(f,folder_input_out)
                 break
+            '''outpath = folder_output_merge + ems + "_" + category + '_merged.wkt'
+            computed_union_geometry = ems_feed_reader.compute_union_geometry(files)
+            with open(outpath, 'w') as geom_file:
+                geom_file.write(computed_union_geometry)'''
         #move files
-        move_merged_files(ems)        
+        move_merged_files(ems) 
+        #import shapefile into postgis
+        print('importing shapefile into POSTGIS')
+        import_shp.shp2postgis(folder_output_merge + ems + '_merged', ems)      
     
     #remove temp folder
     try:
