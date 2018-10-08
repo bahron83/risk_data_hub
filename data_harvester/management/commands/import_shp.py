@@ -23,7 +23,7 @@ def insert_shape(new_record, table_name, names):
         'geom': text_geom
     }
     print(params['values'])
-    insert_template = """INSERT INTO {table_name} (the_geom, {fields}) VALUES (ST_SimplifyPreserveTopology({geom}, 0.001), {values});"""
+    insert_template = """INSERT INTO {table_name} (the_geom) VALUES (ST_SimplifyPreserveTopology({geom}, 0.001));"""
     return insert_template.format(**params)
     
 
@@ -48,9 +48,14 @@ def shp2postgis(directory, table_name):
     fields = sf.fields
 
     names = [field[0] for field in fields]
-    if names:    
+    if names:
+        if len(names) > 1:
+            names_str = ' text, '.join(names[1:])
+        else:
+            names_str = 'placeholder'
+            names.append(names_str)
         cursor.execute('DROP TABLE IF EXISTS %s;' % table_name)
-        cursor.execute('CREATE TABLE %s (id serial, the_geom geometry, %s text);' % (table_name, ' text, '.join(names[1:])))
+        cursor.execute('CREATE TABLE %s (id serial, the_geom geometry);' % (table_name))
         cursor.execute('CREATE INDEX %s_gix on %s USING GIST (the_geom)' % (table_name, table_name))
         connection.commit()
 
