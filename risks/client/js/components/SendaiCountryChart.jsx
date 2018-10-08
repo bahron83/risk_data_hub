@@ -23,7 +23,7 @@ class SendaiCountryChart extends Component {
     getRefValue() {
         const { data, round } = this.props;
         const { sendaiValues } = data;        
-        return sendaiValues && sendaiValues.length > 0 ? round(parseFloat(sendaiValues[0][1])) : null;
+        return sendaiValues && sendaiValues.length > 0 ? round(parseFloat(sendaiValues[0][1])).toLocaleString() : null;
     }
 
     getSendaiIndicator() {

@@ -279,12 +279,12 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                         total = 0'''
                     for s in features_sendai:
                         if s[0] >= SENDAI_FROM_YEAR:
-                            if s[0] <= SENDAI_TO_YEAR:
+                            if s[0] <= SENDAI_TO_YEAR:                            
                                 total += s[1]
                                 n_of_years += 1
-                            else:
-                                rounded_value = round(Decimal(s[1]), DEFAULT_DECIMAL_POINTS)
-                                sendai_final_array.append([s[0], self.calculate_sendai_indicator(loc, sendai_indicator, rounded_value)])
+                            #else: #removing else will display all years instead of grouping years from 2005 to 2015
+                            rounded_value = round(Decimal(s[1]), DEFAULT_DECIMAL_POINTS)
+                            sendai_final_array.append([s[0], self.calculate_sendai_indicator(loc, sendai_indicator, rounded_value)])
                     sendai_final_array.insert(0, ['{}_{}'.format(SENDAI_FROM_YEAR, SENDAI_TO_YEAR), self.calculate_sendai_indicator(loc, sendai_indicator, total, 'average', n_of_years)])
                         
             # Finishing building output            
