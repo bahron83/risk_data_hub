@@ -180,7 +180,7 @@ class DataContainer extends Component {
                             {fullContext.adm_level > 0 ? (
                                 <Panel className="panel-box">   
                                     <h4 className="text-center">{'Sendai Target Indicator'}</h4>                             
-                                    <SendaiCountryChart dim={dim} data={data} round={this.round.bind(this)}/>
+                                    <SendaiCountryChart dim={dim} data={data} unitOfMeasure={unitOfMeasure} round={this.round.bind(this)}/>
                                 </Panel>
                             ) : (
                                 <Panel className="panel-box">   
