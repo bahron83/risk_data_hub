@@ -109,8 +109,8 @@ class Command(BaseCommand):
                     obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
                     obj['nuts3'] = sheet.cell(row_num, 3).value                
                     obj['year'] = int(sheet.cell(row_num, 4).value)                                
-                    begin_date_raw = str(sheet.cell(row_num, 5).value)
-                    end_date_raw = str(sheet.cell(row_num, 6).value)                
+                    begin_date_raw = sheet.cell(row_num, 5).value
+                    end_date_raw = sheet.cell(row_num, 6).value
                     obj['event_type'] = sheet.cell(row_num, 7).value
                     obj['event_source'] = sheet.cell(row_num, 8).value                
                     obj['cause'] = sheet.cell(row_num, 9).value
@@ -122,17 +122,25 @@ class Command(BaseCommand):
                     except AdministrativeDivision.DoesNotExist:                        
                         raise CommandError("Could not find adm unit with code {}".format(obj['iso2']))
 
-                    try:
-                        obj['begin_date'] = parse(begin_date_raw)
-                        obj['end_date'] = parse(end_date_raw)
-                    except:
-                        obj['begin_date'] = datetime.date(obj['year'], 1, 1)
-                        obj['end_date'] = datetime.date(obj['year'], 1, 1)              
+                    obj['begin_date'] = datetime.date(obj['year'], 1, 1)
+                    obj['end_date'] = datetime.date(obj['year'], 1, 1)              
+                    if is_number(begin_date_raw) and is_number(begin_date_raw):                    
+                        try:
+                            obj['begin_date'] = xlrd.xldate_as_datetime(begin_date_raw, 0)
+                            obj['end_date'] = xlrd.xldate_as_datetime(end_date_raw, 0)
+                        except:
+                            pass
+                    else:
+                        try:
+                            obj['begin_date'] = parse(begin_date_raw)
+                            obj['end_date'] = parse(end_date_raw)
+                        except ValueError:
+                            pass
                     
                     if not event_id:
                         event_id, duplicates = Event.generate_event_id(obj['hazard_type'], country, obj['begin_date'], region)
                         #sheet.put_cell(row_num, 0, xlrd.XL_CELL_TEXT, event_id, sheet.cell_xf_index(row_num, 0))
-                    
+                                        
                     try:
                         event = Event.objects.get(event_id=event_id, region=region)
                         for key, value in obj.items():
@@ -175,14 +183,21 @@ class Command(BaseCommand):
                 conn.close() 
         return '\r\n'.join(event_ids)
     
-    def try_parse_int(self, s, base=10, default=None):
-        try:
-            return int(s, base)
-        except ValueError:
-            return default
+def try_parse_int(s, base=10, default=None):
+    try:
+        return int(s, base)
+    except ValueError:
+        return default
 
-    def try_parse_float(self, s, default=None):
-        try:
-            return float(s)
-        except ValueError:
-            return default
+def try_parse_float(s, default=None):
+    try:
+        return float(s)
+    except ValueError:
+        return default
+
+def is_number(s, default=None):
+    try:
+        res = float(s)
+    except ValueError:
+        return False
+    return True

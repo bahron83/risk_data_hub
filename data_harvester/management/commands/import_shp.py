@@ -7,6 +7,9 @@ from risks.management.commands.action_utils import DbUtils
 
 def insert_shape(new_record, table_name, names):
     values = [str(value) for value in new_record.record]
+    if names:
+        if names[0] == 'placeholder':
+            values.append('placeholder')
     points = new_record.shape.points
     first_point = points[0]
     last_point = points[len(points)-1]
@@ -48,6 +51,8 @@ def shp2postgis(directory, table_name):
     fields = sf.fields
 
     names = [field[0] for field in fields]
+    if not names:
+        names.append('placeholder')
 
     cursor.execute('DROP TABLE IF EXISTS %s;' % table_name)
     cursor.execute('CREATE TABLE %s (id serial, the_geom geometry, %s text);' % (table_name, ' text, '.join(names[1:])))
