@@ -107,7 +107,7 @@ class Command(BaseCommand):
                     obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
                     obj['region'] = region
                     obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
-                    obj['nuts3'] = sheet.cell(row_num, 3).value                
+                    obj['nuts3'] = str(sheet.cell(row_num, 3).value).replace(' ', '')
                     obj['year'] = int(sheet.cell(row_num, 4).value)                                
                     begin_date_raw = sheet.cell(row_num, 5).value
                     end_date_raw = sheet.cell(row_num, 6).value
