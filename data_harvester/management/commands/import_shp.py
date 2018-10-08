@@ -6,10 +6,7 @@ from risks.management.commands.action_utils import DbUtils
 
 
 def insert_shape(new_record, table_name, names):
-    values = [str(value) for value in new_record.record]
-    if names:
-        if names[0] == 'placeholder':
-            values.append('placeholder')
+    values = [str(value) for value in new_record.record]    
     points = new_record.shape.points
     first_point = points[0]
     last_point = points[len(points)-1]
@@ -51,22 +48,20 @@ def shp2postgis(directory, table_name):
     fields = sf.fields
 
     names = [field[0] for field in fields]
-    if not names:
-        names.append('placeholder')
+    if names:    
+        cursor.execute('DROP TABLE IF EXISTS %s;' % table_name)
+        cursor.execute('CREATE TABLE %s (id serial, the_geom geometry, %s text);' % (table_name, ' text, '.join(names[1:])))
+        cursor.execute('CREATE INDEX %s_gix on %s USING GIST (the_geom)' % (table_name, table_name))
+        connection.commit()
 
-    cursor.execute('DROP TABLE IF EXISTS %s;' % table_name)
-    cursor.execute('CREATE TABLE %s (id serial, the_geom geometry, %s text);' % (table_name, ' text, '.join(names[1:])))
-    cursor.execute('CREATE INDEX %s_gix on %s USING GIST (the_geom)' % (table_name, table_name))
-    connection.commit()
-
-    shape_records = sf.shapeRecords()
-    queries = process_shapes(shape_records, table_name, names)
-    for q in queries:            
-        cursor.execute(q)        
-    connection.commit()
-    #cursor.execute('UPDATE %s SET the_geom=ST_makevalid(the_geom) WHERE NOT ST_isValid(the_geom);' % table_name)
-    cursor.execute('update %s set the_geom = st_multi(st_collectionextract(st_makevalid(the_geom),3)) where st_isvalid(the_geom) = false;' % table_name)
-    connection.commit()
+        shape_records = sf.shapeRecords()
+        queries = process_shapes(shape_records, table_name, names)
+        for q in queries:            
+            cursor.execute(q)        
+        connection.commit()
+        #cursor.execute('UPDATE %s SET the_geom=ST_makevalid(the_geom) WHERE NOT ST_isValid(the_geom);' % table_name)
+        cursor.execute('update %s set the_geom = st_multi(st_collectionextract(st_makevalid(the_geom),3)) where st_isvalid(the_geom) = false;' % table_name)
+        connection.commit()
 
     shp.close()
     dbf.close()
