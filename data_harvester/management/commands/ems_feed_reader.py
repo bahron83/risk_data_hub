@@ -340,7 +340,7 @@ def import_events(data_from_feed, tolerance = 0.0001):
                             #set default multipolygon
                             ext_coords = ((0, 0), (0, 1), (1, 1), (1, 0), (0, 0))  
                             int_coords = ((0.4, 0.4), (0.4, 0.6), (0.6, 0.6), (0.6, 0.4), (0.4, 0.4))                       
-                            polygon_union = geos.MultiPolygon(geos.Polygon(ext_coords, int_coords))
+                            polygon_union = geos.MultiPolygon(geos.Polygon(ext_coords, int_coords), srid=4326)
                             if row:
                                 polygon_union = geos.fromstr(row[0], srid=4326)
                             
