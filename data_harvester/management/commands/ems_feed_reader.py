@@ -333,9 +333,9 @@ def import_events(data_from_feed, tolerance = 0.0001):
                             select_template = "SELECT ST_AsText(ST_Union(ARRAY(SELECT ST_Buffer(the_geom, 1e-5) FROM {})))".format(ems)
                             try:
                                 curs.execute(select_template)
+                                row = curs.fetchone()
                             except:
-                                pass
-                            row = curs.fetchone()
+                                pass                            
                             polygon_union = geos.GEOSGeometry('POINT (0 0)', srid=4326)
                             if row:
                                 polygon_union = geos.fromstr(row[0], srid=4326)
