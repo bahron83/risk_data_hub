@@ -27,7 +27,7 @@ class SendaiCountryChart extends Component {
     }
 
     getBaselineUnit() {        
-        const values = this.props && this.props.sendaiValues;
+        const values = this.props && this.props.data && this.props.data.sendaiValues;
         if(values) {
             return values[0][2];
         }
