@@ -98,7 +98,7 @@ class EventDetailsView(DataExtractionView):
     def get_risk_analysis_group(self, hazard_type, **kwargs):
         ref_ra = self.get_risk_analysis(**kwargs)        
         analysis_types = AnalysisType.objects.filter(analysis_class=ref_ra.analysis_type.analysis_class)
-        return RiskAnalysis.objects.filter(hazard_type=hazard_type, analysis_type__in=analysis_types)
+        return RiskAnalysis.objects.filter(region=ref_ra.region, hazard_type=hazard_type, analysis_type__in=analysis_types)
 
     def get_event(self, **kwargs):
         try:
