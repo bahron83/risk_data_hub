@@ -34,8 +34,10 @@ const DEFAULT_DECIMAL_POINTS = 3;
 
 class DataContainer extends Component {            
     
-    round(value, decimals = DEFAULT_DECIMAL_POINTS) {
-        return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+    round(value) {
+        const decimals = this.props && this.props.riskAnalysisData && this.props.riskAnalysisData.decimalPoints || DEFAULT_DECIMAL_POINTS;        
+        const adjustedValue = value.toString().indexOf('e') > -1 ? value : value+'e'+decimals;        
+        return Number(Math.round(adjustedValue)+'e-'+decimals);
     }
     
     getRandomColor() {

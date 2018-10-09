@@ -15,7 +15,7 @@ EVENTS_TO_LOAD = 50
 SENDAI_FROM_YEAR = 2005
 SENDAI_TO_YEAR = 2015
 SENDAI_YEARS_TIME_SPAN = 10
-DEFAULT_DECIMAL_POINTS = 3
+DEFAULT_DECIMAL_POINTS = 5
 
 class DataExtractionView(FeaturesSource, HazardTypeView):   
 
@@ -107,16 +107,19 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
     def calculate_sendai_indicator(self, loc, indicator, events_total, output_type = 'sum', n_of_years = 1):
         result = None 
         multiplier = 1          
+        adm_data_value = None
         if indicator:             
             if indicator.code.startswith('A') or indicator.code.startswith('B'):
                 adm_data = AdministrativeData.objects.get(name='Population')
                 multiplier = 100000           
             elif indicator.code.startswith('C'):
                 adm_data = AdministrativeData.objects.get(name='GDP')                 
+                adm_data_value = 1
             if adm_data:
                 adm_data_row = adm_data.set_location(loc).get_by_association()                
                 if adm_data_row:
-                    adm_data_value = float(adm_data_row.value)
+                    if not adm_data_value:
+                        adm_data_value = float(adm_data_row.value)
                     result = events_total / adm_data_value * multiplier
                     if output_type == 'average' and n_of_years > 0:
                         result = round(Decimal(result / n_of_years), DEFAULT_DECIMAL_POINTS)
@@ -304,6 +307,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             out['riskAnalysisData']['data']['total_events'] = total_events         
             out['riskAnalysisData']['events'] = ev_list
             out['riskAnalysisData']['data']['sendaiValues'] = sendai_final_array
+            out['riskAnalysisData']['decimalPoints'] = DEFAULT_DECIMAL_POINTS
         
         return json_response(out)
 
