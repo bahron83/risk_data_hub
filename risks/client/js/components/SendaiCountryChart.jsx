@@ -60,7 +60,7 @@ class SendaiCountryChart extends Component {
             return (
                 <div>
                     <p>{`Indicator ${sendaiIndicator.code}: ${sendaiIndicator.description}`}</p>
-                    <p>Reference value for years 2005/2015: <span>{`${this.getRefValue().toLocaleString()} ${unitOfMeasure}`}</span></p>
+                    <p>Reference value for years 2005/2015: <span>{this.getRefValue().toLocaleString()}</span></p>
                     {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={200}>                    
                             <ComposedChart width={500} height={200} data={chartData} margin={{top: 20, right: 0, left: 0, bottom: 5}}>
