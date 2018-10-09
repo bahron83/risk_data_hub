@@ -357,6 +357,7 @@ def import_events(data_from_feed, tolerance = 0.0001):
                                                             '{geom}', '{event_id}', '{begin_date}', '{end_date}'
                                                         ON CONFLICT (event_id)
                                                         DO UPDATE SET the_geom = excluded.the_geom;"""
+                                print update_template.format(**params)
                                 curs.execute(update_template.format(**params))
                     archive_path = os.path.join(SHAPEFILES_BASE_DIR, d, 'archive')
                     if not os.path.exists(archive_path):
