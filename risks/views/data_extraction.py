@@ -108,13 +108,16 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         result = None 
         multiplier = 1          
         adm_data_value = None
+        baseline_unit = ''
         if indicator:             
             if indicator.code.startswith('A') or indicator.code.startswith('B'):
                 adm_data = AdministrativeData.objects.get(name='Population')
                 multiplier = 100000           
             elif indicator.code.startswith('C'):
                 adm_data = AdministrativeData.objects.get(name='GDP')                 
-                adm_data_value = 1
+                #adm_data_value = 1
+                multiplier = 100
+                baseline_unit = '%'
             if adm_data:
                 adm_data_row = adm_data.set_location(loc).get_by_association()                
                 if adm_data_row:
@@ -123,7 +126,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                     result = events_total / adm_data_value * multiplier
                     if output_type == 'average' and n_of_years > 0:
                         result = round(Decimal(result / n_of_years), DEFAULT_DECIMAL_POINTS)
-        return result
+        return result, baseline_unit
 
     def get(self, request, *args, **kwargs):   
         
@@ -289,8 +292,10 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                                 n_of_years += 1
                             #else: #removing else will display all years instead of grouping years from 2005 to 2015
                             rounded_value = round(Decimal(s[1]), DEFAULT_DECIMAL_POINTS)
-                            sendai_final_array.append([s[0], self.calculate_sendai_indicator(loc, sendai_indicator, rounded_value)])
-                    sendai_final_array.insert(0, ['{}_{}'.format(SENDAI_FROM_YEAR, SENDAI_TO_YEAR), self.calculate_sendai_indicator(loc, sendai_indicator, total, 'average', n_of_years)])
+                            sendai_value, baseline_unit = self.calculate_sendai_indicator(loc, sendai_indicator, rounded_value)
+                            sendai_final_array.append([s[0], sendai_value, baseline_unit])
+                    sendai_average_value, baseline_unit = self.calculate_sendai_indicator(loc, sendai_indicator, total, 'average', n_of_years)
+                    sendai_final_array.insert(0, ['{}_{}'.format(SENDAI_FROM_YEAR, SENDAI_TO_YEAR), sendai_average_value, baseline_unit])
                         
             # Finishing building output            
             out['riskAnalysisData']['eventAreaSelected'] = ''

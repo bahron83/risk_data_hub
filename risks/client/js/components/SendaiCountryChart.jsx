@@ -26,6 +26,14 @@ class SendaiCountryChart extends Component {
         return sendaiValues && sendaiValues.length > 0 ? sendaiValues[0][1] : null;
     }
 
+    getBaselineUnit() {        
+        const values = this.props && this.props.sendaiValues;
+        if(values) {
+            return values[0][2];
+        }
+        return '';
+    }
+
     getSendaiIndicator() {
         const { dim, data } = this.props;
         const { dimensions } = data;
@@ -60,7 +68,7 @@ class SendaiCountryChart extends Component {
             return (
                 <div>
                     <p>{`Indicator ${sendaiIndicator.code}: ${sendaiIndicator.description}`}</p>
-                    <p>Reference value for years 2005/2015: <span>{this.getRefValue().toLocaleString()}</span></p>
+                    <p>Reference value for years 2005/2015: <span>{`${this.getRefValue().toLocaleString()} ${this.getBaselineUnit()}`}</span></p>
                     {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={200}>                    
                             <ComposedChart width={500} height={200} data={chartData} margin={{top: 20, right: 0, left: 0, bottom: 5}}>
