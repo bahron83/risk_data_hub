@@ -336,8 +336,11 @@ def import_events(data_from_feed, tolerance = 0.0001):
                                 curs.execute(select_template)
                                 row = curs.fetchone()
                             except:
-                                pass                            
-                            polygon_union = geos.GEOSGeometry('POINT (0 0)', srid=4326)
+                                pass   
+                            #set default multipolygon
+                            ext_coords = ((0, 0), (0, 1), (1, 1), (1, 0), (0, 0))  
+                            int_coords = ((0.4, 0.4), (0.4, 0.6), (0.6, 0.6), (0.6, 0.4), (0.4, 0.4))                       
+                            polygon_union = geos.MultiPolygon(geos.Polygon(ext_coords, int_coords))
                             if row:
                                 polygon_union = geos.fromstr(row[0], srid=4326)
                             
