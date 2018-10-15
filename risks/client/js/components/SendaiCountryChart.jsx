@@ -60,11 +60,10 @@ class SendaiCountryChart extends Component {
         return null;        
     }
     
-    render() {                     
-        const chartData = this.getChartData();
-        const sendaiIndicator = this.getSendaiIndicator();
-        const { unitOfMeasure } = this.props;
+    render() {                             
+        const sendaiIndicator = this.getSendaiIndicator();        
         if(sendaiIndicator) { 
+            const chartData = this.getChartData();
             return (
                 <div>
                     <p>{`Indicator ${sendaiIndicator.code}: ${sendaiIndicator.description}`}</p>
