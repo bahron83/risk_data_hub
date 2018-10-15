@@ -51,6 +51,12 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         related_name='event_adm',
     )
 
+    further_administrative_divisions = models.ManyToManyField(
+        'AdministrativeDivisionMappings',
+        through='EventFurtherAdministrativeDivisionAssociation',
+        related_name='event_further_adm',
+    )
+
     '''layers = models.ManyToManyField(
         "Layer",
         through='EventLayerAssociation',
@@ -71,9 +77,11 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
     
 
     def get_event_plain(self):
-        nuts3_adm_divs = AdministrativeDivision.objects.filter(level=2, code__in=self.nuts3.split(';'))
+        #nuts3_adm_divs = AdministrativeDivision.objects.filter(level=2, code__in=self.nuts3.split(';'))
+        nuts3_adm_divs = self.administrative_divisions.filter(level=2)
         nuts3_ids = nuts3_adm_divs.values_list('id', flat=True)        
-        nuts2_adm_divs = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').distinct()        
+        #nuts2_adm_divs = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').distinct()        
+        nuts2_adm_divs = self.further_administrative_divisions
         #nuts2_affected_names = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').values_list('name', flat=True).distinct()        
         nuts3_affected_names = nuts3_adm_divs.values_list('name', flat=True)
         return {
@@ -247,6 +255,32 @@ class EventAdministrativeDivisionAssociation(models.Model):
         """
         """
         db_table = 'risks_eventadministrativedivisionassociation'
+
+class EventFurtherAdministrativeDivisionAssociation(models.Model):
+    id = models.AutoField(primary_key=True)
+    
+    #Relationships
+    event = models.ForeignKey(
+        Event,        
+        on_delete=models.CASCADE,
+        blank=False,
+        null=False
+    )    
+    f_adm = models.ForeignKey(
+        AdministrativeDivisionMappings,        
+        on_delete=models.CASCADE,
+        blank=False,
+        null=False
+    )          
+
+    def __unicode__(self):
+        return u"{0}".format(self.event.event_id + " - " +
+                             self.f_adm.name)
+
+    class Meta:
+        """
+        """
+        db_table = 'risks_eventfurtheradministrativedivisionassociation'
 
 class EventRiskAnalysisAssociation(models.Model):
     id = models.AutoField(primary_key=True)

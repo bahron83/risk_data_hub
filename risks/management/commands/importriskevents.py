@@ -7,11 +7,11 @@ from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
-from risks.models import Region, AdministrativeDivision, Event
+from risks.models import Region, AdministrativeDivision, Event, AdministrativeDivisionMappings
 from risks.models import HazardType, RiskApp
 from risks.models import RiskAnalysisDymensionInfoAssociation
 from risks.models import RiskAnalysisAdministrativeDivisionAssociation
-from risks.models import EventAdministrativeDivisionAssociation
+from risks.models import EventAdministrativeDivisionAssociation, EventFurtherAdministrativeDivisionAssociation
 from action_utils import DbUtils
 
 import xlrd
@@ -154,7 +154,12 @@ class Command(BaseCommand):
                     adm_link, created = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=country)
                     n_events += 1         
 
-                    for adm_code in event.nuts3.split(';'):                    
+                    nuts3_list = event.nuts3.split(';')
+                    nuts2_matches = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_list).distinct()
+                    if nuts2_matches:
+                        for nuts2 in nuts2_matches:
+                            EventFurtherAdministrativeDivisionAssociation.objects.update_or_create(event=event, f_adm=nuts2)
+                    for adm_code in nuts3_list:                    
                         try:
                             adm_div = AdministrativeDivision.objects.get(regions__id__exact=region.id, code=adm_code)
                             adm_link, created = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=adm_div)                        

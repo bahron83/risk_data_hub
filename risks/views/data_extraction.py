@@ -234,20 +234,20 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 except ValueError:
                     return json_response(errors=['Invalid date format'], status=400)
             
-            events = events.order_by('-begin_date')
+            events = events.order_by('-begin_date')  
             total_events = events.count()
             
             # Limit number of results
-            if events and 'load' not in kwargs and 'from' not in kwargs and total_events > EVENTS_TO_LOAD:
+            if events and 'load' not in kwargs and 'from' not in kwargs:
                 events = events[:EVENTS_TO_LOAD]
                 #set limit also for Geoserver query
-                feat_kwargs['limit'] = EVENTS_TO_LOAD
+                feat_kwargs['limit'] = EVENTS_TO_LOAD            
 
             # Retrieve values for events aggregated by country from Geoserver
             field_list = ['adm_code', 'dim1_value', 'dim2_value', 'value', 'event_id']
             field_list_group = ['adm_code', 'dim1_value', 'dim2_value', 'value']
             feat_kwargs['level'] = loc.level                        
-            event_group_country = self.get_features_list('geonode:risk_analysis_event_group', field_list_group, **feat_kwargs)
+            event_group_country = self.get_features_list('geonode:risk_analysis_event_group', field_list_group, **feat_kwargs) if loc.level == 0 else None
             values_events = self.get_features_obj('geonode:risk_analysis_event_details', field_list, 'event_id', **feat_kwargs)
             
             # Build final event list (~ [Django] LEFT JOIN [Geoserver])
@@ -255,11 +255,12 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             data_key = values_events.values()[0][1]
             for event in events:
                 e = event.get_event_plain()                
-                value_arr = values_events[e['event_id']] if e['event_id'] in values_events else None
-                try:                                        
-                    e[data_key] = round(Decimal(value_arr[3]), DEFAULT_DECIMAL_POINTS) if value_arr is not None else None
-                except:
-                    e[data_key] = None
+                e[data_key] = None                
+                try:              
+                    value_arr = values_events[e['event_id']]
+                    e[data_key] = round(Decimal(value_arr[3]), DEFAULT_DECIMAL_POINTS)
+                except:                    
+                    pass
                 e['data_key'] = data_key                
                 ev_list.append(e)
 
@@ -296,7 +297,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                             sendai_final_array.append([s[0], sendai_value, baseline_unit])
                     sendai_average_value, baseline_unit = self.calculate_sendai_indicator(loc, sendai_indicator, total, 'average', n_of_years)
                     sendai_final_array.insert(0, ['{}_{}'.format(SENDAI_FROM_YEAR, SENDAI_TO_YEAR), sendai_average_value, baseline_unit])
-                        
+                      
             # Finishing building output            
             out['riskAnalysisData']['eventAreaSelected'] = ''
             out['riskAnalysisData']['eventsLayer'] = {}
