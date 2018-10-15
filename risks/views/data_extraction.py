@@ -271,12 +271,12 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 'risk_analysis': risk.name,
                 'adm_code': loc.code,
                 'from_year': SENDAI_FROM_YEAR
-            }
-            features_sendai = self.get_features_list('geonode:ra_event_values_grouped_by_year', field_list, **feat_kwargs)                        
+            }            
             diminfo = dimension.set_risk_analysis(risk).get_axis().first()
             if diminfo:
                 sendai_indicator = diminfo.sendai_target
-                if sendai_indicator and features_sendai:                                
+                if sendai_indicator: 
+                    features_sendai = self.get_features_list('geonode:ra_event_values_grouped_by_year', field_list, **feat_kwargs)                                                       
                     total = 0
                     n_of_years = 0
                     '''for year in range(SENDAI_TO_YEAR, datetime.datetime.now().year + 1):                    
