@@ -37,6 +37,7 @@ const {
     SET_FILTERS,
     ADM_LOOKUP,
     SWITCH_CONTEXT,
+    APPLY_FILTERS,
     dataLoaded,
     dataLoading,
     dataError,
@@ -54,7 +55,8 @@ const {
     zoomInOut,
     admLookupLoaded,
     eventDetails,
-    setAnalysisClass    
+    setAnalysisClass,
+    filtersApplied    
 } = require('../actions/disaster');
 const {configureMap, configureError} = require('../../MapStore2/web/client/actions/config');
 const getRiskDataEpic = (action$, store) =>
@@ -94,10 +96,22 @@ const getRiskFeatures = (action$, store) =>
         .startWith(featuresLoading())
         .catch(e => Rx.Observable.of(featuresError(e)))
     );
+const applyFiltersEpic = (action$, store) =>
+    action$.ofType(APPLY_FILTERS).switchMap(action => {
+        const { app, contextUrl } = (store.getState()).disaster;             
+        const { reg, loc, ht, ac, at } = action;
+        const urlPrefix = `${contextUrl}/${app}/data_extraction`;
+        const url = `${urlPrefix}/reg/${reg}/loc/${loc}/ht/${ht}/ac/${ac}/at/${at}/`;
+        return Rx.Observable.defer(() => Api.getData(url))
+            .retry(1)
+            .map(val => [filtersApplied(val)])
+            .mergeAll()
+            .startWith(dataLoading(true))            
+            .catch(e => Rx.Observable.of(dataError(e)))
+        });
 const getAnalysisEpic = (action$, store) =>
-    action$.ofType(GET_ANALYSIS_DATA).switchMap(action => {  
-        const { analysisFilters } = (store.getState()).disaster; 
-        //console.log(analysisFilters);
+    action$.ofType(GET_ANALYSIS_DATA).switchMap(action => {          
+        const { analysisFilters } = (store.getState()).disaster;         
         let filtersString = '';
         _.forIn(analysisFilters, (value, key) => { if(value != '') filtersString += `${key}/${value}/` });
         const apiUrl = action.url + filtersString;        
@@ -190,12 +204,12 @@ const getEventDetailsEpic = (action$, store) =>
     );
     
 const zoomInOutEpic = (action$, store) =>
-    action$.ofType("ZOOM_IN_OUT").switchMap( action => {        
+    action$.ofType("ZOOM_IN_OUT").switchMap( action => {                
         let { riskAnalysis, context } = (store.getState()).disaster;         
         const resolvedContext = action && action.context || riskAnalysis && riskAnalysis.context;
         if(action.context != null) context = action.context.replace(/(ht\/\w+\/).*/, "$1");        
         const analysisHref = resolvedContext && `${action.dataHref}${resolvedContext}`;
-        const cleanState = action.context != null;
+        const cleanState = action.context != null;        
         return Rx.Observable.defer(() => Api.getData(`${action.dataHref}${context || ''}`))
             .retry(1).
             map(data => [dataLoaded(data, cleanState), getFeatures(action.geomHref)].concat(analysisHref && getAnalysisData(analysisHref) || []))
@@ -236,8 +250,11 @@ const setFiltersEpic = (action$, store) =>
         .mergeAll();
 
 const admLookupEpic = (action$, store) =>
-    action$.ofType(ADM_LOOKUP).switchMap(action => {        
-        return Rx.Observable.defer(() => Api.getData(action.url))
+    action$.ofType(ADM_LOOKUP).switchMap(action => { 
+        const { app, contextUrl } = (store.getState()).disaster;          
+        const urlPrefix = `${contextUrl}/${app}/data_extraction`;
+        const url = `${urlPrefix}/admlookup/${action.term}/`;
+        return Rx.Observable.defer(() => Api.getData(url))
             .retry(1)
             .map(val => [admLookupLoaded(val, action.detail)])
             .mergeAll()
@@ -246,10 +263,10 @@ const admLookupEpic = (action$, store) =>
     })
 
 const switchContextAnalysisEpic = (action$, store) =>
-    action$.ofType(SWITCH_CONTEXT).map(action => {
-        const { contextUrl } = (store.getState()).disaster;         
-        const dataHref = `${contextUrl}/risks/data_extraction/reg/${action.reg}/loc/${action.loc}/`;
-        const geomHref = `${contextUrl}/risks/data_extraction/reg/${action.reg}/geom/${action.loc}/`;
+    action$.ofType(SWITCH_CONTEXT).map(action => {        
+        const { app, contextUrl } = (store.getState()).disaster;         
+        const dataHref = `${contextUrl}/${app}/data_extraction/reg/${action.reg}/loc/${action.loc}/`;
+        const geomHref = `${contextUrl}/${app}/data_extraction/reg/${action.reg}/geom/${action.loc}/`;
         const context = `ht/${action.ht}/at/${action.at}/an/${action.an}/`;
         const analysisClass = action.at.substring(0,2) == 'e_' ? 'event' : 'risk';
         return [setAnalysisClass(analysisClass), zoomInOut(dataHref, geomHref, context)];
@@ -309,4 +326,4 @@ const chartSliderUpdateEpic = action$ =>
 
     );
 
-module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost, switchContextAnalysisEpic};
+module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, applyFiltersEpic, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost, switchContextAnalysisEpic};

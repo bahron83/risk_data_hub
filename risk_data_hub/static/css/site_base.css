@@ -1221,6 +1221,7 @@ li.not-eligible {
   float: left;
   width: 500px;
   margin-top: 15px;
+  margin-right: 15px;
 }
 .autocomplete-box {
   position: absolute;

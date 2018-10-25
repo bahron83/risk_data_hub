@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { admDivisionLookup, getAnalysisData, switchContext } from '../actions/disaster';
+import { admDivisionLookup, applyFilters } from '../actions/disaster';
 import { lookupResultsSelector } from '../selectors/disaster';
 
 
@@ -9,36 +9,36 @@ class Search extends Component {
         super(props);        
         this.state = {
             term: this.props.value || '',
-            throttle: this.props.throttle || 200            
+            throttle: this.props.throttle || 200,
+            showList: false           
         };
         this.updateSearch = this.updateSearch.bind(this);
-        this.handleClick = this.handleClick.bind(this);          
-        this.loadAnalysis = this.loadAnalysis.bind(this);          
+        this.handleClick = this.handleClick.bind(this);                  
     }
     
     updateSearch(e) {   
-        const { contextUrl, admDivisionLookup } = this.props;
-        this.setState({term: e.target.value}, () => {            
+        const { admDivisionLookup } = this.props;
+        this.setState({term: e.target.value, showList: true}, () => {            
             if(String(this.state.term).length > 3) {            
-                //call api                
-                admDivisionLookup(`${contextUrl}/risks/data_extraction/admlookup/${this.state.term}/`);
+                //call api                                
+                admDivisionLookup(this.state.term);
             }
         });        
         
     }
 
     handleClick(item) {        
-        const { admDivisionLookup, contextUrl, region } = this.props;  
-        if(item.admCode)              
-            admDivisionLookup(`${contextUrl}/risks/data_extraction/reg/${region}/loc/${item.admCode}/detail/yes/`, true);
+        const { region, applyFilters } = this.props;  
+        if(item.admCode) {
+            this.setState({showList: false});
+            applyFilters(region, item.admCode);
+        }                                      
     }
 
     renderResultList() {
-        const { lookupResults, lookupResultsDetail } = this.props;         
+        const { lookupResults } = this.props;         
         if(this.state.term != '') {
-            if(lookupResultsDetail.length > 0)
-                return this.renderPreviewBox();
-            else if (lookupResults.length > 0) {
+            if (lookupResults.length > 0 && this.state.showList) {
                 return (
                     <div className="autocomplete-box">
                         <ul className="list-group lookup-res lookup-res-main">
@@ -54,7 +54,7 @@ class Search extends Component {
         return null;
     }
 
-    renderPreviewBox() {
+    /*renderPreviewBox() {
         const { lookupResultsDetail } = this.props;
         if (lookupResultsDetail.length > 0) {
             return (
@@ -77,17 +77,11 @@ class Search extends Component {
             )
         }
         return null;
-    }    
-    
-    loadAnalysis(item) {
-        const { switchContext } = this.props; 
-        const { ht, at, an, reg, loc } = item && item.context;       
-        this.setState({term: ''}, () => switchContext(ht, at, an, reg, loc));        
-    }
+    }*/            
 
     resetComponent() {        
         this.refs.searchTerm.value = '';
-        this.setState({term: ''});        
+        this.setState({term: '', showList: false});        
     }
     
     renderResetItem() {
@@ -111,4 +105,4 @@ class Search extends Component {
 
 }
 
-export default connect(lookupResultsSelector, { admDivisionLookup, switchContext })(Search);
+export default connect(lookupResultsSelector, { admDivisionLookup, applyFilters })(Search);

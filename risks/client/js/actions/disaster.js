@@ -38,6 +38,9 @@ const ADM_LOOKUP_LOADED = 'ADM_LOOKUP_LOADED';
 const SWITCH_CONTEXT = 'SWITCH_CONTEXT';
 const TOOGLE_EVENT_DETAIL = 'TOOGLE_EVENT_DETAIL';
 const TOOGLE_EVENT_DETAIL_V = 'TOOGLE_EVENT_DETAIL_V';
+const APPLY_FILTERS = 'APPLY_FILTERS';
+const FILTERS_APPLIED = 'FILTERS_APPLIED';
+const TOGGLE_FILTERS_VISIBILITY = 'TOGGLE_FILTERS_VISIBILITY';
 
 function initState({href, geomHref, gc, ac}) {
     return {
@@ -67,7 +70,7 @@ function dataLoading() {
         type: DATA_LOADING
     };
 }
-function dataLoaded(data, cleanState) {
+function dataLoaded(data, cleanState) {    
     return {
         type: DATA_LOADED,
         data,
@@ -80,7 +83,7 @@ function dataError(error) {
         error
     };
 }
-function getAnalysisData(url) {    
+function getAnalysisData(url) {        
     return {
         type: GET_ANALYSIS_DATA,
         url        
@@ -127,7 +130,7 @@ function featuresLoaded(data) {
         data
     };
 }
-function getFeatures(url) {
+function getFeatures(url) {    
     return {
         type: 'GET_RISK_FEATURES',
         url
@@ -238,19 +241,17 @@ function setFilters(url, analysisFilters = { from: '', to: '' }) {
     }
 }
 
-function admDivisionLookup(url, detail = false) {
+function admDivisionLookup(term) {
     return {
         type: ADM_LOOKUP,
-        url,
-        detail
+        term        
     }
 }
 
-function admLookupLoaded(val, detail = false) {
+function admLookupLoaded(val) {
     return {
         type: ADM_LOOKUP_LOADED,
-        val,
-        detail
+        val        
     }
 }
 
@@ -274,6 +275,31 @@ function toggleEventDetail() {
 function toggleEventDetailVisibility() {
     return {
         type: TOOGLE_EVENT_DETAIL_V
+    }
+}
+
+function applyFilters(reg, loc, ht = null, ac = null, at = null) {
+    return {
+        type: APPLY_FILTERS,
+        reg,
+        loc,
+        ht,
+        ac,
+        at
+    }
+}
+
+function filtersApplied(val) {
+    return {
+        type: FILTERS_APPLIED,
+        val
+    }
+}
+
+function toggleFiltersVisibility() {
+    console.log('action hidefilters');
+    return {
+        type: TOGGLE_FILTERS_VISIBILITY
     }
 }
 
@@ -308,6 +334,9 @@ module.exports = {
     SWITCH_CONTEXT,
     TOOGLE_EVENT_DETAIL,
     TOOGLE_EVENT_DETAIL_V,
+    APPLY_FILTERS,
+    FILTERS_APPLIED,
+    TOGGLE_FILTERS_VISIBILITY,
     featuresLoaded,
     featuresLoading,
     featuresError,
@@ -340,5 +369,8 @@ module.exports = {
     admLookupLoaded,
     switchContext,
     toggleEventDetail,
-    toggleEventDetailVisibility
+    toggleEventDetailVisibility,
+    applyFilters,
+    filtersApplied,
+    toggleFiltersVisibility
 };

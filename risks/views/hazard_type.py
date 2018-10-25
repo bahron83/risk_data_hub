@@ -1,7 +1,7 @@
 from django.views.generic import View
 from geonode.utils import json_response
 from risks.views.base import ContextAware, LocationSource
-from risks.models import HazardType, AnalysisClass
+from risks.models import HazardType, AnalysisClass, AnalysisType
 
 
 class HazardTypeView(ContextAware, LocationSource, View):    
@@ -50,6 +50,8 @@ class HazardTypeView(ContextAware, LocationSource, View):
         loc = locations[-1]
         app = self.get_app()
         hazard_types = HazardType.objects.filter(app=app)
+        analysis_classes = AnalysisClass.objects.all()
+        analysis_types = AnalysisType.objects.filter(app=app)
 
         hazard_type = self.get_hazard_type(reg, loc, **kwargs)
 
@@ -61,9 +63,16 @@ class HazardTypeView(ContextAware, LocationSource, View):
         if not atype_r and not atype_e:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404)        
 
+        overview = {
+            'hazardType': [ht.set_region(reg).set_location(loc).export() for ht in hazard_types],
+            'analysisClass': [ac.export() for ac in analysis_classes],
+            'analysisType': [at.export(at.EXPORT_FIELDS_BASIC) for at in analysis_types]
+        }
+
         out = {
             'navItems': [location.set_app(app).set_region(reg).export() for location in locations],
-            'overview': [ht.set_region(reg).set_location(loc).export() for ht in hazard_types],
+            #'overview': [ht.set_region(reg).set_location(loc).export() for ht in hazard_types],
+            'overview': overview,
             'context': self.get_context_url(**kwargs),
             'furtherResources': self.get_further_resources(**kwargs),
             'hazardType': hazard_type.get_hazard_details(),            

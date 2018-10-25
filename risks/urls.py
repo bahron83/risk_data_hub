@@ -35,6 +35,7 @@ _urls = (
     (r'loc/(?P<loc>[\w\-]+)/lvl/(?P<lvl>[\w\-]+)/ht/(?P<ht>[\w\-]+)/an/(?P<an>[\w\-]+)/evt/(?P<evt>[\w\-]+)/$', views.event_view, 'event',),
     (r'ht/(?P<ht>[\w\-]+)/an/(?P<an>[\w\-]+)/evt/(?P<evt>[\w\-]+)/$', views.event_details_view, 'event_details',),
     (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/$', views.hazard_type_view, 'analysis_type',),
+    (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/ht/(?P<ht>(\w+)?)/ac/(?P<ac>(\w+)?)/at/(?P<at>(\w+)?)/$', views.risk_analysis_view, 'risk_analysis',),
     (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/$', views.data_extraction, 'analysis',),
     (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/load/(?P<load>[\w\-]+)/$', views.data_extraction, 'analysis_all',),
     (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/from/(?P<from>[\w\-]+)/to/(?P<to>[\w\-]+)/$', views.data_extraction, 'analysis_daterange',),
@@ -42,7 +43,7 @@ _urls = (
     #(r'apps/(?P<apps>[\w\-]+)/?$', views.apps_view, 'apps',),
     (r'countryauth/?$', views.auth_view, 'countryauth',),
     (r'admlookup/(?P<admlookup>[\w\-]+)/?$', views.adm_lookup_view, 'admlookup',),
-    (r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/detail/(?P<detail>[\w\-]+)/?$', views.adm_lookup_view, 'admlookup',),    
+    #(r'reg/(?P<reg>[\w\-]+)/loc/(?P<loc>[\w\-]+)/detail/(?P<detail>[\w\-]+)/?$', views.adm_lookup_view, 'admlookup',),    
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/pdf/$', views.pdf_report, 'pdf_report',),
     (r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/pdf/(?P<pdf_part>({}))/$'\
         .format('|'.join(views.PDFReportView.PDF_PARTS)), views.pdf_report, 'pdf_report_part',),)

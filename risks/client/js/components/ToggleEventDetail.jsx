@@ -14,7 +14,7 @@ const ToggleEventDetail = React.createClass({
         const tooltip = (<Tooltip id={"tooltip-sub-value"} className="disaster">{label}</Tooltip>);
         return show ? (
             <OverlayTrigger placement="bottom" overlay={tooltip}>
-                <button id="disaster-sub-units-button" className="btn btn-primary" onClick={toggleEventDetail}>
+                <button id="disaster-ev-detail-button" className="btn btn-primary" onClick={toggleEventDetail}>
                     <i className={"fa fa-" + icon}/>
                 </button>
             </OverlayTrigger>

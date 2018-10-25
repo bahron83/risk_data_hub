@@ -23,7 +23,7 @@ const MapViewer = connect(({disaster}) => ({}), {
 //import MapViewer from '../../MapStore2/web/client/containers/MapViewer';
 const Legend = connect(disasterRiskLayerSelector)(require('../../MapStore2/web/client/components/TOC/fragments/legend/Legend'));
 const {drillUpSelector, switchDimSelector, axesSelector} = require('../selectors/disaster');
-const {zoomInOut, toggleDim, setDimIdx, toggleAdminUnit, toggleEventDetail} = require('../actions/disaster');
+const {zoomInOut, toggleDim, setDimIdx, toggleAdminUnit, toggleEventDetail, toggleFiltersVisibility} = require('../actions/disaster');
 const {setControlProperty, toggleControl} = require('../../MapStore2/web/client/actions/controls');
 
 const DrillUpBtn = connect(drillUpSelector, {zoomOut: zoomInOut})(require('../components/DrillUpBtn'));
@@ -46,12 +46,16 @@ const ToggleEventDetail = connect(({disaster}) => ({
     showEventDetail: disaster.showEventDetail,
     show: disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData && disaster.riskAnalysis.riskAnalysisData.events ? true : false
 }), {toggleEventDetail})(require('../components/ToggleEventDetail'));
+const ToggleFilters = connect(({disaster}) => ({
+    showFilters: disaster.showFilters,    
+}), {toggleFiltersVisibility})(require('../components/ToggleFilters'));
 
 const MapContainer = (props) => (        
         <div className="col">            
             <div id="disaster-map-main-container" className="disaster-map-container">
                 <div className="container-fluid">
                     <div id="disaster-map-tools" className="btn-group pull-left disaster-map-tools">
+                        <ToggleFilters/>
                         <LayerBtn/>
                         <IdentifyBtn/>
                         <SwitchAdminU/>

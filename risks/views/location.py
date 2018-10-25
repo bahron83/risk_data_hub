@@ -24,7 +24,7 @@ class LocationView(ContextAware, LocationSource, View):
         location_data = {'navItems': [location.set_app(app).set_region(reg).export() for location in locations],
                          'context': self.get_context_url(**kwargs),
                          'furtherResources': self.get_further_resources(**kwargs),
-                         'overview': [ht.set_region(reg).set_location(loc).export() for ht in hazard_types],
-                         'test': overview}
+                         #'overview': [ht.set_region(reg).set_location(loc).export() for ht in hazard_types],
+                         'overview': overview}
 
         return json_response(location_data)

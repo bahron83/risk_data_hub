@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { dataContainerSelector, chartSelector, eventTableSelector, sChartSelector, eventCountryChartSelector } from '../selectors/disaster';
-import { getAnalysisData, getData, setDimIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent, setFilters } from '../actions/disaster';
+import { dataContainerSelector, chartSelector } from '../selectors/disaster';
+import { getAnalysisData, getData, setDimIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent, setFilters, applyFilters, switchContext, toggleFiltersVisibility } from '../actions/disaster';
 import RiskSelector from '../components/RiskSelector';
 import Chart from '../components/Chart';
 import EventCountryChart from '../components/EventCountryChart';
@@ -10,20 +10,18 @@ import SChart from '../components/ScatterChart';
 import EventTable from '../components/EventTable';
 import Paginator from '../components/Paginator';
 import DatePickerRange from '../components/DatePickerRange';
-import Search from '../components/Search';
+import Filters from '../components/Filters';
 const SummaryChart = connect(chartSelector)(require('../components/SummaryChart'));
 const GetAnalysisBtn = connect(({disaster}) => ({loading: disaster.loading || false}))(require('../components/LoadingBtn'));
-
 import DownloadData from '../components/DownloadData';
 import MoreInfo from '../components/MoreInfo';
-const Overview = connect(({disaster = {}}) => ({riskItems: disaster.overview || [] }) )(require('../components/Overview'));
+//const Overview = connect(({disaster = {}}) => ({riskItems: disaster.overview || [] }) )(require('../components/Overview'));
 import { Panel, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import Nouislider from 'react-nouislider';
 import { show, hide } from 'react-notification-system-redux';
 import { labelSelector } from '../selectors/disaster';
 const LabelResource = connect(labelSelector, { show, hide, getData: getSFurtherResourceData })(require('../components/LabelResource'));
 import { generateReport } from '../actions/report';
-import { isDate } from 'moment';
 const DownloadBtn = connect(({disaster, report}) => {
     return {
         active: disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData && true || false,
@@ -280,7 +278,7 @@ class DataContainer extends Component {
         const {showHazard, hazardType, riskItems, activeRisk, getData, overviewHref} = this.props;
         if(showHazard) {            
             let riskItem = [];
-            riskItems.map(r => {
+            riskItems['hazardType'].map(r => {
                 if(r.mnemonic == activeRisk)
                     riskItem.push(r);
             })                            
@@ -362,9 +360,27 @@ class DataContainer extends Component {
         )
     }
 
-    render() {
-        const {showHazard, getData: loadData } = this.props;                
-        return showHazard ? this.renderHazard() : (<Overview className={this.props.className} getData={loadData}/>);
+    render() {        
+        /*const {showHazard, getData: loadData } = this.props;                
+        return showHazard ? this.renderHazard() : (<Overview className={this.props.className} getData={loadData}/>);*/
+        const { showHazard, applyFilters, riskItems, filteredAnalysis, activeFilters, switchContext, riskAnalysisData, showFilters, toggleFiltersVisibility } = this.props;                
+        if(showFilters) {
+            return (
+                <div className="disaster-filters">
+                    <Filters className={this.props.className} toggleFiltersVisibility={toggleFiltersVisibility} applyFilters={applyFilters} data={riskItems} activeFilters={activeFilters} switchContext={switchContext} filteredAnalysis={filteredAnalysis}/>                
+                </div>
+            )
+        }
+        else if(showHazard && riskAnalysisData && riskAnalysisData.name) {
+            return (
+                <div className="disaster-header">
+                    <div className="container-fluid">
+                        {this.renderAnalysisData()}
+                    </div>
+                </div>                
+            )
+        } 
+        return null;   
     }
 
     componentDidMount() {
@@ -372,15 +388,12 @@ class DataContainer extends Component {
     }
 
     componentDidUpdate() {
-        const { analysisType = {}, analysisTypeE = {}, selectedEventIds = [], fullContext, zoomJustCalled, analysisClass, setAnalysisClass, selectEvent } = this.props;        
-        console.log('analysis type r', analysisType);
-        console.log('analysis type e', analysisTypeE);
+        const { analysisType = {}, analysisTypeE = {}, selectedEventIds = [], fullContext, zoomJustCalled, analysisClass, setAnalysisClass, selectEvent } = this.props;                
         let count = 0;
         if(analysisType.name == undefined)
             count += 1;
         if(analysisTypeE.name == undefined)
-            count += 2;
-        console.log('count', count);
+            count += 2;        
         switch(count) {
             case 0:
                 if(analysisClass == '')
@@ -395,12 +408,8 @@ class DataContainer extends Component {
                     setAnalysisClass('risk')
                 break;            
         } 
-                        
-        /*console.log('zoomjustcalled ', zoomJustCalled);
-        console.log('selected event ids', selectedEventIds);
-        console.log('fullcontext', fullContext);*/
-        console.log('analysis class', analysisClass);
-        if(selectedEventIds.length == 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
+                                
+        if(selectedEventIds.length == 0 && fullContext && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
             const eventData = this.prepareEventData();                
             if(eventData.length > 0)                                 
                 selectEvent([eventData[0].event_id], true, fullContext.loc);
@@ -408,4 +417,4 @@ class DataContainer extends Component {
     }
 }
 
-export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, selectEvent, getEventData, zoomInOut, setAnalysisClass, setFilters})(DataContainer);
+export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, selectEvent, getEventData, zoomInOut, setAnalysisClass, setFilters, applyFilters, switchContext, toggleFiltersVisibility})(DataContainer);
