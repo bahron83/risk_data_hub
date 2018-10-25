@@ -159,8 +159,8 @@ class Filters extends Component {
                         <h3>Analysis Type</h3>
                         {this.renderAnalysisTypeFilter(analysisType)}
                     </div>                    
-                    <button className="btn btn-default" onClick={this.handleClick}>Apply Filters</button>
-                    <button className="btn btn-default" onClick={this.resetFilters}>Reset Filters</button>
+                    <button className="btn btn-default" onClick={this.handleClick}><i className="fa fa-search"></i>Apply Filters</button>
+                    <button className="btn btn-default" onClick={this.resetFilters}><i className="fa fa-eraser"></i>Reset Filters</button>
                 </div>                
                 <ResultList switchContext={switchContext} filteredAnalysis={filteredAnalysis}/>
             </Panel>            
