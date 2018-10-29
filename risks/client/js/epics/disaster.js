@@ -37,6 +37,7 @@ const {
     SET_FILTERS,
     ADM_LOOKUP,
     SWITCH_CONTEXT,
+    APPLY_FILTERS,
     dataLoaded,
     dataLoading,
     dataError,
@@ -53,7 +54,9 @@ const {
     setChartSliderIndex,
     zoomInOut,
     admLookupLoaded,
-    eventDetails     
+    eventDetails,
+    setAnalysisClass,
+    filtersApplied    
 } = require('../actions/disaster');
 const {configureMap, configureError} = require('../../MapStore2/web/client/actions/config');
 const getRiskDataEpic = (action$, store) =>
@@ -93,22 +96,33 @@ const getRiskFeatures = (action$, store) =>
         .startWith(featuresLoading())
         .catch(e => Rx.Observable.of(featuresError(e)))
     );
+const applyFiltersEpic = (action$, store) =>
+    action$.ofType(APPLY_FILTERS).switchMap(action => {
+        const { app, contextUrl } = (store.getState()).disaster;             
+        const { reg, loc, ht, ac, at } = action;
+        const urlPrefix = `${contextUrl}/${app}/data_extraction`;
+        const url = `${urlPrefix}/reg/${reg}/loc/${loc}/ht/${ht}/ac/${ac}/at/${at}/`;
+        return Rx.Observable.defer(() => Api.getData(url))
+            .retry(1)
+            .map(val => [filtersApplied(val)])
+            .mergeAll()
+            .startWith(dataLoading(true))            
+            .catch(e => Rx.Observable.of(dataError(e)))
+        });
 const getAnalysisEpic = (action$, store) =>
-    action$.ofType(GET_ANALYSIS_DATA).switchMap(action => {  
-        const { analysisFilters } = (store.getState()).disaster; 
-        //console.log(analysisFilters);
+    action$.ofType(GET_ANALYSIS_DATA).switchMap(action => {          
+        const { analysisFilters } = (store.getState()).disaster;         
         let filtersString = '';
         _.forIn(analysisFilters, (value, key) => { if(value != '') filtersString += `${key}/${value}/` });
-        const apiUrl = action.url + filtersString;
+        const apiUrl = action.url + filtersString;        
         return Rx.Observable.defer(() => Api.getData(apiUrl))
             .retry(1)
             .map(val => {
                 const baseUrl = val.wms && val.wms.baseurl;
                 const anLayers = val.riskAnalysisData && val.riskAnalysisData.additionalLayers || [];
                 const referenceLayer = val.riskAnalysisData && val.riskAnalysisData.referenceLayer;
-                const layers = (store.getState()).layers;                
-                const {app, dim} = (store.getState()).disaster;                                 
-                
+                const layers = (store.getState()).layers;                  
+                const {app, dim} = (store.getState()).disaster;                                                                 
                 //additional gis layers
                 let anLayerDim = [];
                 //check for layers on X and Y axis                
@@ -116,9 +130,9 @@ const getAnalysisEpic = (action$, store) =>
                 const dimY = dim && dim.dim1 == 0 ? "dim2Idx" : "dim1Idx";
                 for(var i=0;i<2;i++) {                    
                     const dimIdx = i == 0 ? dimX : dimY;
-                    const indexOfAdditionalLayer = (dim == {} || dim === undefined) ? 0 : dim[dimIdx];
+                    const indexOfAdditionalLayer = dim && dim[dimIdx] ? dim[dimIdx] : 0;
                     const dimensions = val.riskAnalysisData.data.dimensions;
-                    const valueOfAdditionalLayer = dimensions[i].values[indexOfAdditionalLayer];
+                    const valueOfAdditionalLayer = dimensions[i].values[indexOfAdditionalLayer];                    
                     const resource = dimensions[i]['layers'][valueOfAdditionalLayer]['resource'];
                     const layerDetails = resource != null ? resource['details'] : null;
                     let layerName = "";                    
@@ -190,14 +204,15 @@ const getEventDetailsEpic = (action$, store) =>
     );
     
 const zoomInOutEpic = (action$, store) =>
-    action$.ofType("ZOOM_IN_OUT").switchMap( action => {        
+    action$.ofType("ZOOM_IN_OUT").switchMap( action => {                
         let { riskAnalysis, context } = (store.getState()).disaster;         
         const resolvedContext = action && action.context || riskAnalysis && riskAnalysis.context;
-        if(action.context != null) context = action.context.replace(/(ht\/\w+\/).*/, "$1");
-        const analysisHref = riskAnalysis && `${action.dataHref}${resolvedContext}`;
+        if(action.context != null) context = action.context.replace(/(ht\/\w+\/).*/, "$1");        
+        const analysisHref = resolvedContext && `${action.dataHref}${resolvedContext}`;
+        const cleanState = action.context != null;        
         return Rx.Observable.defer(() => Api.getData(`${action.dataHref}${context || ''}`))
             .retry(1).
-            map(data => [dataLoaded(data), getFeatures(action.geomHref)].concat(analysisHref && getAnalysisData(analysisHref) || []))
+            map(data => [dataLoaded(data, cleanState), getFeatures(action.geomHref)].concat(analysisHref && getAnalysisData(analysisHref) || []))
             .mergeAll()
             .startWith(dataLoading(true))
             .catch( () => Rx.Observable.of(info({title: "Info", message: "Analysis not available at requested zoom level", position: 'tc', autoDismiss: 3})));
@@ -235,8 +250,11 @@ const setFiltersEpic = (action$, store) =>
         .mergeAll();
 
 const admLookupEpic = (action$, store) =>
-    action$.ofType(ADM_LOOKUP).switchMap(action => {        
-        return Rx.Observable.defer(() => Api.getData(action.url))
+    action$.ofType(ADM_LOOKUP).switchMap(action => { 
+        const { app, contextUrl } = (store.getState()).disaster;          
+        const urlPrefix = `${contextUrl}/${app}/data_extraction`;
+        const url = `${urlPrefix}/admlookup/${action.term}/`;
+        return Rx.Observable.defer(() => Api.getData(url))
             .retry(1)
             .map(val => [admLookupLoaded(val, action.detail)])
             .mergeAll()
@@ -245,12 +263,13 @@ const admLookupEpic = (action$, store) =>
     })
 
 const switchContextAnalysisEpic = (action$, store) =>
-    action$.ofType(SWITCH_CONTEXT).map(action => {
-        const { contextUrl } = (store.getState()).disaster;         
-        const dataHref = `${contextUrl}/risks/data_extraction/reg/${action.reg}/loc/${action.loc}/`;
-        const geomHref = `${contextUrl}/risks/data_extraction/reg/${action.reg}/geom/${action.loc}/`;
+    action$.ofType(SWITCH_CONTEXT).map(action => {        
+        const { app, contextUrl } = (store.getState()).disaster;         
+        const dataHref = `${contextUrl}/${app}/data_extraction/reg/${action.reg}/loc/${action.loc}/`;
+        const geomHref = `${contextUrl}/${app}/data_extraction/reg/${action.reg}/geom/${action.loc}/`;
         const context = `ht/${action.ht}/at/${action.at}/an/${action.an}/`;
-        return [zoomInOut(dataHref, geomHref, context)];
+        const analysisClass = action.at.substring(0,2) == 'e_' ? 'event' : 'risk';
+        return [setAnalysisClass(analysisClass), zoomInOut(dataHref, geomHref, context)];
     })
     .mergeAll();
 
@@ -307,4 +326,4 @@ const chartSliderUpdateEpic = action$ =>
 
     );
 
-module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost, switchContextAnalysisEpic};
+module.exports = {getRiskDataEpic, getRiskMapConfig, getRiskFeatures, applyFiltersEpic, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, initStateEpicCost, switchContextAnalysisEpic};

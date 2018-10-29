@@ -51,7 +51,7 @@ const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/r
 const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/geom/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/reg/Europe/geom/EU/`;
 
 const initDim = init && init.d || {};
-const newInitState = assign({}, initialState, {defaultState: {disaster: {dim: initDim, app: 'risks', contextUrl: contextUrlPrefix, region: reg}, mapInfo: { infoFormat: "text/html"} }});
+const newInitState = assign({}, initialState, {defaultState: {disaster: {app: 'risks', contextUrl: contextUrlPrefix, region: reg}, mapInfo: { infoFormat: "text/html"} }});
 const themeCfg = {
     path: `${contextUrlPrefix}/static/js`
 };

@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { dataContainerSelector, chartSelector, eventTableSelector, sChartSelector, eventCountryChartSelector } from '../selectors/disaster';
-import { getAnalysisData, getData, setDimIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent, setFilters } from '../actions/disaster';
+import { dataContainerSelector, chartSelector } from '../selectors/disaster';
+import { getAnalysisData, getData, setDimIdx, getEventData, getSFurtherResourceData, zoomInOut, setAnalysisClass, selectEvent, setFilters, applyFilters, switchContext, toggleFiltersVisibility } from '../actions/disaster';
+import RiskSelector from '../components/RiskSelector';
 import Chart from '../components/Chart';
 import EventCountryChart from '../components/EventCountryChart';
 import SendaiCountryChart from '../components/SendaiCountryChart';
@@ -9,13 +10,12 @@ import SChart from '../components/ScatterChart';
 import EventTable from '../components/EventTable';
 import Paginator from '../components/Paginator';
 import DatePickerRange from '../components/DatePickerRange';
-import Search from '../components/Search';
+import Filters from '../components/Filters';
 const SummaryChart = connect(chartSelector)(require('../components/SummaryChart'));
 const GetAnalysisBtn = connect(({disaster}) => ({loading: disaster.loading || false}))(require('../components/LoadingBtn'));
-
 import DownloadData from '../components/DownloadData';
 import MoreInfo from '../components/MoreInfo';
-const Overview = connect(({disaster = {}}) => ({riskItems: disaster.overview || [] }) )(require('../components/Overview'));
+//const Overview = connect(({disaster = {}}) => ({riskItems: disaster.overview || [] }) )(require('../components/Overview'));
 import { Panel, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import Nouislider from 'react-nouislider';
 import { show, hide } from 'react-notification-system-redux';
@@ -106,8 +106,8 @@ class DataContainer extends Component {
         const { dim, loading, fullContext, analysisType, analysisTypeE, selectedEventIds, cValues, zoomInOut, selectEvent, setFilters, getAnalysis, contextUrl } = this.props;                
         const { hazardSet, data } = this.props.riskAnalysisData;             
         const { unitOfMeasure } = this.props.riskAnalysisData || 'Values';
-        const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);
-        const val = data.dimensions[dim.dim1].values[dim.dim1Idx];
+        const tooltip = (<Tooltip id={"tooltip-back"} className="disaster">{'Back to Analysis Table'}</Tooltip>);        
+        const val = data.dimensions[dim.dim1].values[dim.dim1Idx];        
         const header = data.dimensions[dim.dim1].name + ': ' + val;
         const description = data.dimensions[dim.dim1].layers && data.dimensions[dim.dim1].layers[val] && data.dimensions[dim.dim1].layers[val].description ? data.dimensions[dim.dim1].layers[val].description : '';
         const eventData = this.prepareEventData();               
@@ -166,16 +166,7 @@ class DataContainer extends Component {
                                 }}/>
                         </div>
                     </div>
-                    )}
-
-                    {(contextUrl == null || contextUrl == '') ? (
-                        <Panel className="panel-box">
-                            <h4>Search a name (country, nuts3 or city)</h4>
-                            <Search />                        
-                        </Panel>
-                    ) : null
-                    }
-                    
+                    )}                                        
                     
                     {fullContext.analysis_class == 'event' ? (                        
                         <div>
@@ -285,6 +276,21 @@ class DataContainer extends Component {
         });
     }
 
+    renderActiveRisk() {
+        const {showHazard, hazardType, riskItems, activeRisk, getData, overviewHref} = this.props;
+        if(showHazard) {            
+            let riskItem = [];
+            riskItems['hazardType'].map(r => {
+                if(r.mnemonic == activeRisk)
+                    riskItem.push(r);
+            })                            
+            return (
+                <RiskSelector riskItems={riskItem} overviewHref={overviewHref} activeRisk={activeRisk} getData={getData}/>
+            )
+        }
+        return null;
+    }
+
     renderAnalysisClass() {        
         const {hazardType} = this.props;
         let analysisClasses = [];
@@ -318,17 +324,22 @@ class DataContainer extends Component {
                         {this.renderAnalysisData()}
                     </div>
                   ) : (
-                    <div className="container-fluid">
+                    <div className="container-fluid">                        
+                        <h4>Hazard</h4>
+                        {this.renderActiveRisk()}
+                        <hr />
+                        <h4>Scope</h4>
                         <ul id="disaster-analysis-class-menu" className="nav nav-pills">
                             {this.renderAnalysisClass()}
                         </ul>                                                
                         
                         <hr />
+                        <h4>Analysis Type</h4>
                         <ul id="disaster-analysis-menu" className="nav nav-pills">
                             {this.renderAnalysisTab()}
                         </ul>
                         
-                        <hr></hr>
+                        <hr />
                         <div id="disaster-analysis-container" className="disaster-analysis">
                             <div className="container-fluid">
                                 {this.renderRiskAnalysis()}
@@ -342,9 +353,36 @@ class DataContainer extends Component {
         );
     }
 
-    render() {
-        const {showHazard, getData: loadData } = this.props;                
-        return showHazard ? this.renderHazard() : (<Overview className={this.props.className} getData={loadData}/>);
+    renderFilters() {
+        return (
+            <div>
+                <h3>Explore datasets by:</h3>
+                <h5>Scope</h5>
+            </div>
+        )
+    }
+
+    render() {        
+        /*const {showHazard, getData: loadData } = this.props;                
+        return showHazard ? this.renderHazard() : (<Overview className={this.props.className} getData={loadData}/>);*/
+        const { showHazard, applyFilters, riskItems, filteredAnalysis, activeFilters, switchContext, riskAnalysisData, showFilters, toggleFiltersVisibility } = this.props;                
+        if(showFilters) {
+            return (
+                <div className="disaster-filters">
+                    <Filters className={this.props.className} toggleFiltersVisibility={toggleFiltersVisibility} applyFilters={applyFilters} data={riskItems} activeFilters={activeFilters} switchContext={switchContext} filteredAnalysis={filteredAnalysis}/>                
+                </div>
+            )
+        }
+        else if(showHazard && riskAnalysisData && riskAnalysisData.name) {
+            return (
+                <div className="disaster-header">
+                    <div className="container-fluid">
+                        {this.renderAnalysisData()}
+                    </div>
+                </div>                
+            )
+        } 
+        return null;   
     }
 
     componentDidMount() {
@@ -352,14 +390,12 @@ class DataContainer extends Component {
     }
 
     componentDidUpdate() {
-        const { analysisType = {}, analysisTypeE = {}, selectedEventIds = [], fullContext, zoomJustCalled, analysisClass, setAnalysisClass, selectEvent } = this.props;        
-
+        const { analysisType = {}, analysisTypeE = {}, selectedEventIds = [], fullContext, zoomJustCalled, analysisClass, setAnalysisClass, selectEvent } = this.props;                
         let count = 0;
         if(analysisType.name == undefined)
             count += 1;
         if(analysisTypeE.name == undefined)
-            count += 2;
-                
+            count += 2;        
         switch(count) {
             case 0:
                 if(analysisClass == '')
@@ -374,8 +410,8 @@ class DataContainer extends Component {
                     setAnalysisClass('risk')
                 break;            
         } 
-                        
-        if(selectedEventIds.length == 0 && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
+                                
+        if(selectedEventIds.length == 0 && fullContext && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
             const eventData = this.prepareEventData();                
             if(eventData.length > 0)                                 
                 selectEvent([eventData[0].event_id], true, fullContext.loc);
@@ -383,4 +419,4 @@ class DataContainer extends Component {
     }
 }
 
-export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, selectEvent, getEventData, zoomInOut, setAnalysisClass, setFilters})(DataContainer);
+export default connect(dataContainerSelector, {getAnalysis: getAnalysisData, getData, setDimIdx, selectEvent, getEventData, zoomInOut, setAnalysisClass, setFilters, applyFilters, switchContext, toggleFiltersVisibility})(DataContainer);

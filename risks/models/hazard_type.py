@@ -19,7 +19,8 @@ class HazardType(RiskAppAware, LocationAware, Exportable, Schedulable, models.Mo
                      ('title', 'title',),
                      ('riskAnalysis', 'risk_analysis_count',),
                      ('defaultAnalysisType', 'default_analysis_type',),
-                     ('href', 'href',))
+                     ('href', 'href',),
+                     ('fa_class', 'fa_class',))
 
     id = models.AutoField(primary_key=True)
     mnemonic = models.CharField(max_length=30, null=False, blank=False,

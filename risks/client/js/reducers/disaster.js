@@ -27,7 +27,10 @@ const {
     SET_FILTERS,
     ADM_LOOKUP_LOADED,
     TOOGLE_EVENT_DETAIL,
-    TOOGLE_EVENT_DETAIL_V   
+    TOOGLE_EVENT_DETAIL_V,
+    APPLY_FILTERS,
+    FILTERS_APPLIED,
+    TOGGLE_FILTERS_VISIBILITY
 } = require('../actions/disaster');
 
 function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, action) {
@@ -36,11 +39,13 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             return assign({}, state, {
                 loading: true
             });
-        case DATA_LOADED: {
-            return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app, analysisClass: state.analysisClass, contextUrl: state.contextUrl, region: state.region}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, selectedEventIds: state.selectedEventIds, analysisClass: state.analysisClass, analysisFilters: state.analysisFilters, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app, contextUrl: state.contextUrl, region: state.region}, action.data);
+        case DATA_LOADED: { 
+            console.log('data loaded, cleanstate = ', action.cleanState);
+            return action.cleanState ? assign({}, {showSubUnit: true, loading: false, error: null, app: state.app, analysisClass: state.analysisClass, contextUrl: state.contextUrl, region: state.region}, action.data) : assign({}, {showSubUnit: state.showSubUnit, loading: false, error: null, dim: state.dim, selectedEventIds: state.selectedEventIds, analysisClass: state.analysisClass, analysisFilters: state.analysisFilters, sliders: state.sliders, riskAnalysis: state.riskAnalysis, app: state.app, contextUrl: state.contextUrl, region: state.region, showFilters: state.showFilters}, action.data);
         }
         case ANALYSIS_DATA_LOADED: {
-            return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values, zoomJustCalled: 2, lookupResultsDetail: [], lookupResults: []});
+            console.log('analysis data loaded');
+            return assign({}, state, { loading: false, error: null, riskAnalysis: action.data, cValues: action.data.riskAnalysisData.data.values, zoomJustCalled: 2, lookupResults: [], filteredAnalysis: [], activeFilters: {}, showFilters: false });
         }
         case EVENT_DATA_LOADED: {            
             return assign({}, state, { loading: false, error: null, eventAnalysis: action.data, cValues: action.data.eventValues });
@@ -55,7 +60,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
         case TOGGLE_ADMIN_UNITS: {
             return assign({}, state, {showSubUnit: !state.showSubUnit});
         }
-        case SET_DIM_IDX: {
+        case SET_DIM_IDX: {            
             const newDim = assign({dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}, state.dim, {[action.dim]: action.idx});            
             return assign({}, state, {dim: newDim});
         }        
@@ -64,7 +69,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
                 error: action.error,
                 loading: false
             });
-        case GET_ANALYSIS_DATA:
+        case GET_ANALYSIS_DATA:            
             return assign({}, state, {
                 currentAnalysisUrl: action.url
             });
@@ -111,16 +116,26 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             const { analysisFilters } = action;            
             return assign({}, state, { analysisFilters });
         }  
-        case ADM_LOOKUP_LOADED: {               
-            const newState = action.detail ? { lookupResultsDetail: action.val } : { lookupResults: action.val, lookupResultsDetail: [] };
-            return assign({}, state, newState);
+        case ADM_LOOKUP_LOADED: {                           
+            return assign({}, state, { lookupResults: action.val });
         }  
         case TOOGLE_EVENT_DETAIL: {
             return assign({}, state, { showEventDetail: !state.showEventDetail });
         } 
         case TOOGLE_EVENT_DETAIL_V: {
             return assign({}, state, { visibleEventDetail: !state.visibleEventDetail });
-        }        
+        }
+        case APPLY_FILTERS: {
+            return assign({}, state, { activeFilters: action.filters });
+        } 
+        case FILTERS_APPLIED: {  
+            console.log('filters applied');
+            return assign({}, state, { loading: false, error: null, showFilters: true, filteredAnalysis: action.val || []});            
+        }  
+        case TOGGLE_FILTERS_VISIBILITY: {
+            console.log('hide filters reducer');
+            return assign({}, state, { showFilters: !state.showFilters });
+        }     
         default:
             return state;
     }

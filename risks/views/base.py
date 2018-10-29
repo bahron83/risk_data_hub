@@ -243,6 +243,8 @@ class FeaturesSource(object):
 
 class LocationSource(object):
 
+    DEFAULT_LIMIT_RESULTS = 8
+    
     def get_region(self, **kwargs):
         try:
             return Region.objects.get(name=kwargs['reg'])            
@@ -253,15 +255,14 @@ class LocationSource(object):
         try:
             return AdministrativeDivision.objects.get(code=loc)            
         except AdministrativeDivision.DoesNotExist:
-            return
+            return None
     
     def get_location(self, **kwargs):
         loc = self.get_location_exact(kwargs['loc'])
-        try:
+        if loc:            
             locations = loc.get_parents_chain() + [loc]
-            return locations
-        except:
-            pass
+            return locations            
+        return None
 
     def get_location_range(self, loc):
         return AdministrativeDivision.objects.filter(code__in=loc)        
@@ -270,14 +271,15 @@ class LocationSource(object):
         #matches = AdministrativeDivision.objects.filter(name__icontains=kwargs['admlookup'])
         qstring = kwargs['admlookup']
         matches = AdministrativeDivision.objects.filter(
-            Q(name=qstring) | Q(name__icontains=qstring)
+            Q(name=qstring) | Q(name__istartswith=qstring)
         ).extra(
             select={'match': 'name = %s'},
             select_params=(qstring,)
         ).order_by('-match', 'name')
         loc_chains = []
-        if matches:            
-            for loc in matches[:10]:
+        if matches: 
+            limit = int(kwargs['limit']) if 'limit' in kwargs else self.DEFAULT_LIMIT_RESULTS
+            for loc in matches[:limit]:
                 loc_chains.append(loc.get_parents_chain() + [loc])
         return loc_chains
 

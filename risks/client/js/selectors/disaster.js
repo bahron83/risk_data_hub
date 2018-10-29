@@ -2,7 +2,8 @@ const {createSelector} = require('reselect');
 const {last, head, isNull} = require('lodash');
 const url = require('url');
 const navItemsSel = ({disaster = {}}) => disaster.navItems || [];
-const riskItemsSel = ({disaster = {}}) => disaster.overview || [];
+const riskItemsSel = ({disaster = {}}) => disaster.overview || {};
+const activeFiltersSel = ({disaster = {}}) => disaster.activeFilters || {};
 const hazardTypeSel = ({disaster = {}}) => disaster.hazardType || {};
 const analysisTypeSel = ({disaster = {}}) => disaster.analysisType || {};
 const analysisTypeESel = ({disaster = {}}) => disaster.analysisTypeE || {};
@@ -26,7 +27,8 @@ const riskAnalysisContextSelector = ({disaster = {}}) => disaster.riskAnalysis &
 const analysisClassSelector = ({disaster = {}}) => disaster.analysisClass || '';
 const zoomJustCalledSel = ({disaster = {}}) => disaster.zoomJustCalled || 0;
 const admLookupSel = ({disaster = {}}) => disaster.lookupResults || [];
-const admLookupDetailSel = ({disaster = {}}) => disaster.lookupResultsDetail || [];
+const showFiltersSel = ({disaster = {}}) => disaster.showFilters !== undefined ? disaster.showFilters : true;
+const filteredAnalysisSel = ({disaster = {}}) => disaster.filteredAnalysis || null; 
 const showEventDetailSel = ({disaster = {}}) => disaster.showEventDetail || false;
 const visibleEventDetailSel = ({disaster = {}}) => disaster.visibleEventDetail || false;
 const eventDetailsSel = ({disaster = {}}) => disaster.eventDetails || {};
@@ -38,13 +40,17 @@ const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel,
         title: (last(navItems) || {label: ''}).label,
         overviewHref: (last(navItems) || {href: ''}).href,
         riskItems,
-        activeRisk: hazardType.mnemonic || "Overview",
+        activeRisk: hazardType,
         context
     }));
-const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analysisTypeSel, analysisTypeESel, riskAnalysisDataSel, dimSelector, loadingStateSelector, showChartSel, fullContextSel, analysisClassSelector, zoomJustCalledSel, chartValues, selectedEventsSelector, contextUrlPrefixSel],
-    (riskItems, hazardType, analysisType, analysisTypeE, riskAnalysisData, dim, loading, showChart, fullContext, analysisClass, zoomJustCalled, cValues, selectedEventIds, contextUrl) => ({
+const dataContainerSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel, analysisTypeSel, analysisTypeESel, riskAnalysisDataSel, dimSelector, loadingStateSelector, showChartSel, fullContextSel, analysisClassSelector, zoomJustCalledSel, chartValues, selectedEventsSelector, contextUrlPrefixSel, filteredAnalysisSel, activeFiltersSel, showFiltersSel],
+    (navItems, riskItems, hazardType, analysisType, analysisTypeE, riskAnalysisData, dim, loading, showChart, fullContext, analysisClass, zoomJustCalled, cValues, selectedEventIds, contextUrl, filteredAnalysis, activeFilters, showFilters) => ({
+        navItems,
+        overviewHref: (last(navItems) || {href: ''}).href,        
+        riskItems,        
+        activeRisk: hazardType.mnemonic || "Overview",
         showHazard: hazardType.mnemonic ? true : false,
-        hazardTitle: hazardType.mnemonic ? head(riskItems.filter((hz) => hz.mnemonic === hazardType.mnemonic)).title || '' : '',
+        hazardTitle: hazardType.mnemonic ? head(riskItems['hazardType'].filter((hz) => hz.mnemonic === hazardType.mnemonic)).title || '' : '',
         hazardType,
         analysisType,
         analysisTypeE,
@@ -57,7 +63,10 @@ const dataContainerSelector = createSelector([riskItemsSel, hazardTypeSel, analy
         zoomJustCalled,
         cValues,
         selectedEventIds,
-        contextUrl
+        contextUrl,
+        filteredAnalysis,
+        activeFilters,
+        showFilters
     }));
 const drillUpSelector = createSelector([navItemsSel],
      (navItems) => ({
@@ -144,12 +153,12 @@ const additionalChartSelector = createSelector([riskAnalysisDataSel, additionalC
         currentSection: additionalCharts.currentSection,
         currentTable: additionalCharts.currentTable
     }));
-const lookupResultsSelector = createSelector([admLookupSel, admLookupDetailSel, contextUrlPrefixSel, activeRegionSel],
-    (lookupResults, lookupResultsDetail, contextUrl, region) => ({
-        lookupResults,
-        lookupResultsDetail,
+const lookupResultsSelector = createSelector([admLookupSel, contextUrlPrefixSel, activeRegionSel, activeFiltersSel],
+    (lookupResults, contextUrl, region, activeFilters) => ({
+        lookupResults,        
         contextUrl,
-        region
+        region,
+        activeFilters
     }));
 const eventDetailsSelector = createSelector([eventDetailsSel, dimSelector, riskAnalysisDataSel, showEventDetailSel, visibleEventDetailSel],
     (eventDetails, dim, riskAnalysisData, showEventDetail, visibleEventDetail) => ({
@@ -165,7 +174,7 @@ const contextUrlPrefixSelector = createSelector([contextUrlPrefixSel],
     }));
 
 module.exports = {
-    dimSelector,
+    dimSelector,    
     drillUpSelector,
     topBarSelector,
     dataContainerSelector,

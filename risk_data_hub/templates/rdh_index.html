@@ -334,7 +334,8 @@
             });
         });
 
-        appUrl = jQuery("#nav_risks a").attr("href").replace(/\/$/, "");
+        //appUrl = jQuery("#nav_risks a").attr("href").replace(/\/$/, "");
+        const appUrl = '/risks/data_extraction';
 
         function getUrlPrefix() {
             const adjustedPathname = window.location.pathname.slice(-1) == "/" ? window.location.pathname : window.location.pathname + "/";
