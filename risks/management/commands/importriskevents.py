@@ -7,11 +7,11 @@ from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
-from risks.models import Region, AdministrativeDivision, Event
+from risks.models import Region, AdministrativeDivision, Event, AdministrativeDivisionMappings
 from risks.models import HazardType, RiskApp
 from risks.models import RiskAnalysisDymensionInfoAssociation
 from risks.models import RiskAnalysisAdministrativeDivisionAssociation
-from risks.models import EventAdministrativeDivisionAssociation
+from risks.models import EventAdministrativeDivisionAssociation, EventFurtherAdministrativeDivisionAssociation
 from action_utils import DbUtils
 
 import xlrd
@@ -20,7 +20,15 @@ from xlrd.sheet import ctype_text
 from dateutil.parser import parse
 import datetime
 import time
+import re
 
+
+def is_int(string):
+    try:
+        n = int(string)
+        return True
+    except ValueError, e:
+        return False
 
 class Command(BaseCommand):
     help = 'Import Risk Data: Loss Impact and Impact Analysis Types.'
@@ -53,8 +61,9 @@ class Command(BaseCommand):
             default=RiskApp.APP_DATA_EXTRACTION,
             help="Name of Risk App, default: {}".format(RiskApp.APP_DATA_EXTRACTION),
             )
-        return parser
+        return parser    
 
+    
     def handle(self, **options):
         commit = options.get('commit')
         region = options.get('region')
@@ -76,7 +85,7 @@ class Command(BaseCommand):
 
         wb = xlrd.open_workbook(filename=excel_file)
         region = Region.objects.get(name=region)
-        #region_code = region.administrative_divisions.filter(parent=None)[0].code                
+        event_ids = []
 
         sheet = wb.sheet_by_index(0)
         row_headers = sheet.row(0)        
@@ -92,32 +101,46 @@ class Command(BaseCommand):
             try:  
                 for row_num in range(1, sheet.nrows):  
                     obj = {}                
-                    event_id = sheet.cell(row_num, 0).value
+                    event_id = str(sheet.cell(row_num, 0).value).replace('\n', '').replace('\r', '').strip()  
+                    duplicates = []                                  
                     
                     obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
                     obj['region'] = region
                     obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
-                    obj['nuts3'] = sheet.cell(row_num, 3).value                
+                    obj['nuts3'] = str(sheet.cell(row_num, 3).value).replace(' ', '')
                     obj['year'] = int(sheet.cell(row_num, 4).value)                                
-                    begin_date_raw = str(sheet.cell(row_num, 5).value)
-                    end_date_raw = str(sheet.cell(row_num, 6).value)                
+                    begin_date_raw = sheet.cell(row_num, 5).value
+                    end_date_raw = sheet.cell(row_num, 6).value
                     obj['event_type'] = sheet.cell(row_num, 7).value
                     obj['event_source'] = sheet.cell(row_num, 8).value                
                     obj['cause'] = sheet.cell(row_num, 9).value
                     obj['notes'] = sheet.cell(row_num, 10).value
-                    obj['sources'] = sheet.cell(row_num, 11).value 
+                    obj['sources'] = sheet.cell(row_num, 11).value                     
 
                     try:
                         country = AdministrativeDivision.objects.get(code=obj['iso2'], level=1)
                     except AdministrativeDivision.DoesNotExist:                        
                         raise CommandError("Could not find adm unit with code {}".format(obj['iso2']))
 
-                    try:
-                        obj['begin_date'] = parse(begin_date_raw)
-                        obj['end_date'] = parse(end_date_raw)
-                    except:
-                        obj['begin_date'] = datetime.date(obj['year'], 1, 1)
-                        obj['end_date'] = datetime.date(obj['year'], 1, 1)              
+                    obj['begin_date'] = datetime.date(obj['year'], 1, 1)
+                    obj['end_date'] = datetime.date(obj['year'], 1, 1)              
+                    if is_number(begin_date_raw) and is_number(begin_date_raw):                    
+                        try:
+                            obj['begin_date'] = xlrd.xldate_as_datetime(begin_date_raw, 0)
+                            obj['end_date'] = xlrd.xldate_as_datetime(end_date_raw, 0)
+                        except:
+                            pass
+                    else:
+                        try:
+                            obj['begin_date'] = parse(begin_date_raw)
+                            obj['end_date'] = parse(end_date_raw)
+                        except ValueError:
+                            pass
+                    
+                    if not event_id:
+                        event_id, duplicates = Event.generate_event_id(obj['hazard_type'], country, obj['begin_date'], region)
+                        #sheet.put_cell(row_num, 0, xlrd.XL_CELL_TEXT, event_id, sheet.cell_xf_index(row_num, 0))
+                                        
                     try:
                         event = Event.objects.get(event_id=event_id, region=region)
                         for key, value in obj.items():
@@ -131,7 +154,12 @@ class Command(BaseCommand):
                     adm_link, created = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=country)
                     n_events += 1         
 
-                    for adm_code in event.nuts3.split(';'):                    
+                    nuts3_list = event.nuts3.split(';')
+                    nuts2_matches = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_list).distinct()
+                    if nuts2_matches:
+                        for nuts2 in nuts2_matches:
+                            EventFurtherAdministrativeDivisionAssociation.objects.update_or_create(event=event, f_adm=nuts2)
+                    for adm_code in nuts3_list:                    
                         try:
                             adm_div = AdministrativeDivision.objects.get(regions__id__exact=region.id, code=adm_code)
                             adm_link, created = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=adm_div)                        
@@ -143,6 +171,10 @@ class Command(BaseCommand):
                     #insert into geoserver db
                     obj['event_id'] = event_id
                     db.insert_event(conn, obj)
+
+                    #append event id to return list                        
+                    formatted_text_row = '{}\tSuspected duplicate of {}'.format(event_id, ';'.join(duplicates)) if duplicates else event_id
+                    event_ids.append(formatted_text_row)
                 conn.commit()
             except Exception, e:
                 try:
@@ -153,16 +185,24 @@ class Command(BaseCommand):
                 #traceback.print_exc()
                 raise CommandError(e)
             finally:
-                conn.close()                          
+                conn.close() 
+        return '\r\n'.join(event_ids)
     
-    def try_parse_int(self, s, base=10, default=None):
-        try:
-            return int(s, base)
-        except ValueError:
-            return default
+def try_parse_int(s, base=10, default=None):
+    try:
+        return int(s, base)
+    except ValueError:
+        return default
 
-    def try_parse_float(self, s, default=None):
-        try:
-            return float(s)
-        except ValueError:
-            return default
+def try_parse_float(s, default=None):
+    try:
+        return float(s)
+    except ValueError:
+        return default
+
+def is_number(s, default=None):
+    try:
+        res = float(s)
+    except ValueError:
+        return False
+    return True

@@ -15,7 +15,7 @@ EVENTS_TO_LOAD = 50
 SENDAI_FROM_YEAR = 2005
 SENDAI_TO_YEAR = 2015
 SENDAI_YEARS_TIME_SPAN = 10
-DEFAULT_DECIMAL_POINTS = 3
+DEFAULT_DECIMAL_POINTS = 5
 
 class DataExtractionView(FeaturesSource, HazardTypeView):   
 
@@ -105,20 +105,28 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         return self.features_to_object(features, field_list, object_key)
 
     def calculate_sendai_indicator(self, loc, indicator, events_total, output_type = 'sum', n_of_years = 1):
-        result = None           
+        result = None 
+        multiplier = 1          
+        adm_data_value = None
+        baseline_unit = ''
         if indicator:             
             if indicator.code.startswith('A') or indicator.code.startswith('B'):
                 adm_data = AdministrativeData.objects.get(name='Population')
+                multiplier = 100000           
             elif indicator.code.startswith('C'):
-                adm_data = AdministrativeData.objects.get(name='GDP')            
+                adm_data = AdministrativeData.objects.get(name='GDP')                 
+                #adm_data_value = 1
+                multiplier = 100
+                baseline_unit = '%'
             if adm_data:
                 adm_data_row = adm_data.set_location(loc).get_by_association()                
                 if adm_data_row:
-                    adm_data_value = float(adm_data_row.value)
-                    result = events_total / adm_data_value * 100000
+                    if not adm_data_value:
+                        adm_data_value = float(adm_data_row.value)
+                    result = events_total / adm_data_value * multiplier
                     if output_type == 'average' and n_of_years > 0:
                         result = round(Decimal(result / n_of_years), DEFAULT_DECIMAL_POINTS)
-        return result
+        return result, baseline_unit
 
     def get(self, request, *args, **kwargs):   
         
@@ -226,20 +234,20 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 except ValueError:
                     return json_response(errors=['Invalid date format'], status=400)
             
-            events = events.order_by('-begin_date')
+            events = events.order_by('-begin_date')  
             total_events = events.count()
             
             # Limit number of results
-            if events and 'load' not in kwargs and 'from' not in kwargs and total_events > EVENTS_TO_LOAD:
+            if events and 'load' not in kwargs and 'from' not in kwargs:
                 events = events[:EVENTS_TO_LOAD]
                 #set limit also for Geoserver query
-                feat_kwargs['limit'] = EVENTS_TO_LOAD
+                feat_kwargs['limit'] = EVENTS_TO_LOAD            
 
             # Retrieve values for events aggregated by country from Geoserver
             field_list = ['adm_code', 'dim1_value', 'dim2_value', 'value', 'event_id']
             field_list_group = ['adm_code', 'dim1_value', 'dim2_value', 'value']
             feat_kwargs['level'] = loc.level                        
-            event_group_country = self.get_features_list('geonode:risk_analysis_event_group', field_list_group, **feat_kwargs)
+            event_group_country = self.get_features_list('geonode:risk_analysis_event_group', field_list_group, **feat_kwargs) if loc.level == 0 else None
             values_events = self.get_features_obj('geonode:risk_analysis_event_details', field_list, 'event_id', **feat_kwargs)
             
             # Build final event list (~ [Django] LEFT JOIN [Geoserver])
@@ -247,11 +255,12 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             data_key = values_events.values()[0][1]
             for event in events:
                 e = event.get_event_plain()                
-                value_arr = values_events[e['event_id']] if e['event_id'] in values_events else None
-                try:                                        
-                    e[data_key] = round(Decimal(value_arr[3]), DEFAULT_DECIMAL_POINTS) if value_arr is not None else None
-                except:
-                    e[data_key] = None
+                e[data_key] = None                
+                try:              
+                    value_arr = values_events[e['event_id']]
+                    e[data_key] = round(Decimal(value_arr[3]), DEFAULT_DECIMAL_POINTS)
+                except:                    
+                    pass
                 e['data_key'] = data_key                
                 ev_list.append(e)
 
@@ -262,12 +271,12 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 'risk_analysis': risk.name,
                 'adm_code': loc.code,
                 'from_year': SENDAI_FROM_YEAR
-            }
-            features_sendai = self.get_features_list('geonode:ra_event_values_grouped_by_year', field_list, **feat_kwargs)                        
-            if features_sendai:                                
-                diminfo = dimension.set_risk_analysis(risk).get_axis().first()
-                if diminfo:                    
-                    sendai_indicator = diminfo.sendai_target
+            }            
+            diminfo = dimension.set_risk_analysis(risk).get_axis().first()
+            if diminfo:
+                sendai_indicator = diminfo.sendai_target
+                if sendai_indicator: 
+                    features_sendai = self.get_features_list('geonode:ra_event_values_grouped_by_year', field_list, **feat_kwargs)                                                       
                     total = 0
                     n_of_years = 0
                     '''for year in range(SENDAI_TO_YEAR, datetime.datetime.now().year + 1):                    
@@ -279,14 +288,16 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                         total = 0'''
                     for s in features_sendai:
                         if s[0] >= SENDAI_FROM_YEAR:
-                            if s[0] <= SENDAI_TO_YEAR:
+                            if s[0] <= SENDAI_TO_YEAR:                            
                                 total += s[1]
                                 n_of_years += 1
-                            else:
-                                rounded_value = round(Decimal(s[1]), DEFAULT_DECIMAL_POINTS)
-                                sendai_final_array.append([s[0], self.calculate_sendai_indicator(loc, sendai_indicator, rounded_value)])
-                    sendai_final_array.insert(0, ['{}_{}'.format(SENDAI_FROM_YEAR, SENDAI_TO_YEAR), self.calculate_sendai_indicator(loc, sendai_indicator, total, 'average', n_of_years)])
-                        
+                            #else: #removing else will display all years instead of grouping years from 2005 to 2015
+                            rounded_value = round(Decimal(s[1]), DEFAULT_DECIMAL_POINTS)
+                            sendai_value, baseline_unit = self.calculate_sendai_indicator(loc, sendai_indicator, rounded_value)
+                            sendai_final_array.append([s[0], sendai_value, baseline_unit])
+                    sendai_average_value, baseline_unit = self.calculate_sendai_indicator(loc, sendai_indicator, total, 'average', n_of_years)
+                    sendai_final_array.insert(0, ['{}_{}'.format(SENDAI_FROM_YEAR, SENDAI_TO_YEAR), sendai_average_value, baseline_unit])
+                      
             # Finishing building output            
             out['riskAnalysisData']['eventAreaSelected'] = ''
             out['riskAnalysisData']['eventsLayer'] = {}
@@ -302,6 +313,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             out['riskAnalysisData']['data']['total_events'] = total_events         
             out['riskAnalysisData']['events'] = ev_list
             out['riskAnalysisData']['data']['sendaiValues'] = sendai_final_array
+            out['riskAnalysisData']['decimalPoints'] = DEFAULT_DECIMAL_POINTS
         
         return json_response(out)
 

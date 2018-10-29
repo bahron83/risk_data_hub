@@ -1,5 +1,6 @@
 import os
 import operator
+import urllib2
 import feedparser
 import re
 from datetime import timedelta
@@ -12,6 +13,7 @@ from django.contrib.gis import geos
 from django.core.management.base import BaseCommand
 from risks.models import AdministrativeDivision, Event, HazardType, Region, EventAdministrativeDivisionAssociation
 from risks.management.commands.action_utils import DbUtils
+from import_shp import shp2postgis
 
 
 #geolocator = Nominatim(user_agent="risk_data_hub", timeout=3)
@@ -30,17 +32,21 @@ def parse_feed(feed_type = 'rapid'):
     elif feed_type == 'risk':
         url = RISK_RECOVERY_URL        
     if url:
-        d = feedparser.parse(url)        
+        if os.getenv('http_proxy'):
+            os.environ['NO_PROXY'] = 'emergency.copernicus.eu'
+        d = feedparser.parse(url)
         for entry in d.entries:                
             hazard_pattern = r'<b>Type of Event:</b>\s?(.*);'
             country_pattern = r'<b>Affected Country:</b>\s?(.*);'
             date_pattern = r'\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}'
             description_pattern = r'<b>Event Description:</b><br /><p>(.*)</p>'
             
-            hazard_check = re.findall(hazard_pattern, entry.summary_detail.value)
-            country_check = re.findall(country_pattern, entry.summary_detail.value)        
-            event_check = re.findall(date_pattern, entry.summary_detail.value)
-            description_check = re.findall(description_pattern, entry.summary_detail.value)
+            summary_detail = entry.summary_detail.value
+            
+            hazard_check = re.findall(hazard_pattern, summary_detail)
+            country_check = re.findall(country_pattern, summary_detail)        
+            event_check = re.findall(date_pattern, summary_detail)
+            description_check = re.findall(description_pattern, summary_detail.replace('\r\n', '').replace('\n', ''))            
 
             hazard = re.sub(hazard_pattern, r'\1', hazard_check[0]) if hazard_check else None        
             country = re.sub(country_pattern, r'\1', country_check[0]) if country_check else None                
@@ -79,14 +85,14 @@ def get_ems_to_import(feed_type = 'rapid', data_from_feed = None):
             row = curs.fetchone()
             if row == None:
                 break
-            already_imported.append(row)    
-        conn.close()
+            already_imported.append(str(row[0]))    
+        conn.close()        
         tags_from_feed = [d['copernicus_id'] for d in data_from_feed]  
 
         #check if Europe
         countries_needed = AdministrativeDivision.objects.filter(parent__code='EU').values_list('name', flat=True)
-        tags_filtered = [d['copernicus_id'] for d in data_from_feed if d['country'] in countries_needed]          
-        return list(set(tags_filtered) - set(already_imported))        
+        tags_filtered = [d['copernicus_id'] for d in data_from_feed if d['country'] in countries_needed]                   
+        return list(set(tags_filtered) - set(already_imported))                       
     return []
 
 def set_tags_imported(emergency_tags):
@@ -138,7 +144,7 @@ def get_country_match(name):
     Check for matching country in Django DB, comparing country name found in EMS feed
     """
     reg_europe = Region.objects.get(name='Europe')
-    return AdministrativeDivision.objects.filter(name__icontains=name, regions__in=[reg_europe]).first()    
+    return AdministrativeDivision.objects.filter(name__icontains=name, level=1, regions__in=[reg_europe]).first()    
 
 def get_event_by_feed(event):
     """
@@ -177,13 +183,13 @@ def get_adm_units_intersected(event, geom):
     For a given event from feed, returns list of NUTS3 whose geometry has positive intersection with geometry of event
     """
     adm_units_covered = []    
-    if event:        
+    if event and geom:        
         parent_adm = get_country_match(event['country'])
         if parent_adm:            
-            for adm_unit in AdministrativeDivision.objects.filter(parent=parent_adm):
+            for adm_unit in AdministrativeDivision.objects.filter(parent=parent_adm):                
                 adm_geom = geos.fromstr(adm_unit.geom, srid=adm_unit.srid)
-                if geom.intersects(adm_geom):
-                    adm_units_covered.append(adm_unit)
+                if geom.intersects(adm_geom):                    
+                    adm_units_covered.append(adm_unit)                                    
     return list(set(adm_units_covered))
 
 def get_event_from_feed(data_from_feed, ems):
@@ -200,21 +206,32 @@ def generate_event_from_feed(event, geom):
     print('looking for event match in database')
     match, hazard_match, country_match = get_event_by_feed(event)
     event_obj = None
+    adm_units_intersected = get_adm_units_intersected(event, geom)
     if match:
         print('found existing event: {}'.format(match.event_id))
+        nuts3_in_event = match.nuts3.split(';')
+        nuts3_intersected = [adm.code for adm in adm_units_intersected]
+        nuts3_union = list(set(nuts3_in_event).union(nuts3_intersected))
+        params = {
+            'nuts3': ';'.join(nuts3_union)
+        }        
+        if 'EMS' not in match.notes:
+            params['notes'] = '{}; {} {}'.format(match.notes, event['copernicus_id'], event['description'])            
         if 'EMS' not in match.sources:
-            params = {'sources': '{}; {} {}'.format(match.sources, event['copernicus_id'], event['link'])}
-            updated = Event.objects.filter(pk=match.pk).update(**params)        
+            params['sources'] = '{}; {} {}'.format(match.sources, event['copernicus_id'], event['link'])            
+        updated = Event.objects.filter(pk=match.pk).update(**params)        
         event_obj = match
     else:        
         print('event to be created => hazard = {} - country = {}'.format(hazard_match, country_match))
         if hazard_match and country_match:
+            region_eu = Region.objects.get(name='Europe') 
+            event_id, duplicates = Event.generate_event_id(hazard_match, country_match, parse(event['begin_date']), region_eu)            
             new_event = Event.objects.create(
-                event_id='{}_{}'.format(hazard_match.mnemonic, event['copernicus_id']),
+                event_id=event_id,
                 hazard_type=hazard_match,
-                region=Region.objects.get(name='Europe'),
+                region=region_eu,
                 iso2=country_match.code,
-                nuts3=';'.join([adm.code for adm in get_adm_units_intersected(event, geom)]),
+                nuts3=';'.join([adm.code for adm in adm_units_intersected]),
                 begin_date=parse(event['begin_date']),
                 end_date=parse(event['begin_date']),
                 year=event['begin_date'][:4],
@@ -226,11 +243,40 @@ def generate_event_from_feed(event, geom):
             )         
             event_obj = new_event
     # Set relations
-    if event_obj:        
-        for adm in get_adm_units_intersected(event, geom):
+    if event_obj and adm_units_intersected:        
+        for adm in adm_units_intersected:
             event_adm, created = EventAdministrativeDivisionAssociation.objects.get_or_create(event=event_obj, adm=adm)
 
     return event_obj
+
+def compute_union_geometry(files, tolerance = 0.0001):    
+    polygon_union = geos.GEOSGeometry('POINT (0 0)', srid=4326)
+    count = 0
+    print('computing geometry union...')
+    for f in files:
+        print('file {}'.format(f))
+        try:
+            ds = DataSource(f)
+        except GDALException, e:
+            traceback.print_exc()
+            break
+        for layer in ds:            
+            for feat in layer:
+                print('processing feature {}'.format(count))
+                geom = geos.fromstr(feat.geom.wkt, srid=4326)                                                    
+                if tolerance > 0:                    
+                    geom = geom.simplify(tolerance, preserve_topology=True)
+
+                # Generalize to 'Multiploygon'                
+                if isinstance(geom, geos.Polygon):
+                    geom = geos.MultiPolygon(geom)
+                
+                if count == 0:
+                    polygon_union = geom.buffer(0)
+                else:
+                    polygon_union = polygon_union.union(geom.buffer(0))
+                count += 1
+    return geos.fromstr(polygon_union.wkt, srid=4326)
 
 def import_events(data_from_feed, tolerance = 0.0001):
     """
@@ -252,7 +298,8 @@ def import_events(data_from_feed, tolerance = 0.0001):
                     for f in os.listdir(os.path.join(SHAPEFILES_BASE_DIR, d)):                        
                         if f.endswith(tuple(allowed_extensions)):
                             print('found shapefiles: {}'.format(f))
-                            try:
+
+                            '''try:
                                 filepath = os.path.join(SHAPEFILES_BASE_DIR, d, f)
                                 ds = DataSource(filepath)
                             except GDALException, e:
@@ -261,9 +308,10 @@ def import_events(data_from_feed, tolerance = 0.0001):
                             for layer in ds:
                                 count = 0 
                                 polygon_union = None   
-                                for feat in layer:
+                                for feat in layer:   
+                                    print('processing feature {}'.format(count))                                 
                                     # Simplify the Geometry
-                                    geom = geos.fromstr(feat.geom.wkt, srid=4326)                
+                                    geom = geos.fromstr(feat.geom.wkt, srid=4326)                                                    
                                     if tolerance > 0:                    
                                         geom = geom.simplify(tolerance, preserve_topology=True)
 
@@ -275,25 +323,53 @@ def import_events(data_from_feed, tolerance = 0.0001):
                                         polygon_union = geom.buffer(0)
                                     else:
                                         polygon_union = polygon_union.union(geom.buffer(0))
-                                    count += 1
-                                polygon_union = geos.fromstr(polygon_union.wkt, srid=4326)
-                                # Update event in Django
-                                event_from_feed = get_event_from_feed(data_from_feed, d.split('_')[0])
-                                new_event = generate_event_from_feed(event_from_feed, polygon_union)
-                                
-                                if new_event:
-                                    params = { 
-                                        'geom': polygon_union,
-                                        'event_id': new_event.event_id,
-                                        'begin_date': new_event.begin_date,
-                                        'end_date': new_event.end_date
-                                    }
-                                    update_template = """INSERT INTO events (the_geom, event_id, begin_date, end_date) 
-                                                            SELECT '{geom}', '{event_id}', '{begin_date}', '{end_date}'
-                                                            ON CONFLICT (event_id)
-                                                            DO UPDATE SET the_geom = excluded.the_geom;"""
-                                    curs.execute(update_template.format(**params))
-                    os.rename(os.path.join(SHAPEFILES_BASE_DIR, d, f), os.path.join(SHAPEFILES_BASE_DIR, d, 'archive', f))
+                                    count += 1                                
+                                try:
+                                    print('re-extracting geom from union polygon')
+                                    polygon_union = geos.fromstr(polygon_union.wkt, srid=4326)
+                                except:
+                                    break'''                                                        
+                            ems = d.split('_')[0]
+                            select_template = "SELECT ST_AsText(ST_Union(ARRAY(SELECT ST_Buffer(the_geom, 1e-5) FROM {})))".format(ems)
+                            row = None
+                            try:
+                                curs.execute(select_template)
+                                row = curs.fetchone()
+                            except:
+                                pass   
+                            #set default multipolygon
+                            ext_coords = ((0, 0), (0, 1), (1, 1), (1, 0), (0, 0))  
+                            int_coords = ((0.4, 0.4), (0.4, 0.6), (0.6, 0.6), (0.6, 0.4), (0.4, 0.4))                       
+                            polygon_union = geos.MultiPolygon(geos.Polygon(ext_coords, int_coords), srid=4326)
+                            if row:
+                                polygon_union = geos.fromstr(row[0], srid=4326)
+                            
+                            # Update event in Django
+                            event_from_feed = get_event_from_feed(data_from_feed, ems)
+                            new_event = generate_event_from_feed(event_from_feed, polygon_union)
+                            
+                            if new_event:
+                                params = { 
+                                    'geom': polygon_union,
+                                    'event_id': new_event.event_id,
+                                    'begin_date': new_event.begin_date,
+                                    'end_date': new_event.end_date
+                                }
+                                update_template = """INSERT INTO events (the_geom, event_id, begin_date, end_date) 
+                                                        SELECT 
+                                                            '{geom}', '{event_id}', '{begin_date}', '{end_date}'
+                                                        ON CONFLICT (event_id)
+                                                        DO UPDATE SET the_geom = excluded.the_geom;"""
+                                print update_template.format(**params)
+                                curs.execute(update_template.format(**params))
+                    archive_path = os.path.join(SHAPEFILES_BASE_DIR, d, 'archive')
+                    if not os.path.exists(archive_path):
+                        os.makedirs(archive_path)
+                    for f2 in os.listdir(os.path.join(SHAPEFILES_BASE_DIR, d)):
+                        filepath = os.path.join(SHAPEFILES_BASE_DIR, d, f2) 
+                        if os.path.isfile(filepath):
+                            print('moving file {} to {}'.format(f2, archive_path))
+                            os.rename(filepath, os.path.join(archive_path, f2))
 
         conn.commit()        
     except Exception:

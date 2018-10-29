@@ -10,6 +10,8 @@ import glob
 import shapefile
 from subprocess import call
 from django.conf import settings
+import ems_feed_reader
+import import_shp
 
 
 ###############################################################################
@@ -48,8 +50,11 @@ def extract_zipped_files (file_name):
     #pass
     print file_name
     file_name_in=folder_input_zip+file_name
-    with zipfile.ZipFile(file_name_in, "r") as z:
-        z.extractall(folder_output_zip)
+    try:
+        with zipfile.ZipFile(file_name_in, "r") as z:
+            z.extractall(folder_output_zip)
+    except:
+        pass
 
 def move_merged_files (ems, extensions = None):
     if not extensions:
@@ -94,7 +99,7 @@ def merge_ems_zips (emergency_tags,elements):
 
     # move files
     for file in sorted(os.listdir(folder_input_shp)):
-        for ems in emergency_tags:
+        for ems in emergency_tags:            
             if ems in file:
                 for category in elements:
                     if category in file:
@@ -126,8 +131,15 @@ def merge_ems_zips (emergency_tags,elements):
             for f in files:
                 shutil.copy(f,folder_input_out)
                 break
+            '''outpath = folder_output_merge + ems + "_" + category + '_merged.wkt'
+            computed_union_geometry = ems_feed_reader.compute_union_geometry(files)
+            with open(outpath, 'w') as geom_file:
+                geom_file.write(computed_union_geometry)'''
         #move files
-        move_merged_files(ems)        
+        move_merged_files(ems) 
+        #import shapefile into postgis
+        print('importing shapefile into POSTGIS')
+        import_shp.shp2postgis(folder_output_merge + ems + '_merged', ems)      
     
     #remove temp folder
     try:

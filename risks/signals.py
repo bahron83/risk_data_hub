@@ -8,11 +8,11 @@ from geonode.people.models import Profile
 
 
 #SIGNALS RELATED TO ASYNCHRONOUS TASKS
-data_uploaded = Signal(providing_args=['user', 'filename', 'region'])
+data_uploaded = Signal(providing_args=['user', 'filename', 'region', 'additional_content'])
 data_processing_failed = Signal(providing_args=['user', 'filename', 'region', 'error_message'])
 
-def complete_upload(user, filename, region):    
-    data_uploaded.send(sender=user.__class__, user=user, filename=filename, region=region)
+def complete_upload(user, filename, region, additional_content=None):    
+    data_uploaded.send(sender=user.__class__, user=user, filename=filename, region=region, additional_content=additional_content)
 
 def report_processing_error(user, filename, region, error_message):
     data_processing_failed.send(sender=user.__class__, user=user, filename=filename, region=region, error_message=error_message)
@@ -24,12 +24,13 @@ def notify_user_data_uploaded(sender, **kwargs):
     if kwargs['user']:
         user = Profile.objects.get(id=kwargs['user'])    
     region = kwargs['region'] if kwargs['region'] else ''
+    additional_content = kwargs['additional_content'] if kwargs['additional_content'] else ''
 
     if filename and user:
         send_now_notification(
             users=[user],
             label="data_uploaded",
-            extra_context={"from_user": user, "filename": filename, "region": region}
+            extra_context={"from_user": user, "filename": filename, "region": region, "additional_content": additional_content}
         )
 
 @receiver(data_processing_failed)

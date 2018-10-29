@@ -36,7 +36,14 @@ class EventDetails extends Component {
 
     formatNumber(string) {
         return Math.round(parseFloat(string) * 100) / 100        
-    }        
+    }
+    
+    round(value, decimals = null) {
+        if(!decimals)
+            decimals = this.props && this.props.riskAnalysisData && this.props.riskAnalysisData.decimalPoints || 3;        
+        const adjustedValue = value.toString().indexOf('e') > -1 ? value : value+'e'+decimals;        
+        return Number(Math.round(adjustedValue)+'e-'+decimals);
+    }
     
     renderAdministrativeData(overview, dataProcessed) {          
         return Object.keys(dataProcessed).map(key => {               
@@ -47,18 +54,18 @@ class EventDetails extends Component {
                     <li key={`${key}-country`} className="list-group-item">
                         <label>{key} of Country</label>
                         {`${countryAdminData.toLocaleString()} ${unitOfMeasure} (${countryAdminDataDim})`}
-                        <span className={`right ${eventByCountry > threshold ? 'eligible' : 'not-eligible'}`}>{eventByCountry ? `${eventByCountry} %` : ''}</span>
+                        <span className={`right ${eventByCountry > threshold ? 'eligible' : 'not-eligible'}`}>{eventByCountry ? `${this.round(eventByCountry, 3)} %` : ''}</span>
                     </li>
                     <li key={`${key}-nuts2`} className={`list-group-item ${cssClass}`}>
                         <label>{key} of NUTS2 affected</label>
                         {`${nuts2AdminData.toLocaleString()} ${unitOfMeasure} (${nuts2AdminDataDim})`}
-                        <span className={`right ${eventByNuts2 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts2 ? `${eventByNuts2} %` : ''}</span>
+                        <span className={`right ${eventByNuts2 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts2 ? `${this.round(eventByNuts2, 3)} %` : ''}</span>
                         {this.renderGDPText(overview, key)}
                     </li>
                     <li key={`${key}-nuts3`} className="list-group-item">
                         <label>{key} of NUTS3 affected</label>
                         {`${nuts3AdminData.toLocaleString()} ${unitOfMeasure} (${nuts3AdminDataDim})`}
-                        <span className={`right ${eventByNuts3 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts3 ? `${eventByNuts3} %` : ''}</span>
+                        <span className={`right ${eventByNuts3 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts3 ? `${this.round(eventByNuts3, 3)} %` : ''}</span>
                     </li>
                 </ul>
             )
@@ -71,15 +78,15 @@ class EventDetails extends Component {
         Object.keys(administrativeData).map(key => {            
             const { unitOfMeasure, values } = administrativeData[key];            
             const nuts3List = event.nuts3.split(';');              
-            const eventAdminData = data[riskAnalysisMapping[key]] && data[riskAnalysisMapping[key]]["values"] && data[riskAnalysisMapping[key]]["values"][0] && this.formatNumber(data[riskAnalysisMapping[key]]["values"][0][2]);
-            const countryAdminData = this.formatNumber(values[event.iso2]['value']);  
+            const eventAdminData = data[riskAnalysisMapping[key]] && data[riskAnalysisMapping[key]]["values"] && data[riskAnalysisMapping[key]]["values"][0] && this.round(data[riskAnalysisMapping[key]]["values"][0][2]);
+            const countryAdminData = this.round(values[event.iso2]['value']);            
             const countryAdminDataDim = values[event.iso2]['dimension'];  
             let nuts2AdminData = 0;   
             let nuts2AdminDataDim = null;                      
             let nuts3AdminData = 0;
             let nuts3AdminDataDim = null;
             _.forOwn(_.omit(values, event.iso2), (v, k) => {
-                const formattedValue = this.formatNumber(v['value']);
+                const formattedValue = this.round(v['value']);
                 nuts2AdminData += formattedValue;                
                 nuts2AdminDataDim = v['dimension'];
                 if(nuts3List.includes(k)) {
@@ -88,9 +95,9 @@ class EventDetails extends Component {
                 }                    
             });
             
-            const eventByCountry = eventAdminData ? this.formatNumber(eventAdminData / countryAdminData * 100) : null;
-            const eventByNuts2 = eventAdminData ? this.formatNumber(eventAdminData / nuts2AdminData * 100) : null;
-            const eventByNuts3 = eventAdminData ? this.formatNumber(eventAdminData / nuts3AdminData * 100) : null;
+            const eventByCountry = eventAdminData ? this.round(eventAdminData / countryAdminData * 100) : null;
+            const eventByNuts2 = eventAdminData ? this.round(eventAdminData / nuts2AdminData * 100) : null;
+            const eventByNuts3 = eventAdminData ? this.round(eventAdminData / nuts3AdminData * 100) : null;
 
             dataProcessed[key] = {
                 'unitOfMeasure': unitOfMeasure,
@@ -106,10 +113,7 @@ class EventDetails extends Component {
                 'threshold': threshold
             }
 
-            if(key == 'GDP' && !calculationReady) {
-                console.log('eligibility = ', eventByNuts2 > threshold);
-                console.log('eventbynuts', eventByNuts2);
-                console.log('threshold', threshold);
+            if(key == 'GDP' && !calculationReady) {                
                 eligible = eventByNuts2 > threshold;
                 calculationReady = true;                
             }

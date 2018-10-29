@@ -21,9 +21,17 @@ class SendaiCountryChart extends Component {
     }    
 
     getRefValue() {
-        const { data, round } = this.props;
+        const { data } = this.props;
         const { sendaiValues } = data;        
-        return sendaiValues && sendaiValues.length > 0 ? round(parseFloat(sendaiValues[0][1])) : null;
+        return sendaiValues && sendaiValues.length > 0 ? sendaiValues[0][1] : null;
+    }
+
+    getBaselineUnit() {        
+        const values = this.props && this.props.data && this.props.data.sendaiValues;
+        if(values) {
+            return values[0][2];
+        }
+        return '';
     }
 
     getSendaiIndicator() {
@@ -43,8 +51,8 @@ class SendaiCountryChart extends Component {
             const color = percentDiff > 0 ? "#ff0000" : "#00ff00";            
             return (
                 <div className="disaster-chart-tooltip">
-                    <p className="disaster-chart-tooltip-values">{`Value: ${value}`}</p>
-                    <p className="disaster-chart-tooltip-values">{`Baseline: ${baseline}`}</p>
+                    <p className="disaster-chart-tooltip-values">{`Value: ${value.toLocaleString()}`}</p>
+                    <p className="disaster-chart-tooltip-values">{`Baseline: ${baseline.toLocaleString()}`}</p>
                     <p style={{color:color}} className="disaster-chart-tooltip-values">{`Difference: ${percentDiff} %`}</p>
                 </div>    
             )
@@ -52,14 +60,14 @@ class SendaiCountryChart extends Component {
         return null;        
     }
     
-    render() {                     
-        const chartData = this.getChartData();
-        const sendaiIndicator = this.getSendaiIndicator();                
+    render() {                             
+        const sendaiIndicator = this.getSendaiIndicator();        
         if(sendaiIndicator) { 
+            const chartData = this.getChartData();
             return (
                 <div>
                     <p>{`Indicator ${sendaiIndicator.code}: ${sendaiIndicator.description}`}</p>
-                    <p>Reference value for years 2005/2015: <span>{this.getRefValue()}</span></p>
+                    <p>Reference value for years 2005/2015: <span>{`${this.getRefValue().toLocaleString()} ${this.getBaselineUnit()}`}</span></p>
                     {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={200}>                    
                             <ComposedChart width={500} height={200} data={chartData} margin={{top: 20, right: 0, left: 0, bottom: 5}}>

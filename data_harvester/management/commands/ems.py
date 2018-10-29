@@ -44,6 +44,8 @@ class Command(BaseCommand):
         #look for updates from feed
         print('start parsing feed...')
         data_from_feed = ems_feed_reader.parse_feed('rapid')
+        #with open('/home/geo/data_from_feed.json', 'w') as f:
+        #    f.write(json.dumps(data_from_feed))
         
         print('resolves events to import...')
         emergency_tags = ems_feed_reader.get_ems_to_import('rapid', data_from_feed)

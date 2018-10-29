@@ -15,7 +15,7 @@ class SChart extends Component {
     } 
     
     render () {        
-        const { selectedEventIds, data, unitOfMeasure } = this.props;           
+        const { selectedEventIds, data, unitOfMeasure } = this.props;         
         if(data.length == 0)
             return null;           
         const dataKey = data[0]['data_key'];

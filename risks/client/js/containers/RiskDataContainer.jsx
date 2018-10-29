@@ -34,8 +34,10 @@ const DEFAULT_DECIMAL_POINTS = 3;
 
 class DataContainer extends Component {            
     
-    round(value, decimals = DEFAULT_DECIMAL_POINTS) {
-        return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+    round(value) {
+        const decimals = this.props && this.props.riskAnalysisData && this.props.riskAnalysisData.decimalPoints || DEFAULT_DECIMAL_POINTS;        
+        const adjustedValue = value.toString().indexOf('e') > -1 ? value : value+'e'+decimals;        
+        return Number(Math.round(adjustedValue)+'e-'+decimals);
     }
     
     getRandomColor() {
@@ -171,7 +173,7 @@ class DataContainer extends Component {
                             {fullContext.adm_level > 0 ? (
                                 <Panel className="panel-box">   
                                     <h4 className="text-center">{'Sendai Target Indicator'}</h4>                             
-                                    <SendaiCountryChart dim={dim} data={data} round={this.round.bind(this)}/>
+                                    <SendaiCountryChart dim={dim} data={data} unitOfMeasure={unitOfMeasure} round={this.round.bind(this)}/>
                                 </Panel>
                             ) : (
                                 <Panel className="panel-box">   

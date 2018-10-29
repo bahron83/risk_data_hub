@@ -38,8 +38,14 @@ class EventTable  extends Component {
     render() {                
         const { data, selectedEventIds } = this.props;                   
         if(data.length == 0)
-            return null;
+            return null;        
         const dataKey = data[0]['data_key'];        
+        /*const dataFormatted = data.map(obj => {
+            let newObj = obj;            
+            newObj[dataKey] = newObj[dataKey] && newObj[dataKey].toLocaleString() || null;
+            return newObj;
+        })
+        console.log(dataFormatted);*/
         const dataKeyVerbose = dataKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
         const options = {
             
