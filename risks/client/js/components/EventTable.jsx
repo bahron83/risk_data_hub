@@ -10,7 +10,7 @@ class EventTable  extends Component {
     
     trClassFormat(row, index) {
         const { selectedEventIds } = this.props;
-        return selectedEventIds.includes(row.event_id) ? 'selected' : '';
+        return selectedEventIds.includes(row.id) ? 'selected' : '';
     }
 
     shouldComponentUpdate(nextProps, nextState) {
@@ -27,7 +27,7 @@ class EventTable  extends Component {
     handleRowSelect(row, isSelected, e) {
         const detailViewEnabled = true; //to remove
         const { selectEvent, fullContext } = this.props;        
-        const list = Array.isArray(row) ? row.map(item => { return item.event_id}) : [row.event_id];        
+        const list = Array.isArray(row) ? row.map(item => { return item.id}) : [row.id];        
         selectEvent(list, isSelected, fullContext.loc);
     }
 
@@ -59,7 +59,7 @@ class EventTable  extends Component {
 
         return (                    
             <BootstrapTable data={data} options={options} selectRow={selectRow} trClassName={this.trClassFormat.bind(this)}>                
-                <TableHeaderColumn dataField='event_id' isKey={true} hidden={true}>Event ID</TableHeaderColumn>
+                <TableHeaderColumn dataField='id' isKey={true} hidden={true}>Event ID</TableHeaderColumn>
                 <TableHeaderColumn dataField='event_source'>Source</TableHeaderColumn>
                 <TableHeaderColumn dataField='begin_date' dataSort>Start Date</TableHeaderColumn>
                 <TableHeaderColumn dataField={dataKey} dataSort>{dataKeyVerbose}</TableHeaderColumn>

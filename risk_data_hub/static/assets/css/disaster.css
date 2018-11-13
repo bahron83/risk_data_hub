@@ -7058,6 +7058,12 @@ a.disaster .label:focus {
   margin-top: 10px;
   color: #2c689c;
 }
+.disaster #disaster-filter-results i.disaster-category {
+  color: #eee;
+}
+.disaster #disaster-filter-results i.disaster-category:hover {
+  color: #2c689c;
+}
 @font-face {
   font-family: 'thinkhazard';
   src: url('../fonts/thinkhazard/thinkhazard.eot?-xr90r9');

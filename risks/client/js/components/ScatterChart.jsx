@@ -26,7 +26,7 @@ class SChart extends Component {
             <CartesianGrid />
             <Scatter onClick={this.handleClick.bind(this)} data={data} name='Events'>
                 {data.map((entry, index) => {
-                    const active = selectedEventIds.includes(entry.event_id);
+                    const active = selectedEventIds.includes(entry.id);
                     return (
                         <Cell cursor="pointer" stroke={active ? '#2c689c' : '#ffffff'} strokeWidth={active ? 2 : 1}fill={active ? '#ff8f31' : '#2c689c'} key={`cell-${index}`}/>);
                 })
@@ -39,8 +39,8 @@ class SChart extends Component {
     
     handleClick(event) {
         const { selectEvent, selectedEventIds } = this.props;        
-        const active = selectedEventIds.includes(event.event_id);        
-        selectEvent([event.event_id], !active, event.iso2);
+        const active = selectedEventIds.includes(event.id);        
+        selectEvent([event.id], !active, event.iso2);
     }
 }
 

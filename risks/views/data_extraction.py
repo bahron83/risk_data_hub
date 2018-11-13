@@ -219,7 +219,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         if risk.analysis_type.analysis_class.name == 'event':                                    
 
             # Retrieve events from Django
-            events = Event.objects.filter(hazard_type=hazard_type, region=reg)
+            events = Event.objects.filter(hazard_type=hazard_type, region=reg, state='ready')
             if loc.level == 1:
                 events = events.filter(iso2=loc.code)
             elif loc.level >= 2:

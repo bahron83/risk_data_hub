@@ -107,21 +107,21 @@ class Command(BaseCommand):
         db = DbUtils()
         conn = db.get_db_conn()        
         first_call = True
-        event_id = ''
+        code = ''
         sample_adm_div = None
                 
         try:
             for row_num in range(1, sheet.nrows):                
-                event_id = str(sheet.cell(row_num, 0).value).strip()
+                code = str(sheet.cell(row_num, 0).value).strip()
                 adm_code = str(sheet.cell(row_num, 1).value).strip()
                 dim1 = str(sheet.cell(row_num, 2).value).strip()
                 dim2 = str(sheet.cell(row_num, 3).value).strip()
                 attribute_value = str(sheet.cell(row_num, 4).value).strip()
                                                                 
                 try:
-                    event = Event.objects.get(event_id=event_id)                                        
+                    event = Event.objects.get(code=code)                                        
                 except Event.DoesNotExist:                        
-                    raise CommandError('Incorrect Event ID: {}'.format(event_id))                                          
+                    raise CommandError('Incorrect Event ID: {}'.format(code))                                          
                 
                 if (attribute_value or allow_null_values) and any(x.value == dim1 for x in axis_x) and any(y.value == dim2 for y in axis_y):                    
                     x = axis_x.get(value=dim1)
@@ -205,7 +205,7 @@ class Command(BaseCommand):
             'region': params['region'].name,
             'adm_level': params['adm_div'].level,
             'parent_adm_code': params['adm_div'].parent.code,
-            'event_id': params['event'].event_id,
+            'event_id': params['event'].id,
             'begin_date': params['event'].begin_date,
             'end_date': params['event'].end_date,
             'value': params['attribute_value']

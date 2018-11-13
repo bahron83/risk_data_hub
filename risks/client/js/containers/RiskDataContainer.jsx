@@ -61,7 +61,7 @@ class DataContainer extends Component {
         const events = this.props.riskAnalysisData && this.props.riskAnalysisData.events || [];
         return events.map(v => {
             let newObj = v;
-            newObj['details_link'] = `<a href="/risks/data_extraction/an/${fullContext.an}/evt/${v.event_id}">click</a>`;
+            newObj['details_link'] = `<a href="/risks/data_extraction/an/${fullContext.an}/evt/${v.id}">click</a>`;
             return newObj;
         });
 
@@ -71,7 +71,7 @@ class DataContainer extends Component {
             return(
                 events.map(v => {
                     let newObj = v;
-                    const valueArr = values[v['event_id']];                            
+                    const valueArr = values[v['id']];                            
                     newObj[dataKey] = (valueArr && valueArr[3]) ? !isNaN(parseFloat(valueArr[3])) ? parseFloat(valueArr[3]) : null : null;
                     newObj['data_key'] = dataKey;
                     return newObj;              
@@ -414,7 +414,7 @@ class DataContainer extends Component {
         if(selectedEventIds.length == 0 && fullContext && fullContext.adm_level > 0 && zoomJustCalled == 2 && analysisClass == 'event') {            
             const eventData = this.prepareEventData();                
             if(eventData.length > 0)                                 
-                selectEvent([eventData[0].event_id], true, fullContext.loc);
+                selectEvent([eventData[0].id], true, fullContext.loc);
         }
     }
 }

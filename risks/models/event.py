@@ -1,4 +1,5 @@
 import re
+from datetime import timedelta
 from django.db import models
 from geonode.layers.models import Layer
 from risks.models import (HazardType, Region, AdministrativeDivision, RiskAnalysis, RiskApp,
@@ -8,10 +9,12 @@ from risks.models.base import rfs
 
 
 class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulable, models.Model):
-    EXPORT_FIELDS = (('event_id', 'event_id',),                     
+    EXPORT_FIELDS = (('code', 'code',),                     
                      ('href', 'href',),)    
 
-    event_id = models.CharField(max_length=25, primary_key=True)
+    id = models.AutoField(primary_key=True)
+    #event_id = models.CharField(max_length=25, db_index=True, blank=True, null=True)
+    code = models.CharField(max_length=25, db_index=True, blank=True, null=True)
     
     hazard_type = models.ForeignKey(
         HazardType,
@@ -73,9 +76,11 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         """
         """
         #ordering = ['iso2']
-        db_table = 'risks_event'    
-    
+        db_table = 'risks_event'
 
+    def __unicode__(self):
+        return u"Event ID {0}".format(self.id)    
+    
     def get_event_plain(self):
         #nuts3_adm_divs = AdministrativeDivision.objects.filter(level=2, code__in=self.nuts3.split(';'))
         nuts3_adm_divs = self.administrative_divisions.filter(level=2)
@@ -85,7 +90,7 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         #nuts2_affected_names = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').values_list('name', flat=True).distinct()        
         nuts3_affected_names = nuts3_adm_divs.values_list('name', flat=True)
         return {
-            'event_id': self.event_id,
+            'code': self.code,
             'hazard_type': self.hazard_type.mnemonic,
             'hazard_title': self.hazard_type.title,
             'region': self.region.name,
@@ -107,25 +112,41 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
     def href(self):
         reg = self.get_region()
         loc = self.get_location()                
-        return self.get_url('event', reg.name, loc.code, self.event_id)
+        return self.get_url('event', reg.name, loc.code, self.id)
 
     @staticmethod
-    def generate_event_id(hazard_type, country, begin_date, region):
-        suffix = 'R' if region.name != 'Europe' else ''
+    def generate_event_code(hazard_type, country, begin_date, region, draft=False):        
+        suffix = 'R' if region.name != 'Europe' else ''        
         pattern = r'^[A-Z]{4}[0-9]{12}' + re.escape(suffix) + r'$'
-        events_to_check = Event.objects.filter(event_id__regex=pattern, hazard_type=hazard_type, year=begin_date.year)
+        events_to_check = Event.objects.filter(code__regex=pattern, hazard_type=hazard_type, year=begin_date.year)
         next_serial = 1
         duplicates = Event.objects.none()
         if events_to_check:           
             duplicates = events_to_check.filter(iso2=country.code, begin_date=begin_date)
-            serials = [str(ev.event_id[-4:]) for ev in events_to_check]            
+            serials = [str(ev.code[-4:]) for ev in events_to_check]            
             serials.sort(reverse=True)
             next_serial = int(serials[0]) + 1        
-        new_event_id = hazard_type.mnemonic + country.code + begin_date.strftime('%Y%m%d') + '{:>04d}'.format(next_serial) + suffix
+        new_code = hazard_type.mnemonic + country.code + begin_date.strftime('%Y%m%d') + '{:>04d}'.format(next_serial) + suffix
         
-        duplicates = duplicates.exclude(event_id=new_event_id).values_list('event_id', flat=True)
-        return new_event_id, duplicates
+        duplicates = duplicates.exclude(code=new_code).values_list('code', flat=True)
+        return new_code, duplicates
 
+    @staticmethod
+    def find_matches(obj):
+        if obj['region'] and obj['hazard_type']:
+            matches = Event.objects.filter(region=obj['region'], hazard_type=obj['hazard_type'])
+            if 'iso2' in obj:
+                matches = matches.filter(iso2=obj['iso2'])
+            if 'year' in obj:
+                matches = matches.filter(year=obj['year'])
+            if 'begin_date' in obj:
+                lt_date = obj['begin_date'] + timedelta(days=7)
+                gt_date = obj['begin_date'] - timedelta(days=7)
+                matches = matches.filter(begin_date__gt=gt_date, begin_date__lt=lt_date)
+            if 'sources' in obj:
+                matches = matches.filter(sources=obj['sources'])
+            return matches
+        return None
 
 class EventImportData(models.Model):
     data_file = models.FileField(upload_to='data_files', storage=rfs, max_length=255)
@@ -248,8 +269,7 @@ class EventAdministrativeDivisionAssociation(models.Model):
     )          
 
     def __unicode__(self):
-        return u"{0}".format(self.event.event_id + " - " +
-                             self.adm.name)
+        return u"{0} - {1}".format(str(self.event.id), self.adm.name)
 
     class Meta:
         """
@@ -274,13 +294,13 @@ class EventFurtherAdministrativeDivisionAssociation(models.Model):
     )          
 
     def __unicode__(self):
-        return u"{0}".format(self.event.event_id + " - " +
+        return u"{0}".format(str(self.event.id) + " - " +
                              self.f_adm.name)
 
     class Meta:
         """
         """
-        db_table = 'risks_eventfurtheradministrativedivisionassociation'
+        db_table = 'risks_eventfurtheradministrativedivisionassociation'    
 
 class EventRiskAnalysisAssociation(models.Model):
     id = models.AutoField(primary_key=True)
@@ -299,7 +319,7 @@ class EventRiskAnalysisAssociation(models.Model):
     )          
 
     def __unicode__(self):
-        return u"{0}".format(self.event.event_id + " - " +
+        return u"{0}".format(str(self.event.id) + " - " +
                              self.risk.name)
 
     class Meta:

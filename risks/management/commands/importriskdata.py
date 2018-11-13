@@ -127,6 +127,7 @@ class Command(BaseCommand):
                 ogc_db_port = settings.DATABASES[datastore]['PORT']
 
             sheet = wb.sheet_by_name(scenario.value)
+            print 'reading from sheet {}'.format(scenario.value)
             row_headers = sheet.row(0)
             for rp_idx, rp in enumerate(round_periods):
                 col_num = -1
@@ -161,7 +162,7 @@ class Command(BaseCommand):
                                     adm_code = cell_obj.value \
                                         if cell_type_str == 'text' \
                                         else iso_country + '{:05d}'.format(int(cell_obj.value))
-                                    print('adm code read from cell: {}'.format(adm_code))
+                                    #print('adm code read from cell: {}'.format(adm_code))
                                     
                                     #check if exists ADM unit with given code and if ADM unit belongs to given region
                                     try:
@@ -181,7 +182,7 @@ class Command(BaseCommand):
                                     #print('parent_adm_div = {}'.format(parent_adm_div.name))
                                     
                                     #print('[%s] (%s) %s (%s) / %s' % (scenario.value, rp.value, adm_div.name.encode('utf-8'), adm_code, value))
-                                    print('[%s] (%s) (%s) / %s' % (scenario.value, rp.value, adm_code, value))
+                                    #print('[%s] (%s) (%s) / %s' % (scenario.value, rp.value, adm_code, value))
 
                                     db_values = {
                                         'table': table_name,  # From rp.layer
@@ -219,7 +220,7 @@ class Command(BaseCommand):
                             if cell_obj.value:
                                 adm_div = AdministrativeDivision.objects.get(name=region)
                                 value = sheet.cell_value(rp_idx + 1, 1)
-                                print('[%s] (%s) %s / %s' % (scenario.value, rp.value, adm_div.name, value))
+                                #print('[%s] (%s) %s / %s' % (scenario.value, rp.value, adm_div.name, value))
 
                                 db_values = {
                                 'table': table_name,  # From rp.layer

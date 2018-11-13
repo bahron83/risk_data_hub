@@ -167,7 +167,7 @@ class EventDetails extends Component {
                         </Modal.Header>
                         <Modal.Body>                                                        
                             <ul className="list-group">
-                                <li className="list-group-item"><label>Event ID</label>{event.event_id}</li>
+                                <li className="list-group-item"><label>Event Code</label>{event.code}</li>
                                 <li className="list-group-item"><label>Hazard Type</label>{event.hazard_title}</li>
                                 <li className="list-group-item"><label>Country</label>{event.iso2}</li>
                                 <li className="list-group-item"><label>NUTS2 affected</label>{event.nuts2_names}</li>

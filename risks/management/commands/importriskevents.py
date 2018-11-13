@@ -85,7 +85,7 @@ class Command(BaseCommand):
 
         wb = xlrd.open_workbook(filename=excel_file)
         region = Region.objects.get(name=region)
-        event_ids = []
+        event_codes = []
 
         sheet = wb.sheet_by_index(0)
         row_headers = sheet.row(0)        
@@ -100,10 +100,9 @@ class Command(BaseCommand):
             conn = db.get_db_conn()        
             try:  
                 for row_num in range(1, sheet.nrows):  
-                    obj = {}                
-                    event_id = str(sheet.cell(row_num, 0).value).replace('\n', '').replace('\r', '').strip()  
+                    obj = {}                                    
                     duplicates = []                                  
-                    
+                    obj['code'] = str(sheet.cell(row_num, 0).value).replace('\n', '').replace('\r', '').strip()  
                     obj['hazard_type'] = HazardType.objects.get(mnemonic=sheet.cell(row_num, 1).value)
                     obj['region'] = region
                     obj['iso2'] = str(sheet.cell(row_num, 2).value).strip()
@@ -137,25 +136,33 @@ class Command(BaseCommand):
                         except ValueError:
                             pass
                     
-                    if not event_id:
-                        event_id, duplicates = Event.generate_event_id(obj['hazard_type'], country, obj['begin_date'], region)
+                    #if not event_id:
+                        #event_id, duplicates = Event.generate_event_id(obj['hazard_type'], country, obj['begin_date'], region)
                         #sheet.put_cell(row_num, 0, xlrd.XL_CELL_TEXT, event_id, sheet.cell_xf_index(row_num, 0))
-                                        
-                    try:
-                        event = Event.objects.get(event_id=event_id, region=region)
-                        for key, value in obj.items():
-                            setattr(event, key, value)                    
-                        event.save()
-                    except Event.DoesNotExist:
-                        obj['event_id'] = event_id
+                    if code:                   
+                        try:
+                            event = Event.objects.filter(code=code, region=region).first()
+                            for key, value in obj.items():
+                                setattr(event, key, value)                    
+                            event.save()
+                        except Event.DoesNotExist:                                                        
+                            obj['state'] = 'draft'
+                            event = Event(**obj)
+                            event.save()                         
+                    else:
+                        new_code, duplicates = Event.generate_event_code(obj['hazard_type'], country, obj['begin_date'], region) 
+                        obj['code'] = new_code
+                        if duplicates:
+                            obj['state'] = 'draft'
                         event = Event(**obj)
-                        event.save()                                                                               
+                        event.save()
+                    event.refresh_from_db()
                     
                     adm_link, created = EventAdministrativeDivisionAssociation.objects.update_or_create(event=event, adm=country)
                     n_events += 1         
 
                     nuts3_list = event.nuts3.split(';')
-                    nuts2_matches = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_list).distinct()
+                    nuts2_matches = AdministrativeDivisionMappings.objects.filter(child__code__in=nuts3_list).distinct()
                     if nuts2_matches:
                         for nuts2 in nuts2_matches:
                             EventFurtherAdministrativeDivisionAssociation.objects.update_or_create(event=event, f_adm=nuts2)
@@ -169,12 +176,12 @@ class Command(BaseCommand):
                             pass 
 
                     #insert into geoserver db
-                    obj['event_id'] = event_id
+                    obj['event_id'] = event.id
                     db.insert_event(conn, obj)
 
                     #append event id to return list                        
-                    formatted_text_row = '{}\tSuspected duplicate of {}'.format(event_id, ';'.join(duplicates)) if duplicates else event_id
-                    event_ids.append(formatted_text_row)
+                    formatted_text_row = '{}\tSuspected duplicate of {}'.format(event.code, ';'.join(duplicates)) if duplicates else event.code
+                    event_codes.append(formatted_text_row)
                 conn.commit()
             except Exception, e:
                 try:
@@ -186,7 +193,7 @@ class Command(BaseCommand):
                 raise CommandError(e)
             finally:
                 conn.close() 
-        return '\r\n'.join(event_ids)
+        return '\r\n'.join(event_codes)
     
 def try_parse_int(s, base=10, default=None):
     try:

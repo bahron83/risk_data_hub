@@ -35,7 +35,7 @@ class Command(BaseCommand):
 
         for r in rows:
             try:
-                event = Event.objects.get(event_id=r[0])            
+                event = Event.objects.get(id=r[0])            
             except Event.DoesNotExist:
                 pass
             if event:                

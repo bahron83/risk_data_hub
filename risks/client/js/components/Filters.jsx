@@ -68,10 +68,12 @@ class Filters extends Component {
 
     renderAnalysisTypeFilter(analysisType) {
         if(analysisType && analysisType.length > 0) {
-            return analysisType.map(h => {
+            const titles = analysisType.map(a => a.title);
+            const titlesUnique = titles.filter((v, i , a) => a.indexOf(v) === i);
+            return titlesUnique.map(t => {
                 return (
-                    <label key={h.name} className="label-container">{h.title}                        
-                        <input type="radio" name="analysisType" value={h.name} checked={this.state.at === h.name} onChange={this.onAnalysisTypeChanged}/>                        
+                    <label key={t} className="label-container">{t}                        
+                        <input type="radio" name="analysisType" value={t} checked={this.state.at === t} onChange={this.onAnalysisTypeChanged}/>                        
                         <span className="checkmark"></span>                                              
                     </label>
                 )

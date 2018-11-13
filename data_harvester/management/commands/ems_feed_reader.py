@@ -208,7 +208,7 @@ def generate_event_from_feed(event, geom):
     event_obj = None
     adm_units_intersected = get_adm_units_intersected(event, geom)
     if match:
-        print('found existing event: {}'.format(match.event_id))
+        print('found existing event: {}'.format(match.id))
         nuts3_in_event = match.nuts3.split(';')
         nuts3_intersected = [adm.code for adm in adm_units_intersected]
         nuts3_union = list(set(nuts3_in_event).union(nuts3_intersected))
@@ -225,9 +225,9 @@ def generate_event_from_feed(event, geom):
         print('event to be created => hazard = {} - country = {}'.format(hazard_match, country_match))
         if hazard_match and country_match:
             region_eu = Region.objects.get(name='Europe') 
-            event_id, duplicates = Event.generate_event_id(hazard_match, country_match, parse(event['begin_date']), region_eu)            
+            code, duplicates = Event.generate_code(hazard_match, country_match, parse(event['begin_date']), region_eu)            
             new_event = Event.objects.create(
-                event_id=event_id,
+                code=code,
                 hazard_type=hazard_match,
                 region=region_eu,
                 iso2=country_match.code,
@@ -351,7 +351,7 @@ def import_events(data_from_feed, tolerance = 0.0001):
                             if new_event:
                                 params = { 
                                     'geom': polygon_union,
-                                    'event_id': new_event.event_id,
+                                    'event_id': new_event.id,
                                     'begin_date': new_event.begin_date,
                                     'end_date': new_event.end_date
                                 }

@@ -74,7 +74,7 @@ class EventView(FeaturesSource, HazardTypeView):
         return json_response(out)
 
     def get_viewparams(self, adm_level, risk_analysis, events):
-        event_ids = '__'.join([e.event_id for e in events])
+        event_ids = '__'.join([e.id for e in events])
         
         actual_geom_lookup = int(adm_level) > 1
         target_level = int(adm_level) if actual_geom_lookup else int(adm_level) + 1
@@ -102,7 +102,7 @@ class EventDetailsView(DataExtractionView):
 
     def get_event(self, **kwargs):
         try:
-            return Event.objects.get(event_id=kwargs['evt'])
+            return Event.objects.get(id=kwargs['evt'])
         except Event.DoesNotExist:
             pass
 

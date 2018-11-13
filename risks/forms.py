@@ -42,6 +42,10 @@ from risks.models import EventImportAttributes
 from risks.tasks import create_risk_analysis, import_risk_data, import_risk_metadata, import_event_data, import_event_attributes
 
 
+class PostEventPublishForm(forms.Form):
+    title = 'Set state ready for selected events'
+    state = forms.ChoiceField(choices=(('ready', 'ready'),))
+
 class CreateRiskAnalysisForm(models.ModelForm):
     """
     """

@@ -41,11 +41,13 @@ class Schedulable(models.Model):
     STATE_PROCESSING = 'processing'
     STATE_READY = 'ready'
     STATE_ERROR = 'error'
+    STATE_DRAFT = 'draft'
 
     STATES = ((STATE_QUEUED, 'Queued',),
               (STATE_PROCESSING, 'Processing',),
               (STATE_READY, 'Ready',),
               (STATE_ERROR, 'Error',),
+              (STATE_DRAFT, 'Draft',),
              )
 
     state = models.CharField(max_length=64, choices=STATES, null=False, default=STATE_READY)
@@ -80,6 +82,10 @@ class Schedulable(models.Model):
     def set_processing(self):
         self.refresh_from_db()
         self.set_state(self.STATE_PROCESSING, save=True)
+
+    def set_draft(self):
+        self.refresh_from_db()
+        self.set_state(self.STATE_DRAFT, save=True)
 
     def set_state(self, state, save=False):
         self.state = state

@@ -45,6 +45,7 @@ from risks.models import Event
 from risks.models import EventImportAttributes
 from risks.models import AnalysisClass
 from risks.models import SendaiTarget
+from risks.models import DataProvider, DataProviderMappings
 
 from risks.forms import CreateRiskAnalysisForm
 from risks.forms import ImportDataRiskAnalysisForm
@@ -56,8 +57,12 @@ from risks.const.messages import *
 
 from django.core.management import call_command
 
+from decorators import action_form
+from risks.forms import PostEventPublishForm
+
 admin.site.site_header = 'Risk Data Hub - Administration'
 admin.site.site_url = local_settings.SITEURL
+
 
 class DymensionInfoInline(admin.TabularInline):
     model = DymensionInfo.risks_analysis.through
@@ -355,14 +360,15 @@ class RiskAnalysisImportMetaDataAdmin(admin.ModelAdmin):
 
 class EventAdmin(admin.ModelAdmin):
     model= Event
-    list_display_links = ('event_id',)
-    list_display = ('event_id', 'region', 'iso2', 'nuts3', 'begin_date', 'end_date', 'risks_count',)
-    search_fields = ('event_id',)
-    list_filter = ('region', 'hazard_type', 'iso2', 'year',) 
-    readonly_fields = ('administrative_divisions', 'risk_analysis',)
+    list_display_links = ('id',)
+    list_display = ('id', 'code', 'region', 'iso2', 'nuts3', 'hazard_type', 'begin_date', 'end_date', 'state', 'risks_count',)
+    search_fields = ('code',)
+    list_filter = ('state', 'region', 'hazard_type', 'iso2', 'year',) 
+    readonly_fields = ('administrative_divisions', 'risk_analysis','state',)
     group_fieldsets = True  
     list_select_related = True
-    filter_horizontal = ('related_layers',)       
+    filter_horizontal = ('related_layers',) 
+    actions = ['make_published']      
 
     def get_queryset(self, request):
         qs = super(EventAdmin, self).get_queryset(request).annotate(_risks_count=Count('risk_analysis')).order_by('_risks_count', 'iso2')      
@@ -375,11 +381,42 @@ class EventAdmin(admin.ModelAdmin):
         return False
 
     def risks_count(self, obj):        
-        return obj._risks_count
+        return obj._risks_count    
 
     risks_count.short_description = _("Number of Risk Analysis")
-
     risks_count.admin_order_field = '_risks_count'
+
+    @action_form(PostEventPublishForm)
+    def make_published(self, request, queryset, form):
+        rows_updated = 0
+        if queryset:
+            for event in queryset:
+                code = event.code
+                if not code:
+                    try:
+                        country = AdministrativeDivision.objects.get(code=event.iso2, level=1)
+                    except AdministrativeDivision.DoesNotExist:
+                        #self.message_user(request, 'An error occurred processing the request', level=messages.ERROR)
+                        pass
+                    code, duplicates = Event.generate_code(event.hazard_type, country, event.begin_date, event.region)
+                if event.state != 'ready':
+                    try:
+                        Event.objects.filter(pk=event.pk).update(state='ready', code=str(code))
+                    except:
+                        #self.message_user(request, 'An error occurred processing the request', level=messages.ERROR)
+                        pass
+                    event.refresh_from_db()
+                    rows_updated += 1    
+        '''message_bit = 'No event'
+        if rows_updated:
+            if rows_updated == 1:
+                message_bit = '1 event was'
+            else:
+                message_bit = '%s events were' % rows_updated    
+        self.message_user(request, '%s succesfully marked as ready.' % message_bit)    '''
+        return rows_updated
+            
+    make_published.short_description = 'Publish selected events'
 
 class EventImportDataAdmin(admin.ModelAdmin):
     model = EventImportData
@@ -457,6 +494,15 @@ class SendaiTargetAdmin(admin.ModelAdmin):
     list_display = ('code', 'description',)
     list_display_links = ('code',)
 
+class DataProviderInlineAdmin(admin.StackedInline):
+    model = DataProviderMappings
+    extra = 1
+
+class DataProviderAdmin(admin.ModelAdmin):
+    model = DataProvider
+    list_display = ('name',)
+    list_display_links = ('name',) 
+    inlines = [DataProviderInlineAdmin]       
 
 @admin.register(RiskApp)
 class RiskAppAdmin(admin.ModelAdmin):
@@ -480,6 +526,7 @@ admin.site.register(FurtherResource, FurtherResourceAdmin)
 admin.site.register(Event, EventAdmin)
 admin.site.register(AnalysisClass, AnalysisClassAdmin)
 admin.site.register(SendaiTarget, SendaiTargetAdmin)
+admin.site.register(DataProvider, DataProviderAdmin)
 
 admin.site.register(RiskAnalysisCreate, RiskAnalysisCreateAdmin)
 admin.site.register(RiskAnalysisImportData, RiskAnalysisImportDataAdmin)

@@ -56,10 +56,7 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
             except AnalysisClass.DoesNotExist:
                 return json_response(errors=['Invalid analysis class'], status=404)            
         if cleaned_args['at']:
-            try:       
-                analysis_type = AnalysisType.objects.get(name=kwargs['at'])
-            except AnalysisType.DoesNotExist:
-                return json_response(errors=['Invalid analysis type'], status=404)                                                    
+            analysis_type = AnalysisType.objects.filter(title=kwargs['at'])
 
         while loc is not None:
             ra_matches = RiskAnalysis.objects.filter(region=region, administrative_divisions=loc)                           
@@ -69,7 +66,8 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
                 if analysis_class:
                     ra_matches = ra_matches.filter(analysis_type__analysis_class=analysis_class)
                 if analysis_type:
-                    ra_matches = ra_matches.filter(analysis_type=analysis_type)                
+                    at_ids = analysis_type.values_list('pk', flat=True)
+                    ra_matches = ra_matches.filter(analysis_type__in=at_ids)                
                 ra_matches = ra_matches.exclude(pk__in=ra_ids) 
                 ra_ids += list(ra_matches.values_list('pk', flat=True))
                 lookup_data += self.prepare_data(ra_matches, region, loc)                

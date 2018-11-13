@@ -103,7 +103,7 @@ def import_risk_metadata(filepath, risk_app_name, risk_analysis_name, region_nam
 @shared_task
 def import_event_data(filepath, risk_app_name, region_name, filename_ori, current_user_id):
         out = StringIO.StringIO()        
-        event_ids = None       
+        event_codes = None       
         try:            
             call_command('importriskevents',
                          commit=False,
@@ -111,12 +111,12 @@ def import_event_data(filepath, risk_app_name, region_name, filename_ori, curren
                          region=region_name,
                          excel_file=filepath,                         
                          stdout=out)  
-            event_ids = out.getvalue()                       
+            event_codes = out.getvalue()                       
         except Exception, e:
             report_processing_error(current_user_id, filename_ori, region_name, e)    
             return None
         
-        complete_upload(current_user_id, filename_ori, region_name, event_ids)           
+        complete_upload(current_user_id, filename_ori, region_name, event_codes)           
 
 @shared_task
 def import_event_attributes(filepath, risk_app_name, risk_analysis_name, region_name, allow_null_values, final_name, current_user_id, adm_level_precision):        
