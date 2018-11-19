@@ -169,7 +169,7 @@ class ImportDataEventForm(models.ModelForm):
         region = self.cleaned_data['region']     
         current_user = self.current_user   
         
-        import_event_data.delay(tmp_file, risk_app.name, region.name, final_name, current_user.id)                    
+        import_event_data(tmp_file, risk_app.name, region.name, final_name, current_user.id)                    
         
         return file_xlsx
 

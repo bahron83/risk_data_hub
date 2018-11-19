@@ -257,7 +257,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 e = event.get_event_plain()                
                 e[data_key] = None                
                 try:              
-                    value_arr = values_events[e['event_id']]
+                    value_arr = values_events[str(e['id'])]
                     e[data_key] = round(Decimal(value_arr[3]), DEFAULT_DECIMAL_POINTS)
                 except:                    
                     pass

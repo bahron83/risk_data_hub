@@ -90,6 +90,7 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
         #nuts2_affected_names = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').values_list('name', flat=True).distinct()        
         nuts3_affected_names = nuts3_adm_divs.values_list('name', flat=True)
         return {
+            'id': self.id,
             'code': self.code,
             'hazard_type': self.hazard_type.mnemonic,
             'hazard_title': self.hazard_type.title,

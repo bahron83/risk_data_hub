@@ -115,4 +115,44 @@ class EventHelper(object):
                         first_call = False
             self.insert_aggregate_values()
 
+    def sync_geodb(self, queryset):
+        db = DbUtils()
+        conn = db.get_db_conn()        
+        rows_updated = 0
+        if queryset:
+            try:
+                for event in queryset:                
+                    code = event.code
+                    if not code:
+                        try:
+                            country = AdministrativeDivision.objects.get(code=event.iso2, level=1)
+                        except AdministrativeDivision.DoesNotExist:                        
+                            pass
+                        code, duplicates = Event.generate_code(event.hazard_type, country, event.begin_date, event.region)
+                    if event.state != 'ready':
+                        try:
+                            Event.objects.filter(pk=event.pk).update(state='ready', code=str(code))
+                        except:                        
+                            pass
+                        event.refresh_from_db()
+                        event_dict = {
+                            'event_id': event.id,
+                            'begin_date': event.begin_date,
+                            'end_date': event.end_date,
+                            'state': event.state
+                        }
+                        db.insert_event(conn, event_dict)                        
+                        rows_updated += 1
+                conn.commit()
+            except Exception, e:
+                try:
+                    conn.rollback()
+                except:
+                    pass
 
+                #traceback.print_exc()
+                raise CommandError(e)
+            finally:
+                conn.close()
+        
+        return rows_updated

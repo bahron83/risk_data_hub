@@ -59,6 +59,7 @@ from django.core.management import call_command
 
 from decorators import action_form
 from risks.forms import PostEventPublishForm
+from risks.helpers.event import EventHelper
 
 admin.site.site_header = 'Risk Data Hub - Administration'
 admin.site.site_url = local_settings.SITEURL
@@ -388,33 +389,8 @@ class EventAdmin(admin.ModelAdmin):
 
     @action_form(PostEventPublishForm)
     def make_published(self, request, queryset, form):
-        rows_updated = 0
-        if queryset:
-            for event in queryset:
-                code = event.code
-                if not code:
-                    try:
-                        country = AdministrativeDivision.objects.get(code=event.iso2, level=1)
-                    except AdministrativeDivision.DoesNotExist:
-                        #self.message_user(request, 'An error occurred processing the request', level=messages.ERROR)
-                        pass
-                    code, duplicates = Event.generate_code(event.hazard_type, country, event.begin_date, event.region)
-                if event.state != 'ready':
-                    try:
-                        Event.objects.filter(pk=event.pk).update(state='ready', code=str(code))
-                    except:
-                        #self.message_user(request, 'An error occurred processing the request', level=messages.ERROR)
-                        pass
-                    event.refresh_from_db()
-                    rows_updated += 1    
-        '''message_bit = 'No event'
-        if rows_updated:
-            if rows_updated == 1:
-                message_bit = '1 event was'
-            else:
-                message_bit = '%s events were' % rows_updated    
-        self.message_user(request, '%s succesfully marked as ready.' % message_bit)    '''
-        return rows_updated
+        eh = EventHelper()        
+        return eh.sync_geodb(queryset)
             
     make_published.short_description = 'Publish selected events'
 

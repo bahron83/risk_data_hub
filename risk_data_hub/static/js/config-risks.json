@@ -8,16 +8,15 @@
       -90, -180,
       90, 180
     ],
-    "layers": [
+    "layers": [      
       {
         "type": "osm",
         "title": "Open Street Map",
-        "name": "mapnik",
+        "name": "France",
         "source": "osm",
         "group": "background",
         "visibility": true
       },
-      
       {
         "type": "vector",
         "queryable": false,
