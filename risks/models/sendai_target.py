@@ -1,19 +1,18 @@
 from django.db import models
-from risks.models import Exportable
 
 
-class SendaiTarget(Exportable, models.Model):
-    """
-    Defines indicators used by Sendai Framework for Disaster Risk Reduction - UNISDR
-    """
-    EXPORT_FIELDS = (('id', 'id',),
-                     ('code', 'code',),
-                     ('description', 'description',),                     
-                     )
-    
+class SendaiTarget(models.Model):
     id = models.AutoField(primary_key=True)
-    code = models.CharField(max_length=10, db_index=True)
-    description = models.CharField(max_length=255, blank=True, null=True)
+    name = models.CharField(max_length=100, null=False, blank=False,
+                            db_index=True)
+    description = models.TextField(default='', null=True, blank=False)    
+
+class SendaiIndicator(models.Model):
+    id = models.AutoField(primary_key=True)
+    sendai_target = models.ForeignKey(SendaiTarget)
+    name = models.CharField(max_length=100, null=False, blank=False,
+                            db_index=True)
+    description = models.TextField(default='', null=True, blank=False)  
 
     def __unicode__(self):
-        return u"{0}".format(self.code)
+        return u"{0}".format(self.name)  

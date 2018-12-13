@@ -68,14 +68,12 @@ class DbUtils:
         insert_template = """INSERT INTO events (
                                 event_id,
                                 begin_date,
-                                end_date,
-                                state)
+                                end_date)
                             SELECT '{event_id}',
                                     '{begin_date}',
-                                    '{end_date}',
-                                    '{state}'
+                                    '{end_date}'
                             ON CONFLICT (event_id) DO UPDATE
-                            SET begin_date = '{begin_date}', end_date = '{end_date}', state = '{state}'"""
+                            SET begin_date = '{begin_date}', end_date = '{end_date}'"""
         
         curs.execute(insert_template.format(**values))
     

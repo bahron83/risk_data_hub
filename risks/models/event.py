@@ -1,114 +1,149 @@
-import re
-from datetime import timedelta
+import datetime
 from django.db import models
-from geonode.layers.models import Layer
-from risks.models import (HazardType, Region, AdministrativeDivision, RiskAnalysis, RiskApp,
-                            RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulable,
-                            AdministrativeDivisionMappings)
-from risks.models.base import rfs
+from django.contrib.postgres.indexes import GinIndex
+from risks.models.risk_app import RiskAppAware
+from risks.models.entity import LocationAware, HazardTypeAware, Exportable, Schedulable
+from risks.models import (EntityAbstract, AttributeValueVarchar, AttributeValueText,
+                                AttributeValueInt, AttributeValueDecimal, AttributeValueDate)
+from risks.models.eav_attribute import entity_types
+from risks.models.location import levels
 
 
-class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulable, models.Model):
-    EXPORT_FIELDS = (('code', 'code',),                     
-                     ('href', 'href',),)    
+DEFAULT_ENTITY_TYPE = 'event'
 
+'''class EventAttributeValueVarchar(AttributeValueVarchar):    
+    event = models.ForeignKey('Event')    
+
+class EventAttributeValueText(AttributeValueText):    
+    event = models.ForeignKey('Event')    
+
+class EventAttributeValueInt(AttributeValueInt):    
+    event = models.ForeignKey('Event')    
+
+class EventAttributeValueDecimal(AttributeValueDecimal):    
+    event = models.ForeignKey('Event')    
+
+class EventAttributeValueDate(AttributeValueDate):    
+    event = models.ForeignKey('Event')'''   
+
+class Phenomenon(models.Model):
     id = models.AutoField(primary_key=True)
-    #event_id = models.CharField(max_length=25, db_index=True, blank=True, null=True)
-    code = models.CharField(max_length=25, db_index=True, blank=True, null=True)
-    
-    hazard_type = models.ForeignKey(
-        HazardType,
-        blank=False,
-        null=False,
-        unique=False,        
-    )
-    
-    region = models.ForeignKey(
-        Region,
-        related_name='events',
-        blank=False,
-        null=False,
-        unique=False,        
-    )
+    event = models.ForeignKey('Event')
+    administrative_division = models.ForeignKey('AdministrativeDivision')
+    begin_date = models.DateField() 
+    end_date = models.DateField()          
 
-    iso2 = models.CharField(max_length=10)
-    nuts3 = models.CharField(max_length=255, null=True)
-    begin_date = models.DateField()
-    end_date = models.DateField()
-    #loss_currency = models.CharField(max_length=3)
-    #loss_amount = models.DecimalField(max_digits=20, decimal_places=6, null=True)
-    year = models.IntegerField()
-    #loss_mln = models.DecimalField(max_digits=20, decimal_places=6, null=True)
-    event_type = models.CharField(max_length=50)
-    event_source = models.CharField(max_length=255)
-    #area_affected = models.DecimalField(max_digits=20, decimal_places=6, null=True)
-    #fatalities = models.CharField(max_length=10, null=True)
-    #people_affected = models.IntegerField()
-    cause = models.CharField(max_length=255)
-    notes = models.TextField(null=True, blank=True)
-    sources = models.CharField(max_length=255)
+    class Meta:
+        verbose_name_plural = 'Phenomena'
 
-    administrative_divisions = models.ManyToManyField(
+    def __unicode__(self):
+        return u"id: {0} - date: {1} - location: {2}".format(self.event.code, self.begin_date, self.administrative_division.code)
+
+class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulable):                
+    id = models.AutoField(primary_key=True)    
+    entity_type = models.CharField(max_length=20, null=False, choices=entity_types, default=DEFAULT_ENTITY_TYPE)        
+    code = models.CharField(max_length=25, null=True, blank=True, db_index=True)    
+    year = models.IntegerField(db_index=True, null=True, blank=True)
+    begin_date = models.DateField(null=True, blank=True)       
+    end_date = models.DateField(null=True, blank=True)    
+    
+    country = models.ForeignKey(
         'AdministrativeDivision',
-        through='EventAdministrativeDivisionAssociation',
-        related_name='event_adm',
+        blank=True,
+        null=True,
+        unique=False,        
     )
-
-    further_administrative_divisions = models.ManyToManyField(
-        'AdministrativeDivisionMappings',
-        through='EventFurtherAdministrativeDivisionAssociation',
-        related_name='event_further_adm',
+    hazard_type = models.ForeignKey(
+        'Hazard',
+        blank=True,
+        null=True,
+        unique=False,        
     )
+    region = models.ForeignKey(
+        'Region',
+        blank=True,
+        null=True,
+        unique=False,        
+    )    
 
-    '''layers = models.ManyToManyField(
-        "Layer",
-        through='EventLayerAssociation',
-        related_name='event_layer',
-    )'''
-    related_layers = models.ManyToManyField(Layer, blank=True)  
-
-    risk_analysis = models.ManyToManyField(
-        'RiskAnalysis',
-        through='EventRiskAnalysisAssociation'        
-    )     
-    
     class Meta:
         """
-        """
-        #ordering = ['iso2']
-        db_table = 'risks_event'
+        """        
+        db_table = 'risks_event' 
+        indexes = [
+            GinIndex(
+                fields=['details'],
+                name='event_detail_gin',
+            ),
+        ]         
 
     def __unicode__(self):
         return u"Event ID {0}".format(self.id)    
+
+    def get_phenomena(self):
+        return Phenomenon.objects.filter(event=self)
+
+    def sync_details_field(self):
+        details = {}
+        if self.details:
+            details = dict(self.details)
+        for attr in self.get_attributes():            
+            if attr.name not in details.keys():
+                details[attr.name] = ''
+        Event.objects.filter(pk=self.id).update(details=details)
+
+    @staticmethod
+    def get_fields_basic():
+        return ['entity_type','code','year','begin_date','end_date','country','hazard_type','region']  
     
-    def get_event_plain(self):
-        #nuts3_adm_divs = AdministrativeDivision.objects.filter(level=2, code__in=self.nuts3.split(';'))
-        nuts3_adm_divs = self.administrative_divisions.filter(level=2)
-        nuts3_ids = nuts3_adm_divs.values_list('id', flat=True)        
-        #nuts2_adm_divs = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').distinct()        
-        nuts2_adm_divs = self.further_administrative_divisions
-        #nuts2_affected_names = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('name').values_list('name', flat=True).distinct()        
-        nuts3_affected_names = nuts3_adm_divs.values_list('name', flat=True)
-        return {
+    def custom_export(self):
+        phenomena = self.get_phenomena()
+        nuts2_adm_divs = [p.administrative_division for p in phenomena if p.administrative_division.level==levels.index('nuts2')]                
+        nuts3_adm_divs = [p.administrative_division for p in phenomena if p.administrative_division.level==levels.index('nuts3')]
+        if not nuts2_adm_divs:
+            if nuts3_adm_divs:
+                nuts2_adm_divs = list(set([adm.parent for adm in nuts3_adm_divs]))
+
+        atts_varchar = EventAttributeValueVarchar.objects.filter(event=self)
+        atts_text = EventAttributeValueText.objects.filter(event=self)
+        atts_int = EventAttributeValueInt.objects.filter(event=self)
+        atts_decimal = EventAttributeValueDecimal.objects.filter(event=self)
+        atts_date = EventAttributeValueDate.objects.filter(event=self)
+
+        obj = {
             'id': self.id,
             'code': self.code,
             'hazard_type': self.hazard_type.mnemonic,
             'hazard_title': self.hazard_type.title,
             'region': self.region.name,
-            'iso2': self.iso2,
-            'nuts2': ', '.join(nuts2_adm_divs.values_list('code', flat=True)),
-            'nuts2_names': ', '.join(nuts2_adm_divs.values_list('name', flat=True)),
-            'nuts3': self.nuts3,
-            'nuts3_names': ', '.join(nuts3_affected_names),
+            'iso2': self.country.code,
+            'nuts2': ', '.join([adm.code for adm in nuts2_adm_divs]),
+            'nuts2_names': ', '.join([adm.name for adm in nuts2_adm_divs]),
+            'nuts3': ', '.join([adm.code for adm in nuts3_adm_divs]),
+            'nuts3_names': ', '.join([adm.name for adm in nuts3_adm_divs]),
             'begin_date': self.begin_date,
             'end_date': self.end_date,
-            'year': self.year,
-            'event_type': self.event_type,
-            'event_source': self.event_source,            
-            'cause': self.cause,
-            'notes': self.notes,
-            'sources': self.sources
+            'year': self.begin_date.year            
         }
+
+        if atts_varchar:
+            for a in atts_varchar:
+                obj[a.code] = a.value
+        if atts_text:
+            for a in atts_text:
+                obj[a.code] = a.value
+        if atts_int:
+            for a in atts_int:
+                obj[a.code] = a.value
+        if atts_decimal:
+            for a in atts_decimal:
+                obj[a.code] = a.value
+        if atts_date:
+            for a in atts_date:
+                obj[a.code] = a.value
+        
+        return obj
+        
 
     def href(self):
         reg = self.get_region()
@@ -136,9 +171,9 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
     def find_matches(obj):
         if obj['region'] and obj['hazard_type']:
             matches = Event.objects.filter(region=obj['region'], hazard_type=obj['hazard_type'])
-            if 'iso2' in obj:
-                matches = matches.filter(iso2=obj['iso2'])
-            if 'year' in obj:
+            if 'country' in obj:                                
+                matches = matches.filter(country=obj['country'])
+            if 'year' in obj:                
                 matches = matches.filter(year=obj['year'])
             if 'begin_date' in obj:
                 lt_date = obj['begin_date'] + timedelta(days=7)
@@ -147,32 +182,38 @@ class Event(RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulabl
             if 'sources' in obj:
                 matches = matches.filter(sources=obj['sources'])
             return matches
-        return None
+        return None     
 
-class EventImportData(models.Model):
-    data_file = models.FileField(upload_to='data_files', storage=rfs, max_length=255)
+    def get_attributes_saved(self):
+        attributes_saved = []
+        attributes_saved += EventAttributeValueVarchar.objects.filter(event=self)
+        attributes_saved += EventAttributeValueText.objects.filter(event=self)
+        attributes_saved += EventAttributeValueInt.objects.filter(event=self)
+        attributes_saved += EventAttributeValueDecimal.objects.filter(event=self)
+        attributes_saved += EventAttributeValueDate.objects.filter(event=self)
+        return attributes_saved
+    
+    def get_extra_inline(self, data_type = None):
+        attributes_saved = self.get_attributes_saved()
+        return len(Event.get_attributes(data_type)) - len(attributes_saved)
+
+class EventImport(models.Model):
+    data_file = models.FileField(upload_to='data_files', max_length=255)
 
     # Relationships
     riskapp = models.ForeignKey(
-        RiskApp,
+        'RiskApp',
         blank=False,
         null=False,
         unique=False,
     )
 
     region = models.ForeignKey(
-        Region,
+        'Region',
         blank=False,
         null=False,
         unique=False,
-    )
-
-    '''hazardtype = models.ForeignKey(
-        HazardType,
-        blank=False,
-        null=False,
-        unique=False,
-    )'''
+    )    
 
     def file_link(self):
         if self.data_file:
@@ -196,27 +237,26 @@ class EventImportData(models.Model):
     def __unicode__(self):
         return u"{0}".format(self.data_file.name)
 
-
-class EventImportAttributes(models.Model):
-    data_file = models.FileField(upload_to='data_files', storage=rfs, max_length=255)
+class EventImportDamage(models.Model):
+    data_file = models.FileField(upload_to='data_files', max_length=255)
 
     # Relationships
     riskapp = models.ForeignKey(
-        RiskApp,
+        'RiskApp',
         blank=False,
         null=False,
         unique=False,
     )
 
     region = models.ForeignKey(
-        Region,
+        'Region',
         blank=False,
         null=False,
         unique=False,
     )
 
-    riskanalysis = models.ForeignKey(
-        RiskAnalysis,
+    damage_assessment = models.ForeignKey(
+        'DamageAssessment',
         blank=False,
         null=False,
         unique=False,
@@ -242,88 +282,10 @@ class EventImportAttributes(models.Model):
     class Meta:
         """
         """
-        ordering = ['riskapp', 'region', 'riskanalysis', 'adm_level_precision']
-        db_table = 'risks_attribute_event_files'
-        verbose_name = 'Risks Analysis: Import Events Data (Attributes) from XLSX file'
-        verbose_name_plural = 'Risks Analysis: Import Events Data (Atributes) from XLSX file'      
+        ordering = ['riskapp', 'region', 'damage_assessment', 'adm_level_precision']
+        db_table = 'risks_event_damage_files'
+        verbose_name = 'Damage Assessment: Import Events Data (Attributes) from XLSX file'
+        verbose_name_plural = 'Damage Assessment: Import Events Data (Atributes) from XLSX file'      
 
     def __unicode__(self):
         return u"{0}".format(self.data_file.name)
-
-
-###RELATIONS###
-class EventAdministrativeDivisionAssociation(models.Model):
-    id = models.AutoField(primary_key=True)
-    
-    #Relationships
-    event = models.ForeignKey(
-        Event,        
-        on_delete=models.CASCADE,
-        blank=False,
-        null=False
-    )    
-    adm = models.ForeignKey(
-        AdministrativeDivision,        
-        on_delete=models.CASCADE,
-        blank=False,
-        null=False
-    )          
-
-    def __unicode__(self):
-        return u"{0} - {1}".format(str(self.event.id), self.adm.name)
-
-    class Meta:
-        """
-        """
-        db_table = 'risks_eventadministrativedivisionassociation'
-
-class EventFurtherAdministrativeDivisionAssociation(models.Model):
-    id = models.AutoField(primary_key=True)
-    
-    #Relationships
-    event = models.ForeignKey(
-        Event,        
-        on_delete=models.CASCADE,
-        blank=False,
-        null=False
-    )    
-    f_adm = models.ForeignKey(
-        AdministrativeDivisionMappings,        
-        on_delete=models.CASCADE,
-        blank=False,
-        null=False
-    )          
-
-    def __unicode__(self):
-        return u"{0}".format(str(self.event.id) + " - " +
-                             self.f_adm.name)
-
-    class Meta:
-        """
-        """
-        db_table = 'risks_eventfurtheradministrativedivisionassociation'    
-
-class EventRiskAnalysisAssociation(models.Model):
-    id = models.AutoField(primary_key=True)
-        
-    event = models.ForeignKey(
-        Event,        
-        on_delete=models.CASCADE,
-        blank=False,
-        null=False
-    )    
-    risk = models.ForeignKey(
-        RiskAnalysis,        
-        on_delete=models.CASCADE,
-        blank=False,
-        null=False
-    )          
-
-    def __unicode__(self):
-        return u"{0}".format(str(self.event.id) + " - " +
-                             self.risk.name)
-
-    class Meta:
-        """
-        """
-        db_table = 'risks_eventriskanalysisassociation'

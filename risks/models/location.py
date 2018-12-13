@@ -1,9 +1,12 @@
 from django.db import models
+from django.contrib.gis.db import models as gismodels
 from mptt.models import MPTTModel, TreeForeignKey
-from risks.models import RiskAppAware, LocationAware, Exportable, AdministrativeData
+from risks.models import RiskAppAware, LocationAware, Exportable
 
 
-   
+location_types = (('fiexd_asset', 'fixed_asset'), ('non_fixed_asset', 'non_fixed_asset'), ('people', 'people'), ('damage', 'damage'),)
+levels = ['continent', 'country', 'nuts2', 'nuts3', 'municipality']
+
 class AdministrativeDivisionManager(models.Manager):
     """
     """
@@ -12,49 +15,23 @@ class AdministrativeDivisionManager(models.Manager):
 
 
 class AdministrativeDivision(RiskAppAware, LocationAware, Exportable, MPTTModel):
-    """
-    Administrative Division Gaul dataset.
-    """
-
     EXPORT_FIELDS = (('label', 'name',),
                      ('href', 'href',),
                      ('geom', 'geom_href',),
                      ('parent_geom', 'parent_geom_href',),
                      )
+    
     id = models.AutoField(primary_key=True)
     code = models.CharField(max_length=30, null=False, unique=True,
                             db_index=True)
     name = models.CharField(max_length=100, null=False, blank=False,
                             db_index=True)
     # GeoDjango-specific: a geometry field (MultiPolygonField)
-    # geom = gismodels.MultiPolygonField() - does not work w/ default db
-    geom = models.TextField()  # As WKT
-    srid = models.IntegerField(default=4326)
-
+    geom = gismodels.MultiPolygonField(srid=4326)
     level = models.IntegerField()
     # Relationships
     parent = TreeForeignKey('self', null=True, blank=True,
                             related_name='children')
-    
-    regions = models.ManyToManyField(
-        'Region',
-        through='RegionAdministrativeDivisionAssociation'        
-    )
-
-    risks_analysis = models.ManyToManyField(
-        'RiskAnalysis',
-        through='RiskAnalysisAdministrativeDivisionAssociation'
-    )
-
-    event = models.ManyToManyField(
-        'Event',
-        through='EventAdministrativeDivisionAssociation'
-    )
-
-    administrative_data = models.ManyToManyField(
-        'AdministrativeData',
-        through='AdministrativeDivisionDataAssociation'        
-    )
 
     @property
     def href(self):
@@ -96,42 +73,20 @@ class AdministrativeDivision(RiskAppAware, LocationAware, Exportable, MPTTModel)
         out.reverse()
         return out
 
-
-class AdministrativeDivisionMappings(models.Model):
-    id = models.AutoField(primary_key=True)    
-    code = models.CharField(max_length=50)
-    name = models.CharField(max_length=100)
-    parent = models.ForeignKey(AdministrativeDivision, related_name='mapping_child')
-    child = models.ForeignKey(AdministrativeDivision, related_name='mapping_parent')
-
-
-###RELATIONS###
-class AdministrativeDivisionDataAssociation(models.Model):
+class Location(models.Model):
     id = models.AutoField(primary_key=True)
-    dimension = models.CharField(max_length=50, db_index=True)
-    value = models.CharField(max_length=50, blank=True, null=True)    
-
-    #Relationships
-    data = models.ForeignKey(
-        AdministrativeData,  
-        related_name='administrativedivision_association',
-        on_delete=models.CASCADE,
-        blank=False,
-        null=False
-    )    
-    adm = models.ForeignKey(
-        AdministrativeDivision,        
-        related_name='data_association',
-        on_delete=models.CASCADE,
-        blank=False,
-        null=False
-    )          
+    location_type = models.CharField(max_length=50, choices=location_types)
+    address = models.CharField(max_length=100)    
+    lat = models.CharField(max_length=100)
+    lon = models.CharField(max_length=100)
+    additional_info = models.TextField(blank=True, null=True)
+    administrative_division = models.ForeignKey('AdministrativeDivision', blank=True, null=True)
 
     def __unicode__(self):
-        return u"{0}".format(self.data.name + " - " +
-                             self.adm.name)
+        return u"type: {0} - adm_unit: {1} - lat: {2} - lon: {3}".format(self.location_type, self.administrative_division, self.lat, self.lon)
 
     class Meta:
         """
         """
-        db_table = 'risks_administrativedivisiondataassociation'
+        unique_together = ("lat", "lon", "administrative_division")
+        

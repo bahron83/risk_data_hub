@@ -7,20 +7,20 @@ from celery import shared_task
 from django.conf import settings
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
-from risks.models import Region, RiskAnalysis, HazardSet, HazardType
+from risks.models import Region, DamageAssessment, HazardSet, Hazard
 from risks.signals import complete_upload, report_processing_error
 
 
 @shared_task
-def create_risk_analysis(input_file, final_name, current_user_id):
+def create_damage_assessment(input_file, final_name, current_user_id):
     out = StringIO.StringIO()
-    risk = None
+    da = None
     try:
-        call_command('createriskanalysis',
+        call_command('create_da',
                      descriptor_file=str(input_file).strip(), current_user=current_user_id, stdout=out)
         value = out.getvalue()
 
-        risk = RiskAnalysis.objects.get(name=str(value).strip())
+        da = DamageAssessment.objects.get(name=str(value).strip())
         print('risk found: {}'.format(risk.name))
         '''try:
             with transaction.atomic():
@@ -28,76 +28,76 @@ def create_risk_analysis(input_file, final_name, current_user_id):
                 risk.save()            
         except IntegrityError:            
 	        pass'''
-        risk.descriptor_file = final_name
-        risk.save()
+        da.descriptor_file = final_name
+        da.save()
 
     except Exception, e:
         value = None
-        if risk is not None:
-            risk.set_error()
+        if da is not None:
+            da.set_error()
         error_message = "Sorry, the input file is not valid: {}".format(e)
         raise ValueError(error_message)
 
 @shared_task
-def import_risk_data(filepath, risk_app_name, risk_analysis_name, region_name, final_name, current_user_id):
+def import_damage_assessment_data(filepath, risk_app_name, damage_assessment_name, region_name, final_name, current_user_id):
         try:
-            risk_analysis = RiskAnalysis.objects.get(name=risk_analysis_name)
-        except RiskAnalysis.DoesNotExist:
-            raise ValueError("Risk Analysis not found")
-        risk_analysis.set_queued()
+            da = DamageAssessment.objects.get(name=damage_assessment_name)
+        except DamageAssessment.DoesNotExist:
+            raise ValueError("Damage Assessment not found")
+        da.set_queued()
         out = StringIO.StringIO()         
         try:            
-            risk_analysis.set_processing()            
-            call_command('importriskdata',
+            da.set_processing()            
+            call_command('import_da_data',
                          commit=False,
                          risk_app=risk_app_name,
                          region=region_name,
                          excel_file=filepath,
-                         risk_analysis=risk_analysis_name,   
+                         damage_assessment=damage_assessment_name,   
                          stdout=out)            
         except Exception, e:            
-            risk_analysis.save()
-            risk_analysis.set_error()
+            da.save()
+            da.set_error()
             report_processing_error(current_user_id, final_name, region_name, e)    
             return None
 
-        risk_analysis.refresh_from_db()
-        risk_analysis.data_file = final_name
-        risk_analysis.save()
-        risk_analysis.set_ready()
+        da.refresh_from_db()
+        da.data_file = final_name
+        da.save()
+        da.set_ready()
         complete_upload(current_user_id, final_name, region_name)
 
 @shared_task
-def import_risk_metadata(filepath, risk_app_name, risk_analysis_name, region_name, final_name):        
+def import_damage_assessment_metadata(filepath, risk_app_name, damage_assessment_name, region_name, final_name):        
         try:
-            risk_analysis = RiskAnalysis.objects.get(name=risk_analysis_name)
-        except RiskAnalysis.DoesNotExist:
-            raise ValueError("Risk Analysis not found")
-        risk_analysis.set_queued()
+            da = DamageAssessment.objects.get(name=damage_assessment_name)
+        except DamageAssessment.DoesNotExist:
+            raise ValueError("Damage Assessment not found")
+        da.set_queued()
         out = StringIO.StringIO()
         try:            
-            risk_analysis.set_processing()
-            call_command('importriskmetadata',
+            da.set_processing()
+            call_command('import_da_metadata',
                          commit=False,
                          risk_app=risk_app_name,
                          region=region_name,
                          excel_file=filepath,
-                         risk_analysis=risk_analysis_name,
+                         damage_assessment=damage_assessment_name,
                          stdout=out)            
-            risk_analysis.refresh_from_db()
-            risk_analysis.metadata_file = final_name
-            hazardsets = HazardSet.objects.filter(riskanalysis__name=risk_analysis_name,
+            da.refresh_from_db()
+            da.metadata_file = final_name
+            hazardsets = HazardSet.objects.filter(damage_assessment__name=damage_assessment_name,
                                                   country__name=region_name)
             if len(hazardsets) > 0:
                 hazardset = hazardsets[0]
-                risk_analysis.hazardset = hazardset
+                da.hazardset = hazardset
 
-            risk_analysis.save()
-            risk_analysis.set_ready()
+            da.save()
+            da.set_ready()
         except Exception, e:
             error_message = "Sorry, the input file is not valid: {}".format(e)
-            if risk_analysis is not None:
-                risk_analysis.set_error()
+            if da is not None:
+                da.set_error()
             raise ValueError(error_message)
 
 @shared_task
@@ -105,7 +105,7 @@ def import_event_data(filepath, risk_app_name, region_name, filename_ori, curren
         out = StringIO.StringIO()        
         event_codes = None       
         try:            
-            call_command('importriskevents',
+            call_command('import_events',
                          commit=False,
                          risk_app=risk_app_name,
                          region=region_name,
@@ -119,40 +119,39 @@ def import_event_data(filepath, risk_app_name, region_name, filename_ori, curren
         complete_upload(current_user_id, filename_ori, region_name, event_codes)           
 
 @shared_task
-def import_event_attributes(filepath, risk_app_name, risk_analysis_name, region_name, allow_null_values, final_name, current_user_id, adm_level_precision):        
+def import_event_attributes(filepath, risk_app_name, damage_assessment_name, region_name, allow_null_values, final_name, current_user_id, adm_level_precision):        
         try:
-            risk_analysis = RiskAnalysis.objects.get(name=risk_analysis_name)
-        except RiskAnalysis.DoesNotExist:
-            raise ValueError("Risk Analysis not found")
+            da = DamageAssessment.objects.get(name=damage_assessment_name)
+        except DamageAssessment.DoesNotExist:
+            raise ValueError("Damage Assessment not found")
         try:
             region = Region.objects.get(name=region_name)
         except Region.DoesNotExist:
             raise ValueError("Region not found")
-        risk_analysis.set_queued()      
+        da.set_queued()      
         out = StringIO.StringIO()          
         try:  
-            risk_analysis.set_processing()          
+            da.set_processing()          
             call_command('import_event_attributes',
                          commit=False,
                          risk_app=risk_app_name,                         
                          region=region_name,
                          allow_null_values=allow_null_values,
                          excel_file=filepath,
-                         risk_analysis=risk_analysis_name,
+                         damage_assessment=damage_assessment_name,
                          adm_level_precision=adm_level_precision, 
                          stdout=out)            
         except Exception, e:    
-            risk_analysis.save()
-            risk_analysis.set_error()        
+            da.save()
+            da.set_error()        
             report_processing_error(current_user_id, final_name, region_name, e)    
             return None
 
-        risk_analysis.refresh_from_db()
-        risk_analysis.region=region
-        risk_analysis.data_file = final_name
-        risk_analysis.save()
-        risk_analysis.set_ready()            
+        da.refresh_from_db()
+        da.region=region
+        da.data_file = final_name
+        da.save()
+        da.set_ready()            
         complete_upload(current_user_id, final_name, region_name)             
 
         
-

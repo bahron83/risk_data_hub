@@ -4,9 +4,9 @@ from geonode.utils import json_response
 from risks.views.base import FeaturesSource
 from risks.views.hazard_type import HazardTypeView
 from risks.views.data_extraction import DataExtractionView
-from risks.models import (Event, RiskAnalysis, AnalysisType, AdministrativeDivision, 
-                            AdministrativeDivisionMappings, AdministrativeData,
-                            AdministrativeDivisionDataAssociation)
+from risks.models import (Event, DamageAssessment, AnalysisType, AdministrativeDivision, 
+                            AdministrativeData, AdministrativeDataValue)
+from risks.models.location import levels
 
 class EventView(FeaturesSource, HazardTypeView):
     def get_events(self, **kwargs):        
@@ -25,8 +25,8 @@ class EventView(FeaturesSource, HazardTypeView):
 
         #hazard_type = self.get_hazard_type(loc, **kwargs)
         try:
-            risk_analysis = RiskAnalysis.objects.get(id=kwargs['an'])
-        except RiskAnalysis.DoesNotExist:
+            risk_analysis = DamageAssessment.objects.get(id=kwargs['an'])
+        except DamageAssessment.DoesNotExist:
             return json_response(errors=['Invalid risk analysis'], status=404)
 
         events = self.get_events(**kwargs)
@@ -91,14 +91,14 @@ class EventView(FeaturesSource, HazardTypeView):
 class EventDetailsView(DataExtractionView):
     def get_risk_analysis(self, **kwargs):
         try:
-            return RiskAnalysis.objects.get(id=kwargs['an'])
-        except RiskAnalysis.DoesNotExist:
+            return DamageAssessment.objects.get(id=kwargs['an'])
+        except DamageAssessment.DoesNotExist:
             pass
 
     def get_risk_analysis_group(self, hazard_type, **kwargs):
         ref_ra = self.get_risk_analysis(**kwargs)        
         analysis_types = AnalysisType.objects.filter(analysis_class=ref_ra.analysis_type.analysis_class)
-        return RiskAnalysis.objects.filter(region=ref_ra.region, hazard_type=hazard_type, analysis_type__in=analysis_types)
+        return DamageAssessment.objects.filter(region=ref_ra.region, hazard_type=hazard_type, analysis_type__in=analysis_types)
 
     def get_event(self, **kwargs):
         try:
@@ -109,9 +109,9 @@ class EventDetailsView(DataExtractionView):
     def get_related_ra(self, hazard_type, dym_values, analysis_type, event):        
         #if 'TOTAL' not in [d.upper() for d in dym_values]:
         #    dym_value.append('total')
-        ra = RiskAnalysis.objects.filter(
+        ra = DamageAssessment.objects.filter(
             hazard_type=hazard_type,
-            dymensioninfo_associacion__value__upper__in=dym_values,
+            damagetype_association__value__upper__in=dym_values,
             analysis_type=analysis_type,
             show_in_event_details=True)
         if event.event_type:
@@ -137,15 +137,14 @@ class EventDetailsView(DataExtractionView):
                 return
     
     def get(self, request, *args, **kwargs):        
-        event = self.get_event(**kwargs)
-        #location = self.get_location_exact(event.iso2)
+        event = self.get_event(**kwargs)                
         #retrieve data about nuts2 which are not in AdministrativeDivision models 
-        nuts3_adm_divs = AdministrativeDivision.objects.filter(level=2, code__in=event.nuts3.split(';'))
+        '''nuts3_adm_divs = AdministrativeDivision.objects.filter(level=2, code__in=event.nuts3.split(';'))
         nuts3_ids = nuts3_adm_divs.values_list('id', flat=True)                   
         nuts2_codes = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('code').values_list('code', flat=True).distinct()
-        nuts3_in_nuts2 = list(AdministrativeDivisionMappings.objects.filter(code__in=nuts2_codes).values_list('child__code', flat=True))
-        #locations = self.get_location_range(event.nuts3.split(';') + [event.iso2])
-        locations = self.get_location_range(nuts3_in_nuts2 + [event.iso2])
+        nuts3_in_nuts2 = list(AdministrativeDivisionMappings.objects.filter(code__in=nuts2_codes).values_list('child__code', flat=True))        
+        locations = self.get_location_range(nuts3_in_nuts2 + [event.iso2])'''
+        locations = list(set([p.administrative_division for p in event.get_phenomena()]))        
         hazard_type = self.get_hazard_type(event.region, locations[0], **kwargs)
         risk_analysis = self.get_risk_analysis(**kwargs)
         an_group = self.get_risk_analysis_group(hazard_type, **kwargs)        
@@ -157,10 +156,10 @@ class EventDetailsView(DataExtractionView):
             administrative_data = {}            
             risk_analysis_mapping = {}
             adm_data_entries = AdministrativeData.objects.all()
-            location_adm_data = AdministrativeDivisionDataAssociation.objects.filter(adm__in=locations)            
+            location_adm_data = AdministrativeDataValue.objects.filter(adm__in=locations)            
             
             for adm_data_entry in adm_data_entries:                 
-                ra_match = RiskAnalysis.objects.filter(hazard_type=hazard_type, region=risk_analysis.region, analysis_type__name__contains=adm_data_entry.indicator_type).first()
+                ra_match = DamageAssessment.objects.filter(hazard_type=hazard_type, region=risk_analysis.region, analysis_type__name__contains=adm_data_entry.indicator_type).first()
                 if ra_match:
                     risk_analysis_mapping[adm_data_entry.name] = ra_match.analysis_type.name
                 administrative_data[adm_data_entry.name] = {
@@ -192,7 +191,7 @@ class EventDetailsView(DataExtractionView):
                 feat_kwargs = self.url_kwargs_to_query_params(**adjusted_kwargs)
                 features = self.get_features_base('geonode:risk_analysis_event_details', None, **feat_kwargs)                
                 dymlist = an_event.dymension_infos.all().distinct()
-                dimension = dymlist.filter(riskanalysis_associacion__axis=self.AXIS_X).distinct().get()                
+                dimension = dymlist.filter(damageassessment_association__axis=self.AXIS_X).distinct().get()                
                 an_event_values = self.reformat_features(an_event, dimension, dymlist, features['features'], True)  
                 data['{}'.format(an_event.analysis_type.name)] = an_event_values
                 data['{}'.format(an_event.analysis_type.name)]['riskAnalysis'] = an_event.get_risk_details()
@@ -214,7 +213,7 @@ class EventDetailsView(DataExtractionView):
                     if kwargs.get('dym'):
                         dimension = dymlist.get(id=kwargs['dym'])
                     else:
-                        dimension = dymlist.filter(riskanalysis_associacion__axis=self.AXIS_X).distinct().get()                    
+                        dimension = dymlist.filter(damageassessment_association__axis=self.AXIS_X).distinct().get()                    
 
                     an_risk_values = self.reformat_features(an_risk, dimension, dymlist, features['features'], True)                
 

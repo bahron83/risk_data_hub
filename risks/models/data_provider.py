@@ -1,9 +1,9 @@
 from django.db import models
-from risks.models import RiskAnalysisDymensionInfoAssociation
+from risks.models import DamageTypeValue
 
 
 def dyminfo_values():        
-    dym_infos = RiskAnalysisDymensionInfoAssociation.objects.values('value').distinct()
+    dym_infos = DamageTypeValue.objects.values('value').distinct()
     return tuple([(str(d['value']), str(d['value'])) for d in dym_infos])
 
 class DataProvider(models.Model):
@@ -15,7 +15,7 @@ class DataProvider(models.Model):
     class Meta:
         """
         """        
-        db_table = 'risks_dataprovider'        
+        db_table = 'risks_data_provider'        
 
 class DataProviderMappings(models.Model):        
     data_provider = models.ForeignKey(
@@ -28,9 +28,10 @@ class DataProviderMappings(models.Model):
     rdh_value = models.CharField(max_length=80, choices=dyminfo_values())
         
     class Meta:
+        db_table = 'risks_data_provider_mappings'        
         verbose_name = 'DataProviderMappings'
         verbose_name_plural = 'DataProviderMappings'
 
-    def get_risk_analysis(self, region, hazard_type):
-        dyminfo_values = RiskAnalysisDymensionInfoAssociation.objects.filter(value=self.rdh_value)
-        return [d.riskanalysis for d in dyminfo_values if d.riskanalysis.hazard_type == hazard_type and d.riskanalysis.region == region]
+    def get_damage_assessments(self, region, hazard_type):
+        dtype_values = DamageTypeValue.objects.filter(value=self.rdh_value)
+        return [d.damage_assessment for d in dtype_values if d.damage_assessment.hazard_type == hazard_type and d.damage_assessment.region == region]

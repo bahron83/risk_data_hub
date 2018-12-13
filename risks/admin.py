@@ -1,391 +1,262 @@
 # -*- coding: utf-8 -*-
-#########################################################################
-#
-# Copyright (C) 2017 OSGeo
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-#
-#########################################################################
+from __future__ import unicode_literals
 
 from django.contrib import admin
+from django.shortcuts import redirect
 from django.utils.translation import ugettext as _
 from django.contrib import messages
-
-from risk_data_hub import local_settings
-
 from django.db.models import Count
 
-from risks.models import RiskAnalysis, RiskAnalysisDymensionInfoAssociation
-from risks.models import Region, AdministrativeDivision
-from risks.models import AnalysisType, HazardType, DymensionInfo
-from risks.models import PointOfContact, HazardSet
-from risks.models import FurtherResource
-from risks.models import AnalysisTypeFurtherResourceAssociation
-from risks.models import DymensionInfoFurtherResourceAssociation
-from risks.models import HazardSetFurtherResourceAssociation
+import nested_admin
 
-from risks.models import RiskAnalysisCreate
-from risks.models import RiskAnalysisImportData
-from risks.models import RiskAnalysisImportMetadata
-from risks.models import EventImportData
-from risks.models import RiskApp
-from risks.models import AdditionalData
-from risks.models import Event
-from risks.models import EventImportAttributes
-from risks.models import AnalysisClass
-from risks.models import SendaiTarget
-from risks.models import DataProvider, DataProviderMappings
-
-from risks.forms import CreateRiskAnalysisForm
-from risks.forms import ImportDataRiskAnalysisForm
-from risks.forms import ImportMetadataRiskAnalysisForm
-from risks.forms import ImportDataEventForm
-from risks.forms import ImportDataEventAttributeForm
-
+# Register your models here.
+from risks.models import (RiskApp, AnalysisType, AssetCategory, Asset, AssetItem, MarketValue, DamageType, DamageTypeValue,
+                                DamageAssessment, DamageAssessmentValue, HazardSet, EavAttribute,
+                                Event, Phenomenon, 
+                                AttributeSet,
+                                Hazard, AdministrativeDivision, Location, Region, PointOfContact,
+                                Owner, SendaiTarget, SendaiIndicator, DamageAssessmentCreate, DamageAssessmentImportData,
+                                DamageAssessmentImportMetadata, EventImport, EventImportDamage, DataProvider, DataProviderMappings)
+from risks.forms import (EventAttributeInlineFormSet, CreateDamageAssessmentForm, ImportDataDamageAssessmentForm,
+                            ImportMetadataDamageAssessmentForm, ImportDataEventForm, ImportDataEventAttributeForm, PostEventPublishForm,
+                            EventForm)
+from risks.helpers.event import EventHelper
 from risks.const.messages import *
 
 from django.core.management import call_command
 
 from decorators import action_form
-from risks.forms import PostEventPublishForm
-from risks.helpers.event import EventHelper
+
+from risk_data_hub import local_settings
+
 
 admin.site.site_header = 'Risk Data Hub - Administration'
 admin.site.site_url = local_settings.SITEURL
 
+'''class EventAttributeValueVarcharInline(admin.StackedInline):
+    def get_extra(self, request, obj=None, **kwargs): 
+        if obj is None:
+            return 1       
+        return obj.get_extra_inline('varchar')        
+    
+    model = EventAttributeValueVarchar    
+    readonly_fields = ('data_type',)
+    formset = EventAttributeInlineFormSet        
+    
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(EventAttributeValueVarcharInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == 'attribute':
+            field.queryset = field.queryset.filter(data_type='varchar')
+        return field
 
-class DymensionInfoInline(admin.TabularInline):
-    model = DymensionInfo.risks_analysis.through
-    raw_id_fields = ('resource',)
-    extra = 3
+class EventAttributeValueTextInline(admin.StackedInline):
+    def get_extra(self, request, obj=None, **kwargs):        
+        if obj is None:
+            return 1       
+        return obj.get_extra_inline('text')        
+    
+    model = EventAttributeValueText
+    readonly_fields = ('data_type',)
+    formset = EventAttributeInlineFormSet        
+    
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(EventAttributeValueTextInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == 'attribute':
+            field.queryset = field.queryset.filter(data_type='text')
+        return field
 
+class EventAttributeValueIntInline(admin.StackedInline):
+    def get_extra(self, request, obj=None, **kwargs):        
+        if obj is None:
+            return 1       
+        return obj.get_extra_inline('int')        
+    
+    model = EventAttributeValueInt
+    readonly_fields = ('data_type',)
+    formset = EventAttributeInlineFormSet        
+    
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(EventAttributeValueIntInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == 'attribute':
+            field.queryset = field.queryset.filter(data_type='int')
+        return field
 
-class AdministrativeDivisionInline(admin.StackedInline):
-    model = AdministrativeDivision.risks_analysis.through
-    exclude = ['geom', 'srid']
-    extra = 3
+class EventAttributeValueDecimalInline(admin.StackedInline):
+    def get_extra(self, request, obj=None, **kwargs):
+        if obj is None:
+            return 1               
+        return obj.get_extra_inline('decimal')        
+    
+    model = EventAttributeValueDecimal
+    readonly_fields = ('data_type',)
+    formset = EventAttributeInlineFormSet        
+    
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(EventAttributeValueDecimalInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == 'attribute':
+            field.queryset = field.queryset.filter(data_type='decimal')
+        return field
 
+class EventAttributeValueDateInline(admin.StackedInline):
+    def get_extra(self, request, obj=None, **kwargs): 
+        if obj is None:
+            return 1              
+        return obj.get_extra_inline('date')        
+    
+    model = EventAttributeValueDate
+    readonly_fields = ('data_type',)
+    formset = EventAttributeInlineFormSet        
+    
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        field = super(EventAttributeValueDateInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == 'attribute':
+            field.queryset = field.queryset.filter(data_type='date')
+        return field'''
 
-class FurtherResourceInline(admin.TabularInline):
-    model = AnalysisTypeFurtherResourceAssociation
-    raw_id_fields = ('resource',)
-    extra = 3
-
-
-class LinkedResourceInline(admin.TabularInline):
-    model = DymensionInfoFurtherResourceAssociation
-    raw_id_fields = ('resource',)
-    extra = 3
-
-
-class AdditionalResourceInline(admin.TabularInline):
-    model = HazardSetFurtherResourceAssociation
-    raw_id_fields = ('resource',)
-    extra = 3
-
-
-class FurtherResourceAdmin(admin.ModelAdmin):
-    model = FurtherResource
-    list_display_links = ('resource',)
-    list_display = ('resource',)
-    group_fieldsets = True  
-
+class BaseAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
-        form = super(FurtherResourceAdmin, self).get_form(request, obj, **kwargs)
-        if not request.user.is_superuser:
-            form.base_fields['resource'].queryset = form.base_fields['resource'].queryset.filter(owner=request.user)
+        form = super(BaseAdmin, self).get_form(request, obj, **kwargs)
+        attribute_set = form.base_fields.pop('attribute_set')
+        form.base_fields['attribute_set'] = attribute_set 
+        details = form.base_fields.pop('details')
+        form.base_fields['details'] = details 
         return form
 
-    def get_queryset(self, request):
-        qs = super(FurtherResourceAdmin, self).get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(owner=request.user)
+class MarketValueInline(nested_admin.NestedStackedInline):
+    model = MarketValue
+    extra = 0
 
+class AssetItemInline(nested_admin.NestedStackedInline):
+    model = AssetItem
+    extra = 1
+    inlines = [MarketValueInline]
 
-class RegionAdmin(admin.ModelAdmin):
-    model = Region
-    list_display_links = ('name',)
-    list_display = ('name', 'level')
-    search_fields = ('name',)
-    readonly_fields = ('administrative_divisions',)
-    inlines = [FurtherResourceInline]
-    group_fieldsets = True
+class SendaiIndicatorInline(admin.StackedInline):
+    model = SendaiIndicator
+    extra = 1
 
+class DamageTypeValueInline(admin.TabularInline):
+    model = DamageTypeValue
+    extra = 2
+
+class PhenomenonInline(admin.StackedInline):
+    model = Phenomenon
+    extra = 1
 
 class AdministrativeDivisionAdmin(admin.ModelAdmin):
     model = AdministrativeDivision
-    list_display_links = ('name',)
-    list_display = ('code', 'name', 'parent')
-    search_fields = ('code', 'name',)
-    readonly_fields = ('risks_analysis',)
-    # inlines = [AdministrativeDivisionInline]
-    group_fieldsets = True
-
-    def has_add_permission(self, request):
-        return request.user.is_superuser
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj: # editing an existing object
-            if not request.user.is_superuser:
-                return self.list_display + ('geom', 'srid', 'level')
-        return self.readonly_fields
-    
-    def get_queryset(self, request):
-        qs = super(AdministrativeDivisionAdmin, self).get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        regions_owned = Region.objects.filter(owner=request.user)
-        if regions_owned.exists():
-            return qs.filter(regions__in=regions_owned)
-        return None
-
+    list_display_links = ('id',)
+    list_display = ('id', 'code', 'name',)
 
 class AnalysisTypeAdmin(admin.ModelAdmin):
     model = AnalysisType
-    list_display_links = ('name',)
-    list_display = ('name', 'title', 'description', 'analysis_class', 'app',)
-    search_fields = ('name', 'title',)
-    list_filter = ('app__name', 'analysis_class__name',)
-    inlines = [FurtherResourceInline]
-    group_fieldsets = True
+    list_display_links = ('id',)
+    list_display = ('id', 'name', 'title', 'scope',)
 
-    def has_add_permission(self, request):
-        return request.user.is_superuser
+class AssetCategoryAdmin(admin.ModelAdmin):
+    model = AssetCategory
+    list_display_links = ('id',)
+    list_display = ('id', 'name',)
 
-    def get_readonly_fields(self, request, obj=None):
-        if obj: # editing an existing object
-            if not request.user.is_superuser:
-                return self.list_display + ('fa_icon',)
-        return self.readonly_fields
+class AssetAdmin(admin.ModelAdmin):
+    model = Asset
+    list_display_links = ('id',)
+    list_display = ('id', 'name',)
+    readonly_fields = ('entity_type',)
+    inlines = [AssetItemInline]
 
+class AttributeSetAdmin(admin.ModelAdmin):
+    model = AttributeSet
+    list_display_links = ('id',)
+    list_display = ('id', 'name',)
 
-class HazardTypeAdmin(admin.ModelAdmin):
-    model = HazardType
-    list_display_links = ('mnemonic',)
-    list_display = ('mnemonic', 'gn_description', 'title', 'app',)
-    search_fields = ('mnemonic', 'gn_description', 'title',)
-    list_filter = ('mnemonic', 'app__name',)
-    inlines = [FurtherResourceInline]
-    list_select_related = True
-    group_fieldsets = True
+class DamageTypeAdmin(admin.ModelAdmin):
+    model = DamageType
+    list_display_links = ('id',)
+    list_display = ('id', 'name', 'abstract', 'unit',)
+    inlines = [DamageTypeValueInline]
 
-    def has_add_permission(self, request):
-        return request.user.is_superuser
+class DamageAssessmentAdmin(admin.ModelAdmin):
+    model = DamageAssessment
+    list_display_links = ('id',)
+    list_display = ('id', 'name', 'analysis_type', 'unit_of_measure',)
+    inlines = [DamageTypeValueInline]
 
-    def get_readonly_fields(self, request, obj=None):
-        if obj: # editing an existing object
-            if not request.user.is_superuser:
-                return self.list_display + ('order', 'description', 'state', 'fa_class',)
-        return self.readonly_fields
+class DamageAssessmentValueAdmin(admin.ModelAdmin):
+    model = DamageAssessmentValue
+    list_display_links = ('id',)
+    list_display = ('id', 'damage_assessment', 'phenomenon', 'damage_type_value_1', 'damage_type_value_2', 'item', 'value',)    
 
-
-class DymensionInfoAdmin(admin.ModelAdmin):
-    model = DymensionInfo
-    list_display_links = ('name',)
-    list_display = ('name', 'unit', 'abstract',)
-    search_fields = ('name',)
-    filter_vertical = ('risks_analysis',)
-    inlines = [LinkedResourceInline, DymensionInfoInline]
-    group_fieldsets = True
-
-    def has_add_permission(self, request):
-        return request.user.is_superuser
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj: # editing an existing object
-            if not request.user.is_superuser:
-                return self.list_display
-        return self.readonly_fields
-
-    def get_formsets_with_inlines(self, request, obj=None):
-        for inline in self.get_inline_instances(request, obj):
-            if obj and request.user.is_superuser:
-                yield inline.get_formset(request, obj), inline
-
-
-class RiskAnalysisAdmin(admin.ModelAdmin):
-    model = RiskAnalysis
-    list_display_links = ('name',)
-    list_display = ('name', 'state', 'app')
-    search_fields = ('name',)
-    list_filter = ('state', 'hazard_type', 'analysis_type', 'app__name', 'region',)
-    readonly_fields = ('administrative_divisions', 'descriptor_file', 'data_file', 'metadata_file', 'state',)
-    # inlines = [AdministrativeDivisionInline, DymensionInfoInline]
-    inlines = [LinkedResourceInline, DymensionInfoInline]
-    group_fieldsets = True
-    raw_id_fields = ('hazardset', 'layer', 'style', 'reference_layer', 'reference_style',)
-    filter_horizontal = ('additional_layers',)    
-
-    def get_queryset(self, request):
-        qs = super(RiskAnalysisAdmin, self).get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(owner=request.user)        
-
-    def has_add_permission(self, request):
-        return False
-
-    def log_change(self, request, obj, message):
-        call_command('fix_diminfo_relations', risk_analysis_id=obj.id)
-        super(RiskAnalysisAdmin, self).log_change(request, obj, message)
-
-
-class PointOfContactAdmin(admin.ModelAdmin):
-    model = PointOfContact
-    list_display_links = ('individual_name', 'organization_name',)
-    list_display = ('individual_name', 'organization_name',)
-    search_fields = ('individual_name', 'organization_name',)
-    group_fieldsets = True
-
-
-class HazardSetAdmin(admin.ModelAdmin):
-    model = HazardSet
-    list_display_links = ('title',)
-    list_display = ('title',)
-    search_fields = ('title', 'riskanalysis', 'country',)
-    inlines = [AdditionalResourceInline]
-    group_fieldsets = True
-
-    def get_queryset(self, request):
-        qs = super(HazardSetAdmin, self).get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(riskanalysis__in=RiskAnalysis.objects.filter(owner=request.user))
-
-    def has_add_permission(self, request):
-        return False
-
-
-class RiskAnalysisCreateAdmin(admin.ModelAdmin):
-    model = RiskAnalysisCreate
-    list_display = ('descriptor_file', )
-    form = CreateRiskAnalysisForm
-    group_fieldsets = True
-
-    def get_actions(self, request):
-        actions = super(RiskAnalysisCreateAdmin, self).get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
-        return actions
-
-    def __init__(self, *args, **kwargs):
-        super(RiskAnalysisCreateAdmin, self).__init__(*args, **kwargs)
-        self.list_display_links = (None, )
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super(RiskAnalysisCreateAdmin, self).get_form(request, obj, **kwargs)
-        form.current_user = request.user
-        return form
-
-    def get_queryset(self, request):
-        qs = super(RiskAnalysisCreateAdmin, self).get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        risk_analysis_owned_files = RiskAnalysis.objects.filter(owner=request.user).values_list('descriptor_file', flat=True)
-        return qs.filter(descriptor_file__in=risk_analysis_owned_files).distinct()        
-
-
-class RiskAnalysisImportDataAdmin(admin.ModelAdmin):
-    model = RiskAnalysisImportData
-    list_display = ('data_file', 'riskapp', 'region', 'riskanalysis',)
-    form = ImportDataRiskAnalysisForm
-    group_fieldsets = True
-
-    def get_actions(self, request):
-        actions = super(RiskAnalysisImportDataAdmin, self).get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
-        return actions
-
-    def __init__(self, *args, **kwargs):
-        super(RiskAnalysisImportDataAdmin, self).__init__(*args, **kwargs)
-        self.list_display_links = (None, )
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super(RiskAnalysisImportDataAdmin, self).get_form(request, obj, **kwargs)
-        form.current_user = request.user
-        return form
-
-    def get_queryset(self, request):
-        qs = super(RiskAnalysisImportDataAdmin, self).get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        risk_analysis_owned = RiskAnalysis.objects.filter(owner=request.user)
-        return qs.filter(riskanalysis__in=risk_analysis_owned)
-
-    def save_model(self, request, obj, form, change):
-        messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
-        super(RiskAnalysisImportDataAdmin, self).save_model(request, obj, form, change)
-
-
-class RiskAnalysisImportMetaDataAdmin(admin.ModelAdmin):
-    model = RiskAnalysisImportMetadata
-    list_display = ('metadata_file', 'riskapp', 'region', 'riskanalysis',)
-    form = ImportMetadataRiskAnalysisForm
-    group_fieldsets = True
-
-    def get_actions(self, request):
-        actions = super(RiskAnalysisImportMetaDataAdmin, self).get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
-        return actions
-
-    def __init__(self, *args, **kwargs):
-        super(RiskAnalysisImportMetaDataAdmin, self).__init__(*args, **kwargs)
-        self.list_display_links = (None, ) 
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super(RiskAnalysisImportMetaDataAdmin, self).get_form(request, obj, **kwargs)
-        form.current_user = request.user
-        return form   
-
-    def get_queryset(self, request):
-        qs = super(RiskAnalysisImportMetaDataAdmin, self).get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        risk_analysis_owned = RiskAnalysis.objects.filter(owner=request.user)
-        return qs.filter(riskanalysis__in=risk_analysis_owned)
-
+class EavAttributeAdmin(admin.ModelAdmin):
+    model = EavAttribute
+    list_display_links = ('id',)
+    list_display = ('id', 'code', 'name', 'entity_type',)
 
 class EventAdmin(admin.ModelAdmin):
-    model= Event
+    model = Event
     list_display_links = ('id',)
-    list_display = ('id', 'code', 'region', 'iso2', 'nuts3', 'hazard_type', 'begin_date', 'end_date', 'state', 'risks_count',)
+    list_display = ('id', 'code', 'begin_date',)       
     search_fields = ('code',)
-    list_filter = ('state', 'region', 'hazard_type', 'iso2', 'year',) 
-    readonly_fields = ('administrative_divisions', 'risk_analysis','state',)
-    group_fieldsets = True  
-    list_select_related = True
-    filter_horizontal = ('related_layers',) 
-    actions = ['make_published']      
+    readonly_fields = ('entity_type', 'code',)
+    #inlines = [EventAttributeValueVarcharInline, EventAttributeValueTextInline, EventAttributeValueIntInline, EventAttributeValueDecimalInline, EventAttributeValueDateInline, PhenomenonInline]    
+    inlines = [PhenomenonInline]
+    actions = ['make_published'] 
+    form = EventForm   
 
-    def get_queryset(self, request):
+    '''def get_queryset(self, request):
         qs = super(EventAdmin, self).get_queryset(request).annotate(_risks_count=Count('risk_analysis')).order_by('_risks_count', 'iso2')      
         if request.user.is_superuser:
             return qs
         regions_owned = Region.objects.filter(owner=request.user)
         return qs.filter(region__in=regions_owned)
+    '''
 
-    def has_add_permission(self, request):
-        return False
+    #def has_add_permission(self, request):
+    #    return False
 
-    def risks_count(self, obj):        
+    '''def risks_count(self, obj):        
         return obj._risks_count    
 
     risks_count.short_description = _("Number of Risk Analysis")
     risks_count.admin_order_field = '_risks_count'
+    '''    
+
+    def get_queryset(self, request):
+        qs = super(EventAdmin, self).get_queryset(request)
+        if 'change' in request.path:                        
+            event_id = [s for s in request.path.split('/') if s.isdigit()]
+            if event_id:
+                event_id = int(str(event_id[0]))
+                event_from_qs = qs.filter(pk=event_id).first()
+                if event_from_qs:                
+                    event_from_qs.sync_details_field()
+        return qs        
+
+    def get_fields(self, request, obj=None):
+        if obj is None:
+            return ['attribute_set']
+        else:            
+            return [attr.name for attr in obj._meta.get_fields() if not attr.auto_created and attr.name != 'id']
+    
+    def get_inline_instances(self, request, obj=None):        
+        if obj is None:
+            return []
+        return super(EventAdmin, self).get_inline_instances(request, obj)
+
+    def get_formsets(self, request, obj=None):
+        for inline in self.get_inline_instances(request, obj):            
+            yield inline.get_formset(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = ['entity_type', 'code', 'state']
+        if obj is not None:
+            readonly_fields.append('attribute_set')
+        return readonly_fields
+
+    def response_add(self, request, obj, post_url_continue=None):
+        Event.objects.filter(pk=obj.id).update(details=obj.get_initial_json_data())
+        url = '/admin/{}/event/{}/change/'.format(self.model._meta.app_label, obj.id)
+        return redirect(url)
 
     @action_form(PostEventPublishForm)
     def make_published(self, request, queryset, form):
@@ -394,81 +265,41 @@ class EventAdmin(admin.ModelAdmin):
             
     make_published.short_description = 'Publish selected events'
 
-class EventImportDataAdmin(admin.ModelAdmin):
-    model = EventImportData
-    list_display = ('data_file', 'riskapp', 'region')
-    form = ImportDataEventForm
-    group_fieldsets = True
+class HazardAdmin(admin.ModelAdmin):
+    model = Hazard
+    list_display_links = ('id',)
+    list_display = ('id', 'mnemonic', 'title',)
 
-    def get_actions(self, request):
-        actions = super(EventImportDataAdmin, self).get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
-        return actions
+class HazardSetAdmin(admin.ModelAdmin):
+    model = HazardSet
+    list_display_links = ('id',)
+    list_display = ('id', 'title', 'damage_assessment', 'date')
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super(EventImportDataAdmin, self).get_form(request, obj, **kwargs)
-        form.current_user = request.user
-        return form
+class LocationAdmin(admin.ModelAdmin):
+    model = Location
+    list_display_links = ('id',)
+    list_display = ('id', 'location_type', 'address', 'lat', 'lon', 'administrative_division',)
 
-    def __init__(self, *args, **kwargs):
-        super(EventImportDataAdmin, self).__init__(*args, **kwargs)
-        self.list_display_links = (None, )
+class OwnerAdmin(admin.ModelAdmin):
+    model = Owner
+    list_display_links = ('id',)
+    list_display = ('id', 'name',)
 
-    def get_queryset(self, request):
-        qs = super(EventImportDataAdmin, self).get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        regions_owned = Region.objects.filter(owner=request.user)
-        return qs.filter(region__in=regions_owned)
+class PointOfContactAdmin(admin.ModelAdmin):
+    model = PointOfContact
+    list_display_links = ('id',)
+    list_display = ('id', 'individual_name', 'organization_name', 'country',)
 
-    def save_model(self, request, obj, form, change):
-        messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
-        super(EventImportDataAdmin, self).save_model(request, obj, form, change)
-
-
-class EventImportAttributeDataAdmin(admin.ModelAdmin):
-    model = EventImportAttributes
-    list_display = ('data_file', 'riskapp', 'region', 'riskanalysis', 'adm_level_precision')
-    form = ImportDataEventAttributeForm
-    group_fieldsets = True
-
-    def get_actions(self, request):
-        actions = super(EventImportAttributeDataAdmin, self).get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
-        return actions
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super(EventImportAttributeDataAdmin, self).get_form(request, obj, **kwargs)
-        form.current_user = request.user
-        return form
-
-    def __init__(self, *args, **kwargs):
-        super(EventImportAttributeDataAdmin, self).__init__(*args, **kwargs)
-        self.list_display_links = (None, )
-
-    def get_queryset(self, request):
-        qs = super(EventImportAttributeDataAdmin, self).get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        regions_owned = Region.objects.filter(owner=request.user)
-        return qs.filter(region__in=regions_owned)
-
-    def save_model(self, request, obj, form, change):
-        messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
-        super(EventImportAttributeDataAdmin, self).save_model(request, obj, form, change)
-
-class AnalysisClassAdmin(admin.ModelAdmin):
-    model = AnalysisClass
-    list_display = ('name', 'title',)
-    list_display_links = ('name',)
-
+class RegionAdmin(admin.ModelAdmin):
+    model = Region
+    list_display_links = ('id',)
+    list_display = ('id', 'name',)
 
 class SendaiTargetAdmin(admin.ModelAdmin):
     model = SendaiTarget
-    list_display = ('code', 'description',)
-    list_display_links = ('code',)
+    list_display_links = ('id',)
+    list_display = ('id', 'name', 'description',)
+    inlines = [SendaiIndicatorInline]
 
 class DataProviderInlineAdmin(admin.StackedInline):
     model = DataProviderMappings
@@ -484,28 +315,180 @@ class DataProviderAdmin(admin.ModelAdmin):
 class RiskAppAdmin(admin.ModelAdmin):
     list_display = ('name',)
 
-@admin.register(AdditionalData)
-class AdditionalDataAdmin(admin.ModelAdmin):
-    list_display = ('risk_analysis', 'name',)
-    raw_id_fields = ('risk_analysis',)
+class DamageAssessmentCreateAdmin(admin.ModelAdmin):
+    model = DamageAssessmentCreate    
+    list_display = ('descriptor_file',)    
+    form = CreateDamageAssessmentForm
+    group_fieldsets = True
+
+    def get_actions(self, request):
+        actions = super(DamageAssessmentCreateAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def __init__(self, *args, **kwargs):
+        super(DamageAssessmentCreateAdmin, self).__init__(*args, **kwargs)
+        self.list_display_links = None
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(DamageAssessmentCreateAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form
+
+    def get_queryset(self, request):
+        qs = super(DamageAssessmentCreateAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        damage_assessment_owned_files = DamageAssessment.objects.filter(owner=request.user).values_list('descriptor_file', flat=True)
+        return qs.filter(descriptor_file__in=damage_assessment_owned_files).distinct()
+
+class DamageAssessmentImportDataAdmin(admin.ModelAdmin):
+    model = DamageAssessmentImportData
+    list_display = ('data_file', 'riskapp', 'region', 'damage_assessment',)
+    form = ImportDataDamageAssessmentForm
+    group_fieldsets = True
+
+    def get_actions(self, request):
+        actions = super(DamageAssessmentImportDataAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def __init__(self, *args, **kwargs):
+        super(DamageAssessmentImportDataAdmin, self).__init__(*args, **kwargs)
+        self.list_display_links = None
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(DamageAssessmentImportDataAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form
+
+    def get_queryset(self, request):
+        qs = super(DamageAssessmentImportDataAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        damage_assessment_owned = DamageAssessment.objects.filter(owner=request.user)
+        return qs.filter(riskanalysis__in=damage_assessment_owned)
+
+    def save_model(self, request, obj, form, change):
+        messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
+        super(DamageAssessmentImportDataAdmin, self).save_model(request, obj, form, change)
 
 
-admin.site.register(Region, RegionAdmin)
+class DamageAssessmentImportMetaDataAdmin(admin.ModelAdmin):
+    model = DamageAssessmentImportData
+    list_display = ('metadata_file', 'riskapp', 'region', 'damage_assessment',)
+    form = ImportMetadataDamageAssessmentForm
+    group_fieldsets = True
+
+    def get_actions(self, request):
+        actions = super(DamageAssessmentImportMetaDataAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def __init__(self, *args, **kwargs):
+        super(DamageAssessmentImportMetaDataAdmin, self).__init__(*args, **kwargs)
+        self.list_display_links = None
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(DamageAssessmentImportMetaDataAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form   
+
+    def get_queryset(self, request):
+        qs = super(DamageAssessmentImportMetaDataAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        damage_assessment_owned = DamageAssessment.objects.filter(owner=request.user)
+        return qs.filter(damage_assessment__in=damage_assessment_owned)
+
+class EventImportAdmin(admin.ModelAdmin):
+    model = EventImport
+    list_display = ('data_file', 'riskapp', 'region')
+    form = ImportDataEventForm
+    group_fieldsets = True
+
+    def get_actions(self, request):
+        actions = super(EventImportAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(EventImportAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form
+
+    def __init__(self, *args, **kwargs):
+        super(EventImportAdmin, self).__init__(*args, **kwargs)
+        self.list_display_links = None
+
+    def get_queryset(self, request):
+        qs = super(EventImportAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        regions_owned = Region.objects.filter(owner=request.user)
+        return qs.filter(region__in=regions_owned)
+
+    def save_model(self, request, obj, form, change):
+        messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
+        super(EventImportAdmin, self).save_model(request, obj, form, change)
+
+
+class EventImportDamageDataAdmin(admin.ModelAdmin):
+    model = EventImportDamage
+    list_display = ('data_file', 'riskapp', 'region', 'damage_assessment', 'adm_level_precision')
+    form = ImportDataEventAttributeForm
+    group_fieldsets = True
+
+    def get_actions(self, request):
+        actions = super(EventImportDamageDataAdmin, self).get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(EventImportDamageDataAdmin, self).get_form(request, obj, **kwargs)
+        form.current_user = request.user
+        return form
+
+    def __init__(self, *args, **kwargs):
+        super(EventImportDamageDataAdmin, self).__init__(*args, **kwargs)
+        self.list_display_links = None
+
+    def get_queryset(self, request):
+        qs = super(EventImportDamageDataAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        regions_owned = Region.objects.filter(owner=request.user)
+        return qs.filter(region__in=regions_owned)
+
+    def save_model(self, request, obj, form, change):
+        messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
+        super(EventImportDamageDataAdmin, self).save_model(request, obj, form, change)
+
+
 admin.site.register(AdministrativeDivision, AdministrativeDivisionAdmin)
 admin.site.register(AnalysisType, AnalysisTypeAdmin)
-admin.site.register(HazardType, HazardTypeAdmin)
-admin.site.register(DymensionInfo, DymensionInfoAdmin)
-admin.site.register(RiskAnalysis, RiskAnalysisAdmin)
-admin.site.register(PointOfContact, PointOfContactAdmin)
+admin.site.register(AssetCategory, AssetCategoryAdmin)
+admin.site.register(Asset, AssetAdmin)
+admin.site.register(AttributeSet, AttributeSetAdmin)
+admin.site.register(DamageType, DamageTypeAdmin)
+admin.site.register(DamageAssessment, DamageAssessmentAdmin)
+admin.site.register(DamageAssessmentValue, DamageAssessmentValueAdmin)
 admin.site.register(HazardSet, HazardSetAdmin)
-admin.site.register(FurtherResource, FurtherResourceAdmin)
+admin.site.register(EavAttribute, EavAttributeAdmin)
 admin.site.register(Event, EventAdmin)
-admin.site.register(AnalysisClass, AnalysisClassAdmin)
+admin.site.register(Hazard, HazardAdmin)
+admin.site.register(Location, LocationAdmin)
+admin.site.register(Owner, OwnerAdmin)
+admin.site.register(PointOfContact, PointOfContactAdmin)
+admin.site.register(Region, RegionAdmin)
 admin.site.register(SendaiTarget, SendaiTargetAdmin)
-admin.site.register(DataProvider, DataProviderAdmin)
-
-admin.site.register(RiskAnalysisCreate, RiskAnalysisCreateAdmin)
-admin.site.register(RiskAnalysisImportData, RiskAnalysisImportDataAdmin)
-admin.site.register(RiskAnalysisImportMetadata, RiskAnalysisImportMetaDataAdmin)
-admin.site.register(EventImportData, EventImportDataAdmin)
-admin.site.register(EventImportAttributes, EventImportAttributeDataAdmin)
+admin.site.register(DamageAssessmentCreate, DamageAssessmentCreateAdmin)
+admin.site.register(DamageAssessmentImportData, DamageAssessmentImportDataAdmin)
+admin.site.register(DamageAssessmentImportMetadata, DamageAssessmentImportMetaDataAdmin)
+admin.site.register(EventImport, EventImportAdmin)
+admin.site.register(EventImportDamage, EventImportDamageDataAdmin)

@@ -49,4 +49,4 @@ class PointOfContact(Exportable, models.Model):
     class Meta:
         """
         """
-        db_table = 'risks_pointofcontact'
+        db_table = 'risks_point_of_contact'

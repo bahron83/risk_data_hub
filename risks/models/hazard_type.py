@@ -1,18 +1,12 @@
 from django.db import models
-from risks.models import RiskAppAware, LocationAware, Exportable, Schedulable, RiskApp, RiskAnalysis, AnalysisType
+from risks.models import RiskAppAware, LocationAware, Exportable, Schedulable, RiskApp, DamageAssessment, AnalysisType
 
 
 class HazardTypeManager(models.Manager):
     def get_by_natural_key(self, mnemonic):
         return self.get(mnemonic=mnemonic)
 
-class HazardType(RiskAppAware, LocationAware, Exportable, Schedulable, models.Model):
-    """
-    Describes an Hazard related to an Analysis and a Risk and pointing to
-    additional resources on GeoNode.
-    e.g.: Earthquake, Flood, Landslide, ...
-    """
-
+class Hazard(RiskAppAware, LocationAware, Exportable, Schedulable, models.Model):
     objects = HazardTypeManager()
 
     EXPORT_FIELDS = (('mnemonic', 'mnemonic',),
@@ -28,8 +22,7 @@ class HazardType(RiskAppAware, LocationAware, Exportable, Schedulable, models.Mo
     title = models.CharField(max_length=80, null=False, blank=False)
     order = models.IntegerField()
     description = models.TextField(default='')
-    gn_description = models.TextField('GeoNode description', default='',
-                                      null=True)
+
     fa_class = models.CharField(max_length=64, default='fa-times')
     app = models.ForeignKey(RiskApp)
 
@@ -43,7 +36,7 @@ class HazardType(RiskAppAware, LocationAware, Exportable, Schedulable, models.Mo
         """
         """
         ordering = ['order', 'mnemonic']
-        db_table = 'risks_hazardtype'
+        db_table = 'risks_hazard'
         verbose_name_plural = 'Hazards'
 
     @property
@@ -97,8 +90,6 @@ class HazardType(RiskAppAware, LocationAware, Exportable, Schedulable, models.Mo
             "href": "http://disasterrisk-af.geo-solutions.it/risks/risk_data_extraction/loc/AF15/ht/EQ/at/impact/"
         }]
     },
-
-
         """
         analysis_types = self.get_analysis_types()
         reg = self.get_region()

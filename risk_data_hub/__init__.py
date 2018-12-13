@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #########################################################################
 #
-# Copyright (C) 2018 European Commission
+# Copyright (C) 2017 OSGeo
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,21 +17,18 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 #########################################################################
-'''from django.utils.translation import ugettext_noop as _
-from geonode.notifications_helper import NotificationsAppConfigBase
+
+'''import os
+
+__version__ = (2, 7, 7, 'unstable', 0)
 
 
-class RisksAppConfig(NotificationsAppConfigBase):
-    name = 'risk_data_hub'
-    NOTIFICATIONS = (("data_uploaded", _("Data uploaded"), _("Finished uploading data from Excel"),),                     
-                     )
-
-    def ready(self):
-        super(RisksAppConfig, self).ready()
+default_app_config = "risk_data_hub.apps.AppConfig"
 
 
-default_app_config = 'risk_data_hub.RisksAppConfig'
-'''
+def get_version():
+    import risk_data_hub.version
+    return risk_data_hub.version.get_version(__version__)'''
 
 from __future__ import absolute_import, unicode_literals
 

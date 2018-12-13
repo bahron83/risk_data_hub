@@ -4,9 +4,9 @@ from django.db.models import Q
 from django.views.generic import FormView
 from django.http import HttpResponse, FileResponse
 from geonode.layers.models import Layer
-from risks.models import (RiskApp, FurtherResource, HazardType, AnalysisType, 
-                            RiskAnalysis, DymensionInfo, Region, AdministrativeDivision,
-                            RiskAnalysisDymensionInfoAssociation)
+from risks.models import (RiskApp, FurtherResource, Hazard, AnalysisType, 
+                            DamageAssessment, DamageType, Region, AdministrativeDivision,
+                            DamageTypeValue)
 from risks.datasource import GeoserverDataSource
 
 
@@ -114,10 +114,10 @@ class ContextAware(AppAware):
 
 
     # maps url captured argument to specific class and field for lookup
-    CONTEXT_KEYS_CLASSES = (('ht', HazardType, 'mnemonic'),
+    CONTEXT_KEYS_CLASSES = (('ht', Hazard, 'mnemonic'),
                             ('at', AnalysisType, 'name',),
-                            ('an', RiskAnalysis, 'id',),
-                            ('dym', DymensionInfo, 'id',),
+                            ('an', DamageAssessment, 'id',),
+                            ('dym', DamageType, 'id',),
                             ('reg', Region, 'name',),
                             ('loc', AdministrativeDivision, 'code',)
                             )
@@ -196,7 +196,7 @@ class FeaturesSource(object):
         return out
 
     def get_dim_association(self, analysis, dyminfo):
-        ass_list = RiskAnalysisDymensionInfoAssociation.objects.filter(riskanalysis=analysis, dymensioninfo=dyminfo)
+        ass_list = DamageTypeValue.objects.filter(damage_assessment=analysis, damage_type=dyminfo)
         dim_list = set([a.axis_to_dim() for a in ass_list])
         if len(dim_list) != 1:
             raise ValueError("Cannot query more than one dimension at the moment, got {}".format(len(dim_list)))
@@ -300,8 +300,8 @@ class RiskLayersView(FormView):
     def get_risk(self):
         rid = self.kwargs['risk_id']
         try:
-            return RiskAnalysis.objects.get(id=rid)
-        except RiskAnalysis.DoesNotExist:
+            return DamageAssessment.objects.get(id=rid)
+        except DamageAssessment.DoesNotExist:
             pass
 
     def get_layer_choices(self):

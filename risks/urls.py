@@ -9,7 +9,6 @@ from risks.models import RiskApp
 
 KWARGS_DATA_EXTRACTION = {'app': RiskApp.APP_DATA_EXTRACTION}
 KWARGS_COST_BENEFIT_ANALYSIS = {'app': RiskApp.APP_COST_BENEFIT}
-KWARGS_TEST = {'app': RiskApp.APP_TEST}
 
 
 
@@ -49,8 +48,7 @@ _urls = (
         .format('|'.join(views.PDFReportView.PDF_PARTS)), views.pdf_report, 'pdf_report_part',),)
 
 urls_sets = ((RiskApp.APP_DATA_EXTRACTION, KWARGS_DATA_EXTRACTION,),
-             (RiskApp.APP_COST_BENEFIT, KWARGS_COST_BENEFIT_ANALYSIS,),
-             (RiskApp.APP_TEST, KWARGS_TEST,))
+             (RiskApp.APP_COST_BENEFIT, KWARGS_COST_BENEFIT_ANALYSIS,))
 
 
 for app_name, kwargs in urls_sets:

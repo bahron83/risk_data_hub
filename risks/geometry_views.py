@@ -8,10 +8,10 @@ import logging
 from django.conf import settings
 from django.views.generic import TemplateView, View
 from django.contrib.gis.gdal import OGRGeometry
+from django.core.serializers import serialize
 
 from geonode.utils import json_response
-from risks.models import (LocationAware, Region, HazardType, AdministrativeDivision,
-                                          RiskAnalysisDymensionInfoAssociation)
+from risks.models import (LocationAware, Region, AdministrativeDivision)
 from risks.views import AppAware
 
 from risks.datasource import GeoserverDataSource
@@ -25,9 +25,8 @@ class AdministrativeGeometry(AppAware, LocationAware, View):
     def _get_geometry(self, val):
         """
         converts geometry to geojson geom
-        """
-        g = OGRGeometry(val)
-        return json.loads(g.json)
+        """        
+        return json.loads(val.geom.ogr.json)        
 
     def _get_properties(self, val):
         return val.export()
@@ -39,7 +38,7 @@ class AdministrativeGeometry(AppAware, LocationAware, View):
         """
         return {"type": "Feature",
                 "properties": self._get_properties(val.set_app(app).set_region(reg)),
-                "geometry": self._get_geometry(val.geom)
+                "geometry": self._get_geometry(val)
                 }
 
 

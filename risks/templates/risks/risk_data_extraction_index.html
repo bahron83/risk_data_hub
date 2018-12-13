@@ -1,6 +1,5 @@
 {% extends 'risks_main.html' %}
 {% load i18n static %}
-{% load url from future %}
 
 {% comment %}
 {% block risks_page_title %}Risk Data Extraction & Visualization{% endblock %}
@@ -8,5 +7,5 @@
 
 {% block body %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static "js/risks.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/RiskDataHubClient.js" %}"></script>
 {% endblock body %}

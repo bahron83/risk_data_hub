@@ -18,20 +18,16 @@
 #
 #########################################################################
 
-from django.conf.urls import patterns, url, include
+from django.conf.urls import url, include
 from django.views.generic import TemplateView
 
 from geonode.urls import urlpatterns
 
-urlpatterns += (
-## include your urls here
+proj_patterns = [
+    url(r'^/?$', TemplateView.as_view(template_name='rdh_index.html'), name='home'),
+    url(r'^jet/', include('jet.urls', 'jet')),        
+    url(r'^nested_admin/', include('nested_admin.urls')),
+    url(r'^risks/', include('risks.urls', namespace='risks')),    
+]
 
-)
-
-urlpatterns = patterns('',
-   url(r'^/?$',
-       TemplateView.as_view(template_name='rdh_index.html'),
-       name='home'),
-       url(r'^/', include('ecas_auth.urls')),
-       url(r'^risks/', include('risks.urls', namespace='risks')),
- ) + urlpatterns
+urlpatterns = proj_patterns + urlpatterns

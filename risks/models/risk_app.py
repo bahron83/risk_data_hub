@@ -4,11 +4,9 @@ from django.db import models
 
 class RiskApp(models.Model):
     APP_DATA_EXTRACTION = 'data_extraction'
-    APP_COST_BENEFIT = 'cost_benefit_analysis'
-    APP_TEST = 'test'
+    APP_COST_BENEFIT = 'cost_benefit_analysis'    
     APPS = ((APP_DATA_EXTRACTION, 'Data Extraction',),
-            (APP_COST_BENEFIT, 'Cost Benefit Analysis',),
-            (APP_TEST, 'Test'))    
+            (APP_COST_BENEFIT, 'Cost Benefit Analysis',))    
 
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=64, choices=APPS, unique=True, null=False, blank=False)

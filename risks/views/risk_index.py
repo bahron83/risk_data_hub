@@ -8,8 +8,7 @@ from risks.models import RiskApp
 class RiskIndexView(AppAware, FeaturesSource, TemplateView):
 
     TEMPLATES = {RiskApp.APP_DATA_EXTRACTION: 'risks/risk_data_extraction_index.html',
-                 RiskApp.APP_COST_BENEFIT: 'risks/cost_benefit_index.html',
-                 RiskApp.APP_TEST: 'risks/risk_test_index.html'}
+                 RiskApp.APP_COST_BENEFIT: 'risks/cost_benefit_index.html'}
 
     def get_template_names(self):
         app = self.get_app()

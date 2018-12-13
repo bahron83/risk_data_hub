@@ -1,15 +1,20 @@
 from django.contrib.gis import geos
+from django.db import transaction
 from risks.management.commands.action_utils import DbUtils
-from risks.models import AdministrativeDivision, Event, AdministrativeDivisionMappings, EventRiskAnalysisAssociation
-from risks.models import (RiskAnalysisAdministrativeDivisionAssociation, EventAdministrativeDivisionAssociation, 
-                            EventFurtherAdministrativeDivisionAssociation, RiskAnalysisDymensionInfoAssociation)
+from risks.models.location import AdministrativeDivision
+from risks.models.event import Event, Phenomenon
+from risks.models.eav_attribute import EavAttribute
+from risks.models.damage_type import DamageTypeValue
+from risks.models.risk_analysis import DamageAssessmentValue
 
 
 class EventHelper(object):
     _event = None
+    _phenomena = None
 
-    def __init__(self, event=None):
+    def __init__(self, event=None, phenomena=None):
         self._event = event
+        self._phenomena = phenomena
 
     def get_event(self):
         return self._event
@@ -17,26 +22,68 @@ class EventHelper(object):
     def set_event(self, event):
         self._event = event        
 
-    def set_adm_associations(self):
-        if self._event:
-            try:
-                country = AdministrativeDivision.objects.get(code=self._event.iso2, level=1)
-            except AdministrativeDivision.DoesNotExist:
-                pass 
-            adm_link, created = EventAdministrativeDivisionAssociation.objects.update_or_create(event=self._event, adm=country)
-            if self._event.nuts3:
-                nuts3_list = self._event.nuts3.split(';')
-                nuts2_matches = AdministrativeDivisionMappings.objects.filter(child__code__in=nuts3_list).distinct()
-                if nuts2_matches:
-                    for nuts2 in nuts2_matches:
-                        EventFurtherAdministrativeDivisionAssociation.objects.update_or_create(event=self._event, f_adm=nuts2)
-                for adm_code in nuts3_list:                    
-                    try:
-                        adm_div = AdministrativeDivision.objects.get(regions__id__exact=self._event.region.id, code=adm_code)
-                        adm_link, created = EventAdministrativeDivisionAssociation.objects.update_or_create(event=self._event, adm=adm_div)                        
-                    except AdministrativeDivision.DoesNotExist:                
-                        pass 
+    def get_phenomena(self):
+        return self._phenomena
+    
+    def set_phenomena(self, phenomena):
+        self._phenomena = phenomena
 
+    def save_event(self, event_obj, phenomena_list=None):
+        event_fields = Event.get_fields_basic()
+        additional_attributes = []
+        for t in event_obj.items():
+            key = t[0][0]
+            if key not in event_fields:
+                additional_attributes.apppend({key: event_obj[key]})
+                del event_obj[key]
+
+        event = Event(**event_obj)        
+        event.save() 
+        event.refresh_from_db() 
+
+        if additional_attributes:
+            for a in additional_attributes:
+                key = a.items()[0][0]
+                eav = None
+                try:
+                    eav = EavAttribute.objects.get(code=key)
+                except EavAttribute.DoesNotExist:
+                    continue
+                if eav.data_type == 'varchar':
+                    attr = EventAttributeValueVarchar()
+                elif eav.data_type == 'text':
+                    attr = EventAttributeValueText()
+                elif eav.data_type == 'int':
+                    attr = EventAttributeValueInt()
+                elif eav.data_type == 'decimal':
+                    attr = EventAttributeValueDecimal()
+                elif eav.data_type == 'date':
+                    attr = EventAttributeValueDate()
+                else:
+                    continue
+                attr.attribute = eav
+                attr.data_type =eav.data_type
+                attr.event = event
+                attr.value = a[key]
+                attr.save()
+
+        phenomena = []        
+        if not phenomena_list:
+            phenomenon_obj = {
+                'begin_date': event.begin_date,
+                'end_date': event.end_date,
+                'administrative_division': event.country                
+            }            
+            phenomena_list = [phenomenon_obj]
+        for p in phenomena_list:            
+            p['event'] = event
+            phenomenon = Phenomenon(**p)
+            phenomenon.save()
+            phenomenon.refresh_from_db()
+            phenomena.append(phenomenon)
+
+        return (event, phenomena)
+    
     def insert_attributes_row(self, params):                 
         db_values = {
             #'table': table_name,  # From rp.layer
@@ -67,7 +114,7 @@ class EventHelper(object):
             risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=params['risk'], administrativedivision=params['adm_div'])
             #event_adm, created = EventAdministrativeDivisionAssociation.objects.get_or_create(event=params['event'], adm=params['adm_div'])
 
-    def insert_aggregate_values(conn, sample_adm_div = None, adm_level_precision = 2):
+    def insert_aggregate_values(self, sample_adm_div = None, adm_level_precision = 2):
         region_adm_div = None
         if sample_adm_div:
             region_adm_div = [adm for adm in sample_adm_div.get_parents_chain() if adm.level == 0] 
@@ -85,74 +132,32 @@ class EventHelper(object):
             db.insert_aggregate_values(conn, params)            
             risk_adm, created = RiskAnalysisAdministrativeDivisionAssociation.objects.get_or_create(riskanalysis=risk, administrativedivision=region_adm_div[0])
     
-    def insert_event_attributes(self, data_attributes, conn):
-        first_call = True
-        if data_attributes:
-            for a in data_attributes:
-                event = a['event']
-                if a['risk_analysis']:
-                    for risk in a['risk_analysis']:                        
-                        axis_x = RiskAnalysisDymensionInfoAssociation.objects.filter(riskanalysis=risk, axis='x')
-                        axis_y = RiskAnalysisDymensionInfoAssociation.objects.filter(riskanalysis=risk, axis='y')
-                        x = axis_x.get(value=str(a['dim1']))
-                        y = axis_y[0]
-                        attribute_value = a[str(a['dim1'])]
+    def insert_assessment_value(self, obj):
+        if 'damage_assessment' in obj and 'phenomenon' in obj:
+            for da in v['damage_assessment']:                        
+                axis_x = DamageTypeValue.objects.filter(damage_assessment=da, axis='x')
+                axis_y = DamageTypeValue.objects.filter(damage_assessment=da, axis='y')
+                axis_z = DamageTypeValue.objects.filter(damage_assessment=da, axis='z')                        
+                damage_value = v[str(v['dim1'])]
 
-                        params = {
-                            'adm_div': a['adm_div'],
-                            'event': event,
-                            'risk': risk,
-                            'region': risk.region,
-                            'attribute_value': attribute_value,
-                            'x': x,
-                            'y': y,
-                            'first_call': first_call,
-                            'create_django_association': True,                        
-                            'conn': conn
-                        }
-                        self.insert_attributes_row(params)
-                        event_risk, created = EventRiskAnalysisAssociation.objects.get_or_create(risk=risk, event=event)
-                        first_call = False
-            self.insert_aggregate_values()
-
-    def sync_geodb(self, queryset):
-        db = DbUtils()
-        conn = db.get_db_conn()        
-        rows_updated = 0
-        if queryset:
-            try:
-                for event in queryset:                
-                    code = event.code
-                    if not code:
-                        try:
-                            country = AdministrativeDivision.objects.get(code=event.iso2, level=1)
-                        except AdministrativeDivision.DoesNotExist:                        
-                            pass
-                        code, duplicates = Event.generate_code(event.hazard_type, country, event.begin_date, event.region)
-                    if event.state != 'ready':
-                        try:
-                            Event.objects.filter(pk=event.pk).update(state='ready', code=str(code))
-                        except:                        
-                            pass
-                        event.refresh_from_db()
-                        event_dict = {
-                            'event_id': event.id,
-                            'begin_date': event.begin_date,
-                            'end_date': event.end_date,
-                            'state': event.state
-                        }
-                        db.insert_event(conn, event_dict)                        
-                        rows_updated += 1
-                conn.commit()
-            except Exception, e:
-                try:
-                    conn.rollback()
-                except:
-                    pass
-
-                #traceback.print_exc()
-                raise CommandError(e)
-            finally:
-                conn.close()
-        
-        return rows_updated
+                da_value, created = DamageAssessmentValue.objects.get_or_create(
+                    damage_assessment=da,
+                    phenomenon=phenomenon,
+                    damage_type_value_1=axis_x,
+                    damage_type_value_2=axis_y,
+                    damage_type_value_3=axis_z                            
+                )
+                to_update = {
+                    'value': damage_value,
+                    'item': v['item'] if 'item' in v else None,
+                    'linked_item': v['linked_item'] if 'linked_item' in v else None,
+                    'location': v['location'] if 'location' in v else None
+                }                        
+                da_value.objects.filter(pk=da_value.pk).update(**to_update)
+    
+    def insert_assessment_values(self, values):        
+        if values:
+            with transaction.atomic():
+                for v in values:
+                    self.insert_assessment_value(v)
+                                    

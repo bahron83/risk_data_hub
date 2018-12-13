@@ -8,7 +8,8 @@ from geonode.utils import json_response
 from risks.views.base import FeaturesSource, LocationSource
 from risks.views.hazard_type import HazardTypeView
 from risks.views.auth import UserAuth
-from risks.models import RiskAnalysis, DymensionInfo, AnalysisType, Event, AdministrativeData
+from risks.models.risk_analysis import DamageAssessment
+from risks.models import DamageType, AnalysisType, Event, AdministrativeData
 
 
 EVENTS_TO_LOAD = 50
@@ -144,18 +145,18 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             return json_response(errors=['Invalid hazard type'], status=404)
 
         # Check analysis type
-        (atype_r, atype_e, atypes, aclass,) = self.get_analysis_type(reg, loc, hazard_type, **kwargs)        
+        (atype_r, atype_e, atypes, scope,) = self.get_analysis_type(reg, loc, hazard_type, **kwargs)        
         current_atype = None
         risks = None
         if not atype_r:
             if atype_e:
-                if atype_e.analysis_class == aclass:
+                if atype_e.analysis_class == scope:
                     current_atype = atype_e
         else:
-            if atype_r.analysis_class == aclass:
+            if atype_r.analysis_class == scope:
                 current_atype = atype_r
             if atype_e: 
-                if atype_e.analysis_class == aclass:
+                if atype_e.analysis_class == scope:
                     current_atype = atype_e        
         if not current_atype:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404) 
@@ -195,7 +196,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         if kwargs.get('dym'):
             dimension = dymlist.get(id=kwargs['dym'])
         else:
-            dimension = dymlist.filter(riskanalysis_associacion__axis=self.AXIS_X).distinct().get()
+            dimension = dymlist.filter(damageassessment_association__axis=self.AXIS_X).distinct().get()
 
         feat_kwargs = self.url_kwargs_to_query_params(**kwargs)
         feat_kwargs['risk_analysis'] = risk.name        
@@ -257,7 +258,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 e = event.get_event_plain()                
                 e[data_key] = None                
                 try:              
-                    value_arr = values_events[str(e['id'])]
+                    value_arr = values_events[e['event_id']]
                     e[data_key] = round(Decimal(value_arr[3]), DEFAULT_DECIMAL_POINTS)
                 except:                    
                     pass

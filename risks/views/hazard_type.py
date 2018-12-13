@@ -1,7 +1,8 @@
 from django.views.generic import View
 from geonode.utils import json_response
 from risks.views.base import ContextAware, LocationSource
-from risks.models import HazardType, AnalysisClass, AnalysisType
+from risks.models.hazard_type import Hazard
+from risks.models.analysis_type import AnalysisType, scopes
 
 
 class HazardTypeView(ContextAware, LocationSource, View):    
@@ -9,38 +10,35 @@ class HazardTypeView(ContextAware, LocationSource, View):
     def get_hazard_type(self, region, location, **kwargs):
         app = self.get_app()
         try:
-            return HazardType.objects.get(mnemonic=kwargs['ht'], app=app).set_region(region).set_location(location)
-        except (KeyError, HazardType.DoesNotExist,):
+            return Hazard.objects.get(mnemonic=kwargs['ht'], app=app).set_region(region).set_location(location)
+        except (KeyError, Hazard.DoesNotExist,):
             return
 
     def get_analysis_type(self, region, location, hazard_type, **kwargs):
-        atypes = hazard_type.get_analysis_types()
-        aclasses = AnalysisClass.objects.all()
-        aclass_risk = aclasses.get(name='risk')
-        aclass_event = aclasses.get(name='event')
+        atypes = hazard_type.get_analysis_types()        
         if not atypes.exists():
             return None, None, None, None
         
-        first_atype = atypes.filter(analysis_class=aclass_risk).first()
+        first_atype = atypes.filter(scope='risk').first()
         if first_atype is not None:
             first_atype = first_atype.set_region(region).set_location(location).set_hazard_type(hazard_type)
-        first_atype_e = atypes.filter(analysis_class=aclass_event).first()
+        first_atype_e = atypes.filter(scope='event').first()
         if first_atype_e is not None:
             first_atype_e = first_atype_e.set_region(region).set_location(location).set_hazard_type(hazard_type)
         if not kwargs.get('at'):
             atype_r = first_atype
-            atype_e = first_atype_e
-            aclass = None
+            atype_e = first_atype_e   
+            scope = None         
         else:
             atype = atypes.filter(name=kwargs['at']).first()
             if atype is None:
                 return None, None, atypes, None
             else:
                 atype = atype.set_region(region).set_location(location).set_hazard_type(hazard_type)            
-                atype_r = atype if atype.analysis_class == aclass_risk else first_atype
-                atype_e = atype if atype.analysis_class == aclass_event else first_atype_e
-                aclass = atype.analysis_class
-        return atype_r, atype_e, atypes, aclass,
+                atype_r = atype if atype.scope == 'risk' else first_atype
+                atype_e = atype if atype.scope == 'event' else first_atype_e
+                scope = atype.scope
+        return atype_r, atype_e, atypes, scope,
 
     def get(self, request, *args, **kwargs):
         reg = self.get_region(**kwargs)
@@ -49,8 +47,7 @@ class HazardTypeView(ContextAware, LocationSource, View):
             return json_response(errors=['Invalid location code'], status=404)
         loc = locations[-1]
         app = self.get_app()
-        hazard_types = HazardType.objects.filter(app=app)
-        analysis_classes = AnalysisClass.objects.all()
+        hazard_types = Hazard.objects.filter(app=app)        
         analysis_types = AnalysisType.objects.filter(app=app)
 
         hazard_type = self.get_hazard_type(reg, loc, **kwargs)
@@ -58,14 +55,14 @@ class HazardTypeView(ContextAware, LocationSource, View):
         if not hazard_type:
             return json_response(errors=['Invalid hazard type'], status=404)
 
-        (atype_r, atype_e, atypes, aclass,) = self.get_analysis_type(reg, loc, hazard_type, **kwargs)
+        (atype_r, atype_e, atypes, scope,) = self.get_analysis_type(reg, loc, hazard_type, **kwargs)
                 
         if not atype_r and not atype_e:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404)        
 
         overview = {
             'hazardType': [ht.set_region(reg).set_location(loc).export() for ht in hazard_types],
-            'analysisClass': [ac.export() for ac in analysis_classes],
+            'analysisClass': list(scopes),
             'analysisType': [at.export(at.EXPORT_FIELDS_BASIC) for at in analysis_types]
         }
 

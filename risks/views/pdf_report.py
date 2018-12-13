@@ -8,7 +8,7 @@ from django.utils.crypto import get_random_string
 from django.template.loader import render_to_string
 from geonode.base.forms import ValuesListField
 from risks.views.base import ContextAware
-from risks.models import RiskAnalysis
+from risks.models import DamageAssessment
 from risks.pdf_helpers import generate_pdf
 
 
@@ -65,7 +65,7 @@ class PDFReportView(ContextAware, FormView):
                 further_resources.append(fr_item)
         ctx['context']['further_resources'] = further_resources
 
-        ctx['risk_analysis'] = risk_analysis = RiskAnalysis.objects.get(id=k['an'])
+        ctx['risk_analysis'] = risk_analysis = DamageAssessment.objects.get(id=k['an'])
 
         def p(val):
             # for test we need full fs path

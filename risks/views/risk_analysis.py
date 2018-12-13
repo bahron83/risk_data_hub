@@ -1,7 +1,7 @@
 from django.views.generic import View
 from geonode.utils import json_response
 from risks.views.base import ContextAware, LocationSource
-from risks.models import RiskAnalysis, Region, HazardType, AnalysisClass, AnalysisType
+from risks.models import DamageAssessment, Region, Hazard, AnalysisType
 
 class RiskAnalysisView(ContextAware, LocationSource, View):
     def prepare_data(self, resultset, region, location, rtype = 'risk_analysis'):
@@ -33,7 +33,7 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
         lookup_data = []        
         ra_ids = []
         hazard_type = None
-        analysis_class = None
+        scope = None
         analysis_type = None
         cleaned_args = self.clean_args(**kwargs)
         loc_chain = self.get_location(**kwargs)
@@ -47,24 +47,24 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
 
         if cleaned_args['ht']:
             try:       
-                hazard_type = HazardType.objects.get(mnemonic=kwargs['ht'])
-            except HazardType.DoesNotExist:
+                hazard_type = Hazard.objects.get(mnemonic=kwargs['ht'])
+            except Hazard.DoesNotExist:
                 return json_response(errors=['Invalid hazard type'], status=404)
         if cleaned_args['ac']:
             try:       
-                analysis_class = AnalysisClass.objects.get(name=kwargs['ac'])
+                scope = AnalysisType.objects.get(scope=kwargs['ac'])
             except AnalysisClass.DoesNotExist:
                 return json_response(errors=['Invalid analysis class'], status=404)            
         if cleaned_args['at']:
             analysis_type = AnalysisType.objects.filter(title=kwargs['at'])
 
         while loc is not None:
-            ra_matches = RiskAnalysis.objects.filter(region=region, administrative_divisions=loc)                           
+            ra_matches = DamageAssessment.objects.filter(region=region, administrative_divisions=loc)                           
             if ra_matches:
                 if hazard_type:
                     ra_matches = ra_matches.filter(hazard_type=hazard_type)
-                if analysis_class:
-                    ra_matches = ra_matches.filter(analysis_type__analysis_class=analysis_class)
+                if scope:
+                    ra_matches = ra_matches.filter(analysis_type__scope=scope)
                 if analysis_type:
                     at_ids = analysis_type.values_list('pk', flat=True)
                     ra_matches = ra_matches.filter(analysis_type__in=at_ids)                

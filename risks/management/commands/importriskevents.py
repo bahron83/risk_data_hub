@@ -139,9 +139,9 @@ class Command(BaseCommand):
                     #if not event_id:
                         #event_id, duplicates = Event.generate_event_id(obj['hazard_type'], country, obj['begin_date'], region)
                         #sheet.put_cell(row_num, 0, xlrd.XL_CELL_TEXT, event_id, sheet.cell_xf_index(row_num, 0))
-                    if obj['code']:                   
+                    if code:                   
                         try:
-                            event = Event.objects.filter(code=obj['code'], region=region).first()
+                            event = Event.objects.filter(code=code, region=region).first()
                             for key, value in obj.items():
                                 setattr(event, key, value)                    
                             event.save()
@@ -177,7 +177,6 @@ class Command(BaseCommand):
 
                     #insert into geoserver db
                     obj['event_id'] = event.id
-                    obj['state'] = event.state
                     db.insert_event(conn, obj)
 
                     #append event id to return list                        

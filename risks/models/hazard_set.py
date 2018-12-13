@@ -1,7 +1,6 @@
 from django.db import models
 from geonode.base.models import TopicCategory
 from risks.models import Exportable, PointOfContact, Region, RiskApp, FurtherResource
-from risks.models.base import rfs
 
 
 class HazardSet(Exportable, models.Model):
@@ -145,9 +144,9 @@ class HazardSet(Exportable, models.Model):
         blank=False
     )
 
-    riskanalysis = models.ForeignKey(
-        'RiskAnalysis',
-        related_name='riskanalysis',
+    damage_assessment = models.ForeignKey(
+        'DamageAssessment',
+        related_name='damage_assessment',
         blank=False,
         null=False
     )
@@ -158,7 +157,7 @@ class HazardSet(Exportable, models.Model):
     class Meta:
         """
         """
-        db_table = 'risks_hazardset'
+        db_table = 'risks_hazard_set'
 
     def get_category(self):
         return self.topic_category.identifier
@@ -179,10 +178,10 @@ class HazardSet(Exportable, models.Model):
             self.country.name
 
 
-class RiskAnalysisImportMetadata(models.Model):
+class DamageAssessmentImportMetadata(models.Model):
     """
     """
-    metadata_file = models.FileField(upload_to='metadata_files', storage=rfs, max_length=255)
+    metadata_file = models.FileField(upload_to='metadata_files', max_length=255)
 
     # Relationships
     riskapp = models.ForeignKey(
@@ -199,8 +198,8 @@ class RiskAnalysisImportMetadata(models.Model):
         unique=False,
     )
 
-    riskanalysis = models.ForeignKey(
-        'RiskAnalysis',
+    damage_assessment = models.ForeignKey(
+        'DamageAssessment',
         blank=False,
         null=False,
         unique=False,
@@ -220,11 +219,11 @@ class RiskAnalysisImportMetadata(models.Model):
     class Meta:
         """
         """
-        ordering = ['riskapp', 'region', 'riskanalysis']
+        ordering = ['riskapp', 'region', 'damage_assessment']
         db_table = 'risks_metadata_files'
-        verbose_name = 'Risks Analysis: Import or Update Metadata from \
+        verbose_name = 'Damage Assessment: Import or Update Metadata from \
                         XLSX file'
-        verbose_name_plural = 'Risks Analysis: Import or Update Metadata \
+        verbose_name_plural = 'Damage Assessment: Import or Update Metadata \
                                from XLSX file'
 
 
@@ -265,4 +264,4 @@ class HazardSetFurtherResourceAssociation(models.Model):
     class Meta:
         """
         """
-        db_table = 'risks_hazardsetfurtheresourceassociation'
+        db_table = 'risks_hazardset_furtheresourceassociation'
