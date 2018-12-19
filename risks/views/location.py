@@ -1,7 +1,7 @@
 from django.views.generic import View
 from geonode.utils import json_response
 from risks.views.base import ContextAware, LocationSource
-from risks.models import Hazard, AnalysisType
+from risks.models import Hazard, AnalysisType, scopes
 
 class LocationView(ContextAware, LocationSource, View):
 
@@ -16,7 +16,8 @@ class LocationView(ContextAware, LocationSource, View):
         analysis_types = AnalysisType.objects.filter(app=app)
         overview = {
             'hazardType': [ht.set_region(reg).set_location(loc).export() for ht in hazard_types],            
-            'analysisType': [at.export(at.EXPORT_FIELDS_BASIC) for at in analysis_types]
+            'analysisType': [at.export(at.EXPORT_FIELDS_BASIC) for at in analysis_types],
+            'scope': [s[0] for s in scopes]
         }
 
         location_data = {'navItems': [location.set_app(app).set_region(reg).export() for location in locations],

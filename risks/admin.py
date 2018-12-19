@@ -6,6 +6,7 @@ from django.shortcuts import redirect
 from django.utils.translation import ugettext as _
 from django.contrib import messages
 from django.db.models import Count
+from geonode.people.admin import ProfileAdmin
 
 import nested_admin
 
@@ -16,7 +17,7 @@ from risks.models import (RiskApp, AnalysisType, AssetCategory, Asset, AssetItem
                                 AttributeSet,
                                 Hazard, AdministrativeDivision, Location, Region, PointOfContact,
                                 Owner, SendaiTarget, SendaiIndicator, DamageAssessmentCreate, DamageAssessmentImportData,
-                                DamageAssessmentImportMetadata, EventImport, EventImportDamage, DataProvider, DataProviderMappings)
+                                DamageAssessmentImportMetadata, EventImport, EventImportDamage, DataProvider, DataProviderMappings, RdhUser)
 from risks.forms import (EventAttributeInlineFormSet, CreateDamageAssessmentForm, ImportDataDamageAssessmentForm,
                             ImportMetadataDamageAssessmentForm, ImportDataEventForm, ImportDataEventAttributeForm, PostEventPublishForm,
                             EventForm)
@@ -180,12 +181,19 @@ class DamageAssessmentAdmin(admin.ModelAdmin):
     model = DamageAssessment
     list_display_links = ('id',)
     list_display = ('id', 'name', 'analysis_type', 'unit_of_measure',)
+    readonly_fields = ('descriptor_file', 'data_file', 'metadata_file', 'state',)
     inlines = [DamageTypeValueInline]
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 class DamageAssessmentValueAdmin(admin.ModelAdmin):
     model = DamageAssessmentValue
     list_display_links = ('id',)
-    list_display = ('id', 'damage_assessment', 'phenomenon', 'damage_type_value_1', 'damage_type_value_2', 'item', 'value',)    
+    list_display = ('id', 'damage_assessment', 'phenomenon', 'damage_type_value_1', 'damage_type_value_2', 'item', 'value',)
+
+    def has_add_permission(self, request, obj=None):
+        return False    
 
 class EavAttributeAdmin(admin.ModelAdmin):
     model = EavAttribute
@@ -269,6 +277,7 @@ class HazardAdmin(admin.ModelAdmin):
     model = Hazard
     list_display_links = ('id',)
     list_display = ('id', 'mnemonic', 'title',)
+    readonly_fields = ('state',)
 
 class HazardSetAdmin(admin.ModelAdmin):
     model = HazardSet
@@ -469,6 +478,75 @@ class EventImportDamageDataAdmin(admin.ModelAdmin):
         messages.add_message(request, messages.INFO, FILE_UPLOADED_EMAIL)
         super(EventImportDamageDataAdmin, self).save_model(request, obj, form, change)
 
+class RdhUserAdmin(ProfileAdmin):     
+    def is_user_in_group(self, user, group_name):
+        return group_name in [str(g.name) for g in user.groups.all()]
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super(RdhUserAdmin, self).get_fieldsets(request, obj)
+        if 'change' in request.path:
+            user_groups_names = [str(g.name) for g in request.user.groups.all()]
+            t1 = (None, {'fields': ('username', 'password')})            
+            t4 = (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups')})
+            if not request.user.is_superuser:
+                t4 = (_('Permissions'), {'fields': ('is_active', 'is_staff', 'groups')})
+                if 'administrator' not in user_groups_names and request.user != obj:            
+                    t1 = (None, {'fields': ['username']})                
+            fieldsets = (
+                t1,
+                (_('Personal info'), {'fields': ('first_name', 'last_name', 'email')}),
+                (_('Region'), {'fields': ['region']}),
+                t4,        
+                (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+                (_('Extended profile'), {'fields': ('organization', 'profile',
+                                                    'position', 'voice', 'fax',
+                                                    'delivery', 'city', 'area',
+                                                    'zipcode', 'country',
+                                                    'keywords')}),
+            )
+        return fieldsets
+    
+    def has_add_permission(self, request, obj=None):
+        if request.user.is_superuser or self.is_user_in_group(request.user, 'administrator'):
+            return True
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        if request.user.is_superuser or self.is_user_in_group(request.user, 'administrator'):
+            return True
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return True
+        elif 'change' not in request.path:
+            return True
+        elif obj:
+            if request.user == obj:
+                return True
+            elif request.user.region and obj.region == request.user.region:                
+                if self.is_user_in_group(request.user, 'administrator'):
+                    if not self.is_user_in_group(obj, 'administrator') and not obj.is_superuser:
+                        return True
+        return False
+
+    def get_queryset(self, request):
+        qs = super(RdhUserAdmin, self).get_queryset(request)
+        if not request.user.is_superuser and 'change' not in request.path:            
+            if request.user.region:
+                return qs.filter(region=request.user.region, is_superuser=False)
+        return qs  
+
+    def response_add(self, request, obj, post_url_continue=None):
+        obj.region = request.user.region
+        obj.save()
+        return super(RdhUserAdmin, self).response_add(request, obj, post_url_continue)
+
+    def get_readonly_fields(self, request, obj=None):
+        if not request.user.is_superuser:
+            return ['region']
+        return []
+
 
 admin.site.register(AdministrativeDivision, AdministrativeDivisionAdmin)
 admin.site.register(AnalysisType, AnalysisTypeAdmin)
@@ -492,3 +570,4 @@ admin.site.register(DamageAssessmentImportData, DamageAssessmentImportDataAdmin)
 admin.site.register(DamageAssessmentImportMetadata, DamageAssessmentImportMetaDataAdmin)
 admin.site.register(EventImport, EventImportAdmin)
 admin.site.register(EventImportDamage, EventImportDamageDataAdmin)
+admin.site.register(RdhUser, RdhUserAdmin)

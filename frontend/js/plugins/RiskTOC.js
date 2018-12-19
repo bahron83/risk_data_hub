@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 const React = require('react');
+const PropTypes = require('prop-types');
 const ReactDOM = require('react-dom');
 const {connect} = require('react-redux');
 const {createSelector} = require('reselect');
@@ -39,67 +40,65 @@ const DefaultGroup = require('../../MapStore2/web/client/components/TOC/DefaultG
 const DefaultLayer = require('../../MapStore2/web/client/components/TOC/DefaultLayer');
 const DefaultLayerOrGroup = require('../../MapStore2/web/client/components/TOC/DefaultLayerOrGroup');
 
-const LayerTree = React.createClass({
-    propTypes: {
-        id: React.PropTypes.number,
-        buttonContent: React.PropTypes.node,
-        groups: React.PropTypes.array,
-        settings: React.PropTypes.object,
-        querypanelEnabled: React.PropTypes.bool,
-        groupStyle: React.PropTypes.object,
-        groupPropertiesChangeHandler: React.PropTypes.func,
-        layerPropertiesChangeHandler: React.PropTypes.func,
-        onToggleGroup: React.PropTypes.func,
-        onToggleLayer: React.PropTypes.func,
-        onToggleQuery: React.PropTypes.func,
-        onZoomToExtent: React.PropTypes.func,
-        retrieveLayerData: React.PropTypes.func,
-        onSort: React.PropTypes.func,
-        onSettings: React.PropTypes.func,
-        hideSettings: React.PropTypes.func,
-        updateSettings: React.PropTypes.func,
-        updateNode: React.PropTypes.func,
-        removeNode: React.PropTypes.func,
-        activateRemoveLayer: React.PropTypes.bool,
-        activateLegendTool: React.PropTypes.bool,
-        activateZoomTool: React.PropTypes.bool,
-        activateQueryTool: React.PropTypes.bool,
-        activateSettingsTool: React.PropTypes.bool,
-        visibilityCheckType: React.PropTypes.string,
-        settingsOptions: React.PropTypes.object,
-        enabled: React.PropTypes.bool
-    },
-    getDefaultProps() {        
-        return {
-            groupPropertiesChangeHandler: () => {},
-            layerPropertiesChangeHandler: () => {},
-            retrieveLayerData: () => {},
-            onToggleGroup: () => {},
-            onToggleLayer: () => {},
-            onToggleQuery: () => {},
-            onZoomToExtent: () => {},
-            onSettings: () => {},
-            updateNode: () => {},
-            removeNode: () => {},
-            activateLegendTool: false,
-            activateZoomTool: false,
-            activateSettingsTool: false,
-            activateRemoveLayer: false,
-            activateQueryTool: false,
-            visibilityCheckType: "glyph",
-            settingsOptions: {
-                includeCloseButton: false,
-                closeGlyph: "1-close",
-                asModal: false,
-                buttonSize: "small"
-            },
-            querypanelEnabled: false
-        };
-    },
+class LayerTree extends React.Component{
+    static propTypes = {
+        id: PropTypes.number,
+        buttonContent: PropTypes.node,
+        groups: PropTypes.array,
+        settings: PropTypes.object,
+        querypanelEnabled: PropTypes.bool,
+        groupStyle: PropTypes.object,
+        groupPropertiesChangeHandler: PropTypes.func,
+        layerPropertiesChangeHandler: PropTypes.func,
+        onToggleGroup: PropTypes.func,
+        onToggleLayer: PropTypes.func,
+        onToggleQuery: PropTypes.func,
+        onZoomToExtent: PropTypes.func,
+        retrieveLayerData: PropTypes.func,
+        onSort: PropTypes.func,
+        onSettings: PropTypes.func,
+        hideSettings: PropTypes.func,
+        updateSettings: PropTypes.func,
+        updateNode: PropTypes.func,
+        removeNode: PropTypes.func,
+        activateRemoveLayer: PropTypes.bool,
+        activateLegendTool: PropTypes.bool,
+        activateZoomTool: PropTypes.bool,
+        activateQueryTool: PropTypes.bool,
+        activateSettingsTool: PropTypes.bool,
+        visibilityCheckType: PropTypes.string,
+        settingsOptions: PropTypes.object,
+        enabled: PropTypes.bool
+    }
+    static defaultProps = {                
+        groupPropertiesChangeHandler: () => {},
+        layerPropertiesChangeHandler: () => {},
+        retrieveLayerData: () => {},
+        onToggleGroup: () => {},
+        onToggleLayer: () => {},
+        onToggleQuery: () => {},
+        onZoomToExtent: () => {},
+        onSettings: () => {},
+        updateNode: () => {},
+        removeNode: () => {},
+        activateLegendTool: false,
+        activateZoomTool: false,
+        activateSettingsTool: false,
+        activateRemoveLayer: false,
+        activateQueryTool: false,
+        visibilityCheckType: "glyph",
+        settingsOptions: {
+            includeCloseButton: false,
+            closeGlyph: "1-close",
+            asModal: false,
+            buttonSize: "small"
+        },
+        querypanelEnabled: false        
+    }
     getNoBackgroundLayers(group) {
         return group.name !== 'background';
-    },
-    renderTOC() {        
+    }
+    renderTOC() {           
         const Group = (<DefaultGroup onSort={this.props.onSort}
                                   propertiesChangeHandler={this.props.groupPropertiesChangeHandler}
                                   onToggle={this.props.onToggleGroup}
@@ -130,7 +129,7 @@ const LayerTree = React.createClass({
                             opacityText={<Message msgId="opacity"/>}
                             saveText={<Message msgId="save"/>}
                             closeText={<Message msgId="close"/>}
-                            groups={this.props.groups}/>);
+                            groups={this.props.groups}/>);                
         return (
             <div className="risk-toc-container">
                 <TOC onSort={this.props.onSort} filter={this.getNoBackgroundLayers}
@@ -139,16 +138,16 @@ const LayerTree = React.createClass({
                 </TOC>
             </div>
         );
-    },
-    render() {
+    }
+    render() {                
         if (!this.props.groups || !this.props.enabled) {
             return null;
         }
         return this.renderTOC();
-    },
+    }
     componentDidMount() {               
         this.componentDidUpdate();
-    },
+    }
     componentDidUpdate() {                
         const overlays = this.props.groups.filter(item => { return item.id === 'Gis Overlays' });
         if(ReactDOM.findDOMNode(this) !== null) {  
@@ -173,7 +172,7 @@ const LayerTree = React.createClass({
             }
         }                
     }
-});
+}
 
 const TOCPlugin = connect(tocSelector, {
     groupPropertiesChangeHandler: changeGroupProperties,

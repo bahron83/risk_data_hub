@@ -41,6 +41,7 @@ from risks.models.eav_attribute import EavAttribute, data_types
 from risks.models.region import Region
 from risks.models.hazard_set import HazardSet, DamageAssessmentImportMetadata
 from risks.models.risk_analysis import DamageAssessment, DamageAssessmentCreate, DamageAssessmentImportData
+from risks.models.user import AccessRule
 from risks.tasks import (create_damage_assessment, import_damage_assessment_data,
                             import_damage_assessment_metadata, import_event_data, import_event_attributes)
 
@@ -96,13 +97,16 @@ class EventForm(forms.ModelForm):
         }    
 
     def clean(self):
-        details = self.cleaned_data.get('details')
+        details = self.cleaned_data.get('details')        
         if details:
+            event_attributes = self.instance.attribute_set.attributes.all()
             for k in details.keys():
+                if not event_attributes.filter(name=k).first():
+                    raise forms.ValidationError("Invalid attribute {}. Check that it's included in attribute set".format(k))
                 try:
                     attribute = EavAttribute.objects.get(name=k)
                 except EavAttribute.DoesNotExist:
-                    raise form.ValidationError("Unknown attribute")
+                    raise forms.ValidationError("Unknown attribute")
                 if not is_valid_attribute(attribute, details[k]):
                     raise forms.ValidationError("Invalid data for attribute {}. Please, check that is a valid {}".format(k, attribute.data_type))
         return self.cleaned_data

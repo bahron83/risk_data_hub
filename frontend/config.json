@@ -8,13 +8,15 @@
       -20037508.34, -20037508.34,
       20037508.34, 20037508.34
     ],
-    "layers": [{
-      "type": "osm",
-      "title": "Open Street Map",
-      "name": "mapnik",
-            "source": "osm",
-      "group": "background",
-            "visibility": true
-        }]
+    "layers": [
+      {
+        "type": "osm",
+        "title": "Open Street Map",
+        "name": "mapnik",
+        "source": "osm",
+        "group": "background",
+        "visibility": true
+      }
+    ]
   }
 }

@@ -62,7 +62,7 @@ class ResizableMapComponent extends React.Component {
                     ...this.props.options,
                     onClickEvent: event => {
                         const layers = this.getLayers(event);
-                        if (layers && !head(layers.filter(layer => layer.get('msId') === 'datasets_layer' && layer.getVisible()))) {
+                        if (layers && !head(layers.filter(layer => layer.get('msId') === 'adminunits' && layer.getVisible()))) {
                             return null;
                         }
                         const featuresAtPixel = event.target && event.target.getFeaturesAtPixel && event.target.getFeaturesAtPixel(event.pixel);
@@ -94,7 +94,7 @@ class ResizableMapComponent extends React.Component {
                     },
                     onMoveEvent: event => {
                         const layers = this.getLayers(event);
-                        if (layers && !head(layers.filter(layer => layer.get('msId') === 'datasets_layer' && layer.getVisible()))) {
+                        if (layers && !head(layers.filter(layer => layer.get('msId') === 'adminunits' && layer.getVisible()))) {
                             if (this.props.mousePointer !== 'default') {
                                 this.props.onChangePointer('default');
                             }
@@ -116,7 +116,7 @@ class ResizableMapComponent extends React.Component {
 
                         if (layers && layers.length > 0) {
                             layers.forEach(layer => {
-                                if (layer.type === 'VECTOR' && layer.get('msId') === 'datasets_layer' && layer.getSource) {
+                                if (layer.type === 'VECTOR' && layer.get('msId') === 'adminunits' && layer.getSource) {
                                     layer.getSource().forEachFeature(feature => {
                                         const properties = feature.getProperties();
                                         if (id && id === properties[this.props.propertyId]) {

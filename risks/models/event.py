@@ -3,8 +3,7 @@ from django.db import models
 from django.contrib.postgres.indexes import GinIndex
 from risks.models.risk_app import RiskAppAware
 from risks.models.entity import LocationAware, HazardTypeAware, Exportable, Schedulable
-from risks.models import (EntityAbstract, AttributeValueVarchar, AttributeValueText,
-                                AttributeValueInt, AttributeValueDecimal, AttributeValueDate)
+from risks.models import (EntityAbstract, AdministrativeDivision)
 from risks.models.eav_attribute import entity_types
 from risks.models.location import levels
 
@@ -29,7 +28,7 @@ class EventAttributeValueDate(AttributeValueDate):
 class Phenomenon(models.Model):
     id = models.AutoField(primary_key=True)
     event = models.ForeignKey('Event')
-    administrative_division = models.ForeignKey('AdministrativeDivision')
+    administrative_division = models.ForeignKey('AdministrativeDivision', limit_choices_to={'id__in': AdministrativeDivision.objects.filter(level__gte=1)})
     begin_date = models.DateField() 
     end_date = models.DateField()          
 
@@ -49,6 +48,7 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
     
     country = models.ForeignKey(
         'AdministrativeDivision',
+        limit_choices_to={'id__in': AdministrativeDivision.objects.filter(level=1)},
         blank=True,
         null=True,
         unique=False,        

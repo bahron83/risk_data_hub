@@ -53,13 +53,13 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
         if cleaned_args['ac']:
             try:       
                 scope = AnalysisType.objects.get(scope=kwargs['ac'])
-            except AnalysisClass.DoesNotExist:
-                return json_response(errors=['Invalid analysis class'], status=404)            
+            except AnalysisType.DoesNotExist:
+                return json_response(errors=['Invalid scope'], status=404)            
         if cleaned_args['at']:
             analysis_type = AnalysisType.objects.filter(title=kwargs['at'])
 
         while loc is not None:
-            ra_matches = DamageAssessment.objects.filter(region=region, administrative_divisions=loc)                           
+            ra_matches = DamageAssessment.objects.filter(region=region, phenomena__administrative_division=loc)                           
             if ra_matches:
                 if hazard_type:
                     ra_matches = ra_matches.filter(hazard_type=hazard_type)

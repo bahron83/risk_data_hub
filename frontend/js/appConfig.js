@@ -6,6 +6,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+//data from Home Page
+const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
+const defaultUrlPrefix = '';
+const contextUrlPrefix = disasterRisk && disasterRisk.contextUrl || defaultUrlPrefix;
+
 module.exports = {
     pages: [{
         name: "home",
@@ -16,6 +21,9 @@ module.exports = {
         path: "/main",
         component: require('./pages/Main')
     }],
+    themeCfg: {
+        path: `${contextUrlPrefix}/static/js`
+    },
     initialState: {
         defaultState: {
             //mousePosition: {enabled: false},
@@ -52,9 +60,11 @@ module.exports = {
                 }
             },
             disaster: {
-                app: 'risks'
+                app: 'risks',
+                contextUrl: contextUrlPrefix,
+                disasterRisk: disasterRisk
             }
-        },
+        },        
         mobile: {
             mapInfo: {enabled: true, infoFormat: 'application/json' },
             //mousePosition: {enabled: true, crs: "EPSG:4326", showCenter: true}

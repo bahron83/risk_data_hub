@@ -70,30 +70,29 @@ const createBaseVectorLayer = name => ({
     name: name,
     title: name,
     visibility: true,
-    hideLoading: true
+    hideLoading: true,
+    group: "Default",
+    queryable: false
 });
 
-const initDataLayerEpic = action$ =>
+const initDataLayerEpic = (action$, store) =>
     action$.ofType(MAP_CONFIG_LOADED)
-        .switchMap(() => {
-            //data from Home Page
-            const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
-            const defaultUrlPrefix = '';
-            const contextUrlPrefix = disasterRisk && disasterRisk.contextUrl || defaultUrlPrefix;
+        .switchMap(() => {   
+            const { disasterRisk, contextUrl } = (store.getState()).disaster;         
             const loc = disasterRisk && disasterRisk.app && disasterRisk.app.region || 'EU';
             const reg = disasterRisk && disasterRisk.app && disasterRisk.app.regionName || 'Europe';
-            const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/loc/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/reg/Europe/loc/EU/`;
-            const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/geom/${loc}/` || `${contextUrlPrefix}/risks/data_extraction/reg/Europe/geom/EU/`;        
+            const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/loc/${loc}/` || `${contextUrl}/risks/data_extraction/reg/Europe/loc/EU/`;
+            const geomPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/geom/${loc}/` || `${contextUrl}/risks/data_extraction/reg/Europe/geom/EU/`;        
             
             return Rx.Observable.of(
                 addLayer(
                     {
-                        ...createBaseVectorLayer('datasets_layer'),
+                        ...createBaseVectorLayer('adminunits'),
                         features: [],
                         style: getMainViewStyle()
                     }
                 ),
-                addLayer(
+                /*addLayer(
                     {
                         ...createBaseVectorLayer('search_layer'),
                         features: [],
@@ -106,7 +105,7 @@ const initDataLayerEpic = action$ =>
                         features: [],
                         style: getSearchLayerStyle()
                     }
-                ),
+                ),*/
                 getData(dataPath),
                 getFeatures(geomPath)
             );
@@ -143,7 +142,7 @@ const getRiskFeatures = (action$, store) =>
         Rx.Observable.defer(() => Api.getData(action.url))
         .retry(1)
         .map(val => [zoomToExtent(bbox(val.features[0]), "EPSG:4326"),
-                changeLayerProperties("datasets_layer", {features: val.features.map((f, idx) => (assign({}, f, {id: idx}))) || []}),
+                changeLayerProperties("adminunits", {features: val.features.map((f, idx) => (assign({}, f, {id: idx}))) || []}),
                 featuresLoaded(val.features)])
         .mergeAll()
         .startWith(featuresLoading())
@@ -151,7 +150,7 @@ const getRiskFeatures = (action$, store) =>
     );
 const applyFiltersEpic = (action$, store) =>
     action$.ofType(APPLY_FILTERS).switchMap(action => {
-        const { app, contextUrl } = (store.getState()).disaster;             
+        const { app, contextUrl } = (store.getState()).disaster;            
         const { reg, loc, ht, ac, at } = action;
         const urlPrefix = `${contextUrl}/${app}/data_extraction`;
         const url = `${urlPrefix}/reg/${reg}/loc/${loc}/ht/${ht}/ac/${ac}/at/${at}/`;

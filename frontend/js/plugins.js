@@ -9,31 +9,37 @@
 module.exports = {
     plugins: {
         // SearchServicesConfigPlugin: require('../MapStore2/web/client/plugins/SearchServicesConfig'),
-
-
+        MapLoadingPlugin: require('./plugins/MapLoading'),
+        MapPlugin: require('../MapStore2/web/client/plugins/Map'),
         DataExplorerPlugin: require('./plugins/DataExplorer'),
+        TOCPlugin: require('./plugins/RiskTOC'),
+        
+        NotificationsPlugin: require('../MapStore2/web/client/plugins/Notifications'),
+        OmniBarPlugin: require('../MapStore2/web/client/plugins/OmniBar'),
         //DataExplorerButtonPlugin: require('./plugins/DataExplorerButton'),
         //BrandNavbarPlugin: require('./plugins/BrandNavBar'),
         //ZoomToSearchPlugin: require('./plugins/ZoomToSearch'),
-        TOCPlugin: require('./plugins/TOC'),
-        TOCButtonPlugin: require('./plugins/TOCButton'),
+        //TOCPlugin: require('./plugins/TOC'),
+        //TOCButtonPlugin: require('./plugins/TOCButton'),
+        ToolbarPlugin: require('../MapStore2/web/client/plugins/Toolbar'),
         //SpatialFilterPlugin: require('./plugins/SpatialFilter'),
-        MapLoadingPlugin: require('./plugins/MapLoading'),
+        
         //DownloadPlugin: require('./plugins/Download'),
         //AboutPlugin: require('./plugins/About'),
         //SearchPlugin: require('./plugins/Search'),
         //DownloadsCounterPlugin: require('./plugins/DownloadsCounter'),
 
-        ToolbarPlugin: require('../MapStore2/web/client/plugins/Toolbar'),
-        ExpanderPlugin: require('../MapStore2/web/client/plugins/Expander'),
-        UndoPlugin: require('../MapStore2/web/client/plugins/History'),
-        RedoPlugin: require('../MapStore2/web/client/plugins/History'),
-        ZoomInPlugin: require('../MapStore2/web/client/plugins/ZoomIn'),
-        ZoomOutPlugin: require('../MapStore2/web/client/plugins/ZoomOut'),
-        ZoomAllPlugin: require('../MapStore2/web/client/plugins/ZoomAll'),
-        FullScreenPlugin: require('../MapStore2/web/client/plugins/FullScreen'),
-        NotificationsPlugin: require('../MapStore2/web/client/plugins/Notifications'),
-        MapPlugin: require('../MapStore2/web/client/plugins/Map')
+        
+        //ExpanderPlugin: require('../MapStore2/web/client/plugins/Expander'),
+        //UndoPlugin: require('../MapStore2/web/client/plugins/History'),
+        //RedoPlugin: require('../MapStore2/web/client/plugins/History'),
+        //ZoomInPlugin: require('../MapStore2/web/client/plugins/ZoomIn'),
+        //ZoomOutPlugin: require('../MapStore2/web/client/plugins/ZoomOut'),
+        //ZoomAllPlugin: require('../MapStore2/web/client/plugins/ZoomAll'),
+        //FullScreenPlugin: require('../MapStore2/web/client/plugins/FullScreen'),
+        
+        //IdenifyPlugin: require('../MapStore2/web/client/plugins/Identify'),
+        
         //MapPlugin: require('./plugins/Map')
 
         /*DetailsPlugin: require('../plugins/Details'),
@@ -113,7 +119,7 @@ module.exports = {
         TOCItemsSettingsPlugin: require('../plugins/TOCItemsSettings')*/
     },
     requires: {
-        ReactSwipe: require('react-swipeable-views').default,
-        SwipeHeader: require('../MapStore2/web/client/components/data/identify/SwipeHeader')
+        //ReactSwipe: require('react-swipeable-views').default,
+        //SwipeHeader: require('../MapStore2/web/client/components/data/identify/SwipeHeader')
     }
 };

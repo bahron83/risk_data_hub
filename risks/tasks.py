@@ -21,7 +21,7 @@ def create_damage_assessment(input_file, final_name, current_user_id):
         value = out.getvalue()
 
         da = DamageAssessment.objects.get(name=str(value).strip())
-        print('risk found: {}'.format(risk.name))
+        print('risk found: {}'.format(da.name))
         '''try:
             with transaction.atomic():
                 risk.descriptor_file = file_ini

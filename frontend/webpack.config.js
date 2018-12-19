@@ -12,8 +12,9 @@ module.exports = {
     entry: assign({
         'webpack-dev-server': 'webpack-dev-server/client?http://0.0.0.0:8081', // WebpackDevServer host and port
         'webpack': 'webpack/hot/only-dev-server', // "only" prevents reload on syntax errors
-        'RiskDataHubClient': path.join(__dirname, "js", "app")
-    }, themeEntries),
+        'RiskDataHubClient': path.join(__dirname, "js", "app"),
+        'default': path.join(__dirname, "assets", "themes", "map", "theme.less")
+    }),
     output: {
         path: path.join(__dirname, "dist"),
         publicPath: "/dist/",
@@ -48,7 +49,8 @@ module.exports = {
         new NormalModuleReplacementPlugin(/map\/openlayers\/DrawSupport/, path.join(__dirname, "js", "ms2Override", "components", "DrawSupport.jsx")),
         new NormalModuleReplacementPlugin(/DockPanel.jsx/, path.join(__dirname, "js", "ms2Override", "components", "DockPanel.jsx")),
         new NormalModuleReplacementPlugin(/PanelHeader.jsx/, path.join(__dirname, "js", "ms2Override", "components", "PanelHeader.jsx")),
-        new NormalModuleReplacementPlugin(/selectors\/layers/, path.join(__dirname, "js", "ms2Override", "selectors", "layers.js")),
+        //new NormalModuleReplacementPlugin(/selectors\/layers/, path.join(__dirname, "js", "ms2Override", "selectors", "layers.js")),
+        new NormalModuleReplacementPlugin(/client\/selectors\/layer/, path.join(__dirname, "js", "ms2Override", "layersSelector.js")),
         new NormalModuleReplacementPlugin(/VectorStyle.js/, path.join(__dirname, "js", "ms2Override", "components", "VectorStyle.js")),
         new NormalModuleReplacementPlugin(/SideCard.jsx/, path.join(__dirname, "js", "ms2Override", "components", "SideCard.jsx")),
         new NormalModuleReplacementPlugin(/SideGrid.jsx/, path.join(__dirname, "js", "ms2Override", "components", "SideGrid.jsx")),

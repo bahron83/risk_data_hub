@@ -19,6 +19,7 @@
 #########################################################################
 
 from optparse import make_option
+from dateutil.parser import parse as parse_date
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -26,9 +27,10 @@ from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 User = get_user_model()
 from geonode.layers.models import Layer
-from risks.models import RiskAnalysis, HazardType, RiskApp
-from risks.models import AnalysisType, DymensionInfo
-from risks.models import RiskAnalysisDymensionInfoAssociation, SendaiTarget
+from risks.models.user import RdhUser
+from risks.models import DamageAssessment, Hazard, RiskApp
+from risks.models import AnalysisType, DamageType
+from risks.models import DamageTypeValue, SendaiTarget
 
 from django.db import IntegrityError, transaction
 
@@ -142,18 +144,18 @@ Loss Impact and Impact Analysis Types.'
         return parser
     
     @transaction.atomic
-    def create_relation(self, value, dymensioninfo, riskanalysis, order, axis, layer_attribute, sendai_target):
+    def create_relation(self, value, damage_type, damage_assessment, order, axis, layer_attribute, sendai_indicator):
         res = None
         try:
             with transaction.atomic():
-                rd, created = RiskAnalysisDymensionInfoAssociation.objects.update_or_create(
+                rd, created = DamageTypeValue.objects.update_or_create(
                     value=value,
-                    dymensioninfo = dymensioninfo,
-                    riskanalysis = riskanalysis,
+                    damage_type = damage_type,
+                    damage_assessment = damage_assessment,
                     order = order,
                     axis = axis,
                     layer_attribute = layer_attribute,
-                    sendai_target=sendai_target
+                    sendai_indicator=sendai_indicator
                 )  
                 res = rd              
         except IntegrityError:
@@ -169,23 +171,29 @@ Loss Impact and Impact Analysis Types.'
 '--descriptor_file' is mandatory")
 
         Config.read(descriptor_file)
-        risk_name = Config.get('DEFAULT', 'name')        
+        da_name = Config.get('DEFAULT', 'name')        
         analysis_type_name = Config.get('DEFAULT', 'analysis_type')
         hazard_type_name = Config.get('DEFAULT', 'hazard_type')
         layer_name = Config.get('DEFAULT', 'layer')
+        assessment_date_str = Config.get('DEFAULT', 'assessment_date')
         tags = Config.get('DEFAULT', 'tags')
         try:
             app_name = Config.get('DEFAULT', 'app')
         except ConfigParser.NoOptionError:
             app_name = options['risk_app']
 
+        try:
+            assessment_date = parse_date(assessment_date_str)
+        except ValueError:
+            raise CommandError("Invalid date format {}".format(assessment_date_str))
+
         app = RiskApp.objects.get(name=app_name)
 
-        if RiskAnalysis.objects.filter(name=risk_name, app=app).exists():
-            raise CommandError("A Risk Analysis with name '" + risk_name +
+        if DamageAssessment.objects.filter(name=da_name, app=app).exists():
+            raise CommandError("A Risk Analysis with name '" + da_name +
                                "' already exists on DB!")
 
-        if not HazardType.objects.filter(mnemonic=hazard_type_name, app=app).exists():
+        if not Hazard.objects.filter(mnemonic=hazard_type_name, app=app).exists():
             raise CommandError("An Hazard Type with mnemonic '" +
                                hazard_type_name+"' does not exist on DB!")
 
@@ -197,55 +205,62 @@ Loss Impact and Impact Analysis Types.'
             raise CommandError("A Layer with name '" + layer_name +
                                "' does not exist on DB!")
 
-        hazard = HazardType.objects.get(mnemonic=hazard_type_name, app=app)
+        hazard = Hazard.objects.get(mnemonic=hazard_type_name, app=app)
         analysis = AnalysisType.objects.get(name=analysis_type_name, app=app)
         layer = Layer.objects.get(name=layer_name)
-        owner = User.objects.get(id=user_id)
+        matched_user = User.objects.get(id=user_id)
+        owner = RdhUser.objects.get(id=user_id)
+
+        if not owner.region:
+            raise CommandError("Current user must be assigned to a Region to upload data!")
+
         print ("before transaction")
-        risk, created = RiskAnalysis.objects.update_or_create(
+        da, created = DamageAssessment.objects.update_or_create(
             owner=owner,
-            name=risk_name,
+            name=da_name,
             app=app,            
             analysis_type = analysis,
-            hazard_type = hazard,
-            layer = layer
+            hazard = hazard,
+            region = owner.region,
+            layer = layer,
+            assessment_date = assessment_date
         ) 
 
         if tags:
-            RiskAnalysis.objects.filter(pk=risk.id).update(tags=tags)
+            DamageAssessment.objects.filter(pk=da.id).update(tags=tags)
 
         if created:
             print ("Created Risk Analysis [%s] (%s) - %s" %
-                (risk_name, hazard, analysis))
+                (da_name, hazard, analysis))
 
             for section in Config.sections():            
-                dimension_values = ConfigSectionMap(section)
+                damage_type_values = ConfigSectionMap(section)
 
                 values = list(filter(None,
                                     (x.strip() for x in
-                                    dimension_values['values'].splitlines())))
+                                    damage_type_values['values'].splitlines())))
 
-                if 'sendai_targets' in dimension_values:
-                    sendai_targets = list(filter(None,
+                if 'sendai_indicators' in damage_type_values:
+                    sendai_indicators = list(filter(None,
                                         (x.strip() for x in
-                                        dimension_values['sendai_targets'].splitlines())))
+                                        damage_type_values['sendai_indicators'].splitlines())))
 
-                dim_name = dimension_values['dymensioninfo']
+                dim_name = damage_type_values['damagetype']
                 i = 0
                 for counter, dim_value in enumerate(values):                        
-                    diminfo = DymensionInfo.objects.get(name=dim_name)  
+                    damage_type = DamageType.objects.get(name=dim_name)  
                     sendai_target = None
                     try:
-                        sendai_target = SendaiTarget.objects.get(code=sendai_targets[i])
+                        sendai_indicator = SendaiTarget.objects.get(code=sendai_indicators[i])
                     except:
-                        pass
-                    rd = self.create_relation(dim_value, diminfo, risk, counter, dimension_values['axis'], dimension_values['layer_attribute'], sendai_target)                       
+                        sendai_indicator = None
+                    rd = self.create_relation(dim_value, damage_type, da, counter, damage_type_values['axis'], damage_type_values['layer_attribute'], sendai_indicator)                       
                     if rd is not None:
                         print ("Created Risk Analysis Dym %s [%s] (%s) - axis %s" %
                         (rd.order, dim_value, dim_name, rd.axis))            
                     i += 1
 
-        return risk_name    
+        return da_name    
 
 def ConfigSectionMap(section):
     dict1 = {}

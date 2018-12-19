@@ -14,7 +14,7 @@ class Filters extends Component {
             at: null            
         }; 
         this.onHazardChanged = this.onHazardChanged.bind(this);
-        this.onAnalysisClassChanged = this.onAnalysisClassChanged.bind(this);
+        this.onScopeChanged = this.onScopeChanged.bind(this);
         this.onAnalysisTypeChanged = this.onAnalysisTypeChanged.bind(this);
         this.handleClick = this.handleClick.bind(this);
         this.removeFilter = this.removeFilter.bind(this);
@@ -28,7 +28,7 @@ class Filters extends Component {
         })
     }
 
-    onAnalysisClassChanged(e) {
+    onScopeChanged(e) {
         this.setState({
             ac: e.target.value
         })
@@ -53,12 +53,12 @@ class Filters extends Component {
         }
     }
 
-    renderAnalysisClassFilter(analysisClass) {
-        if(analysisClass && analysisClass.length > 0) {
-            return analysisClass.map(h => {
+    renderScopeFilter(scope) {
+        if(scope && scope.length > 0) {
+            return scope.map(s => {
                 return (
-                    <label key={h.name} className="label-container">{h.title}                        
-                        <input type="radio" name="analysisClass" value={h.name} checked={this.state.ac === h.name} onChange={this.onAnalysisClassChanged}/>
+                    <label key={s} className="label-container capitalize">{s}                        
+                        <input type="radio" name="scope" value={s} checked={this.state.ac === s} onChange={this.onScopeChanged}/>
                         <span className="checkmark"></span>                                              
                     </label>
                 )
@@ -124,7 +124,7 @@ class Filters extends Component {
 
     render() {
         const { switchContext, filteredAnalysis } = this.props;
-        const { hazardType, analysisClass, analysisType } = this.props && this.props.data;        
+        const { hazardType, scope, analysisType } = this.props && this.props.data;        
         /*return (
             <div id="disaster-overview-list" className="disaster-level-container">                
                 <h3 className="heading">Explore Datasets</h3>
@@ -134,7 +134,7 @@ class Filters extends Component {
                 </Panel>
                 <Panel className="panel-box">
                     <h4>Scope</h4>
-                    {this.renderAnalysisClassFilter(analysisClass)}
+                    {this.renderScopeFilter(scope)}
                 </Panel>
                 <Panel className="panel-box">
                     <h4>Analysis Type</h4>
@@ -155,7 +155,7 @@ class Filters extends Component {
                     </div>
                     <div>
                         <h3>Scope</h3>
-                        {this.renderAnalysisClassFilter(analysisClass)}                        
+                        {this.renderScopeFilter(scope)}                        
                     </div>
                     <div>
                         <h3>Analysis Type</h3>

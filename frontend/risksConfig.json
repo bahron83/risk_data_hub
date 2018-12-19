@@ -12,8 +12,8 @@
 		}
 	},
 	"plugins": {
-			"home": [			
-				"TOC",									
+			"home": [							
+				"MapLoading",
 				{
 					"name": "Map",
 					"cfg": {
@@ -21,15 +21,35 @@
 													
 					}
 				},
+				"TOC",				
+				{
+					"name": "Identify",
+					"cfg": {
+						"style": {
+							"position": "fixed",
+							"width": "100%",
+							"bottom": "0",
+							"left": "0",
+							"zIndex": 1023,
+							"maxHeight": "70%",
+							"marginBottom": 0
+						},
+						"viewerOptions": {
+							"container": "{context.ReactSwipe}",
+							"header": "{context.SwipeHeader}",
+							"headerOptions": {
+								"useButtons": true
+							}
+						}
+					}
+				},
 				{
 					"name": "DataExplorer",
 					"cfg": {
 							"containerPosition": "columns"
 					}
-				},
-				"MapLoading",
-				"ZoomAll",
-				"TOCButton",
+				},				
+				"ZoomAll",				
 				{
 					"name": "ZoomIn",
 					"override": {

@@ -45,10 +45,11 @@ module.exports = (config, pluginsDef) => {
         const { loadAfterThemeSelector } = require('../MapStore2/web/client/selectors/config');
         const StandardApp = require('../MapStore2/web/client/components/app/StandardApp');
 
-        const { pages, initialState, storeOpts, appEpics = {} } = config;
+        const { pages, initialState, storeOpts, appEpics = {}, themeCfg } = config;
 
         const StandardRouter = connect((state) => ({
             locale: state.locale || {},
+            themeCfg,
             pages,
             loadAfterTheme: loadAfterThemeSelector(state)
         }))(require('../MapStore2/web/client/components/app/StandardRouter'));

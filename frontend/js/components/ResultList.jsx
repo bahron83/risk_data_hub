@@ -66,7 +66,7 @@ class ResultList extends Component {
     }
     
     render() {   
-        const { filteredAnalysis } = this.props;                 
+        const { filteredAnalysis } = this.props;          
         return (
             <div id="disaster-filter-results" className="disaster-analysis">                    
                 {filteredAnalysis ? (

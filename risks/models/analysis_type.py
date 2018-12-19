@@ -2,9 +2,20 @@ from django.db import models
 from risks.models import RiskAppAware, HazardTypeAware, LocationAware, Exportable
 
 
-scopes = (('risk', 'risk'), ('event', 'event'),)
+scopes = (('risk', 'Risk'), ('event', 'Event'),)
 
 class AnalysisType(RiskAppAware, HazardTypeAware, LocationAware, Exportable, models.Model):
+    EXPORT_FIELDS_BASIC = (('name', 'name',),
+                     ('title', 'title',),
+                     ('description', 'description',),
+                     ('faIcon', 'fa_icon',),)
+    
+    EXPORT_FIELDS = (('name', 'name',),
+                     ('title', 'title',),
+                     ('description', 'description',),
+                     ('faIcon', 'fa_icon',),
+                     ('href', 'href',),
+                     ('scope', 'scope',),)
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30, null=False, blank=False,
                             db_index=True)

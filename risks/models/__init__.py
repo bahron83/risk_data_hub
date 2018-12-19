@@ -18,3 +18,4 @@ from asset_category import *
 from asset import *
 from owner import *
 from attribute_set import *
+from user import *

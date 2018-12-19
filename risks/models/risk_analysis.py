@@ -1,3 +1,4 @@
+import datetime
 from django.db import models
 from geonode.layers.models import Layer, Style
 from risks.models.risk_app import RiskAppAware
@@ -23,9 +24,9 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
     name = models.CharField(max_length=100, null=False, blank=False,
                             db_index=True)
     unit_of_measure = models.CharField(max_length=255, null=True, blank=True)    
-    tags = models.CharField(max_length=255, null=True, blank=True)
-    author = models.CharField(max_length=255)
-    begin_date = models.DateField()
+    tags = models.CharField(max_length=255, null=True, blank=True)    
+    assessment_date = models.DateField()
+    insert_date = models.DateField(default=datetime.date.today)
     descriptor_file = models.FileField(upload_to='descriptor_files', max_length=255)
     data_file = models.FileField(upload_to='data_files', max_length=255)
     metadata_file = models.FileField(upload_to='metadata_files', max_length=255)
@@ -72,6 +73,8 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
     items = models.ManyToManyField('AssetItem', through='DamageAssessmentValue', through_fields=('damage_assessment','item'), related_name='assessment_for_item')
     phenomena = models.ManyToManyField('Phenomenon', through='DamageAssessmentValue', related_name='assessment_for_phenomenon')
     locations = models.ManyToManyField('Location', through='DamageAssessmentValue', related_name='assessment_for_location')
+    users = models.ManyToManyField('RdhUser', through='AccessRule', through_fields=('damage_assessment', 'user'), related_name='damage_assessment_user_access')
+    groups = models.ManyToManyField('RdhGroup', through='AccessRule', through_fields=('damage_assessment', 'group'), related_name='damage_assessment_group_access')
 
     def __unicode__(self):
         return u"{0}".format(self.name)

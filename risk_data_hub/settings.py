@@ -87,3 +87,5 @@ INSTALLED_APPS += (
     'jet',
     'django_json_widget',
 )
+
+AUTH_USER_MODEL = os.getenv('AUTH_USER_MODEL', 'risks.RdhUser')
