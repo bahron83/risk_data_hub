@@ -5,7 +5,7 @@ from risks.models.location import AdministrativeDivision
 from risks.models.event import Event, Phenomenon
 from risks.models.eav_attribute import EavAttribute
 from risks.models.damage_type import DamageTypeValue
-from risks.models.risk_analysis import DamageAssessmentValue
+#from risks.models.risk_analysis import DamageAssessmentValue
 
 
 class EventHelper(object):
@@ -140,7 +140,7 @@ class EventHelper(object):
                 axis_z = DamageTypeValue.objects.filter(damage_assessment=da, axis='z')                        
                 damage_value = v[str(v['dim1'])]
 
-                da_value, created = DamageAssessmentValue.objects.get_or_create(
+                '''da_value, created = DamageAssessmentValue.objects.get_or_create(
                     damage_assessment=da,
                     phenomenon=phenomenon,
                     damage_type_value_1=axis_x,
@@ -153,7 +153,7 @@ class EventHelper(object):
                     'linked_item': v['linked_item'] if 'linked_item' in v else None,
                     'location': v['location'] if 'location' in v else None
                 }                        
-                da_value.objects.filter(pk=da_value.pk).update(**to_update)
+                da_value.objects.filter(pk=da_value.pk).update(**to_update)'''
     
     def insert_assessment_values(self, values):        
         if values:

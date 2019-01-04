@@ -56,9 +56,10 @@ class CompactTOC extends React.Component {
     }
 
     render() {
+        console.log('props', this.props);        
         const isDraggable = !this.state.filterText && this.props.layers.length > 1;
         return this.props.enabled ? (
-            <div key="et-compact-toc" className="et-compact-toc et-open">
+            <div key="et-compact-toc" className="et-compact-toc et-open risk-toc-container">
                 <BorderLayout
                     header={
                         <Grid fluid style={{width: '100%'}}>

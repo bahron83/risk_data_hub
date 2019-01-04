@@ -6,6 +6,8 @@ from region import *
 from further_resource import *
 from point_of_contact import *
 from hazard_set import *
+from user import *
+from access_rule import *
 from risk_analysis import *
 from analysis_type import *
 from hazard_type import *
@@ -18,4 +20,4 @@ from asset_category import *
 from asset import *
 from owner import *
 from attribute_set import *
-from user import *
+

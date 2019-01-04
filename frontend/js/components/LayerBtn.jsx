@@ -28,7 +28,7 @@ class LayerBtn extends React.Component{
         const active = enabled === 'toc' ? ' active' : '';
         return (
           <OverlayTrigger placement="bottom" overlay={tooltip}>
-            <button id="disaster-layer-button" className={"btn btn-primary" + active + " drc"} onClick={this.props.toggleTOC}><i className="glyphicon glyphicon-1-layer"/></button>
+            <button id="disaster-layer-button" className={"btn btn-primary" + active + " drc"} onClick={() => this.props.toggleTOC()}><i className="glyphicon glyphicon-1-layer"/></button>
           </OverlayTrigger>);
     }
 }

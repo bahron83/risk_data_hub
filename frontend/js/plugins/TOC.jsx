@@ -21,7 +21,7 @@ const tocSelector = createSelector([
     layersSelector,
     currentDetailsSelector
 ], (enabled, hide, layers, currentDetails) => {
-    const tocLayers = layers.filter(layer => layer.group === 'toc_layers');
+    const tocLayers = layers.filter(layer => layer.group === 'Default');    
     return {
         enabled: enabled && head(tocLayers) && !hide,
         layers: [...tocLayers.reverse()],

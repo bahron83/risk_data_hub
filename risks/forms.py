@@ -41,7 +41,6 @@ from risks.models.eav_attribute import EavAttribute, data_types
 from risks.models.region import Region
 from risks.models.hazard_set import HazardSet, DamageAssessmentImportMetadata
 from risks.models.risk_analysis import DamageAssessment, DamageAssessmentCreate, DamageAssessmentImportData
-from risks.models.user import AccessRule
 from risks.tasks import (create_damage_assessment, import_damage_assessment_data,
                             import_damage_assessment_metadata, import_event_data, import_event_attributes)
 

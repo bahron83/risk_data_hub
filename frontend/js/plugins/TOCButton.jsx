@@ -28,8 +28,9 @@ class TOCButtonComponent extends React.Component {
         onClick: () => {}
     };
 
-    render() {
-        return this.props.enabled ? (
+    render() {       
+        console.log('toc button props', this.props);
+        return (
             <ButtonT
                 className="et-layer-button square-button"
                 tooltipId="heve.compactTOC"
@@ -38,7 +39,7 @@ class TOCButtonComponent extends React.Component {
                 onClick={() => this.props.onClick()}>
                 <Glyphicon glyph="1-layer"/>
             </ButtonT>
-        ) : null;
+        );
     }
 }
 
@@ -47,7 +48,7 @@ const tocButtonSelector = createSelector([
     state => state.controls && state.controls.compacttoc && state.controls.compacttoc.hide,
     layersSelector
 ], (enabled, hide, layers) => {
-    const tocLayers = layers.filter(layer => layer.group === 'toc_layers');
+    const tocLayers = layers.filter(layer => layer.group === 'Default');
     return {
         enabled: !enabled && head(tocLayers) && !hide
     };

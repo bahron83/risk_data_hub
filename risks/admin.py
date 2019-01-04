@@ -12,12 +12,12 @@ import nested_admin
 
 # Register your models here.
 from risks.models import (RiskApp, AnalysisType, AssetCategory, Asset, AssetItem, MarketValue, DamageType, DamageTypeValue,
-                                DamageAssessment, DamageAssessmentValue, HazardSet, EavAttribute,
+                                DamageAssessment, HazardSet, EavAttribute,
                                 Event, Phenomenon, 
                                 AttributeSet,
                                 Hazard, AdministrativeDivision, Location, Region, PointOfContact,
                                 Owner, SendaiTarget, SendaiIndicator, DamageAssessmentCreate, DamageAssessmentImportData,
-                                DamageAssessmentImportMetadata, EventImport, EventImportDamage, DataProvider, DataProviderMappings, RdhUser)
+                                DamageAssessmentImportMetadata, EventImport, EventImportDamage, DataProvider, DataProviderMappings, RdhUser, AccessRule)
 from risks.forms import (EventAttributeInlineFormSet, CreateDamageAssessmentForm, ImportDataDamageAssessmentForm,
                             ImportMetadataDamageAssessmentForm, ImportDataEventForm, ImportDataEventAttributeForm, PostEventPublishForm,
                             EventForm)
@@ -187,13 +187,13 @@ class DamageAssessmentAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):
         return False
 
-class DamageAssessmentValueAdmin(admin.ModelAdmin):
+'''class DamageAssessmentValueAdmin(admin.ModelAdmin):
     model = DamageAssessmentValue
     list_display_links = ('id',)
     list_display = ('id', 'damage_assessment', 'phenomenon', 'damage_type_value_1', 'damage_type_value_2', 'item', 'value',)
 
     def has_add_permission(self, request, obj=None):
-        return False    
+        return False'''    
 
 class EavAttributeAdmin(admin.ModelAdmin):
     model = EavAttribute
@@ -547,6 +547,34 @@ class RdhUserAdmin(ProfileAdmin):
             return ['region']
         return []
 
+class AccessRuleAdmin(admin.ModelAdmin):
+    model = AccessRule
+    list_display = ('order', 'scope', 'damage_assessment', 'group', 'user', 'access',)
+    #readonly_fields = ['region']
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):   
+        if db_field.name == 'region':
+            kwargs['queryset'] = db_field.related_model.objects.filter(pk=request.user.region.pk)
+            kwargs['initial'] = request.user.region.pk
+        if db_field.name == 'damage_assessment':
+            kwargs['queryset'] = db_field.related_model.objects.filter(region=request.user.region)
+        if db_field.name == 'user':
+            kwargs['queryset'] = db_field.related_model.objects.filter(region=request.user.region)
+        return super(AccessRuleAdmin, self).formfield_for_foreignkey(
+            db_field, request, **kwargs
+        )
+
+    def response_add(self, request, obj, post_url_continue=None):
+        obj.order = AccessRule.objects.all().count() - 1
+        obj.save()
+        return super(AccessRuleAdmin, self).response_add(request, obj, post_url_continue)  
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = []
+        if obj is not None:
+            readonly_fields.extend(['region', 'order'])
+        return readonly_fields  
+
 
 admin.site.register(AdministrativeDivision, AdministrativeDivisionAdmin)
 admin.site.register(AnalysisType, AnalysisTypeAdmin)
@@ -555,7 +583,7 @@ admin.site.register(Asset, AssetAdmin)
 admin.site.register(AttributeSet, AttributeSetAdmin)
 admin.site.register(DamageType, DamageTypeAdmin)
 admin.site.register(DamageAssessment, DamageAssessmentAdmin)
-admin.site.register(DamageAssessmentValue, DamageAssessmentValueAdmin)
+#admin.site.register(DamageAssessmentValue, DamageAssessmentValueAdmin)
 admin.site.register(HazardSet, HazardSetAdmin)
 admin.site.register(EavAttribute, EavAttributeAdmin)
 admin.site.register(Event, EventAdmin)
@@ -571,3 +599,4 @@ admin.site.register(DamageAssessmentImportMetadata, DamageAssessmentImportMetaDa
 admin.site.register(EventImport, EventImportAdmin)
 admin.site.register(EventImportDamage, EventImportDamageDataAdmin)
 admin.site.register(RdhUser, RdhUserAdmin)
+admin.site.register(AccessRule, AccessRuleAdmin)

@@ -371,4 +371,4 @@ const chartSliderUpdateEpic = action$ =>
 
     );
 
-module.exports = {initDataLayerEpic, getRiskDataEpic, getRiskMapConfig, getRiskFeatures, applyFiltersEpic, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, changeTutorial, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, switchContextAnalysisEpic};
+module.exports = {initDataLayerEpic, getRiskDataEpic, getRiskMapConfig, getRiskFeatures, applyFiltersEpic, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, switchContextAnalysisEpic};

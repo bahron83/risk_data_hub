@@ -1,5 +1,6 @@
 from django.views.generic import View
 from geonode.utils import json_response
+from risks.views import UserAuth
 from risks.views.base import ContextAware, LocationSource
 from risks.models import DamageAssessment, Region, Hazard, AnalysisType
 
@@ -37,6 +38,7 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
         analysis_type = None
         cleaned_args = self.clean_args(**kwargs)
         loc_chain = self.get_location(**kwargs)
+        user_auth = UserAuth()
         if not loc_chain:
             return json_response(errors=['Invalid location code'], status=404)        
         try:
@@ -58,19 +60,29 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
         if cleaned_args['at']:
             analysis_type = AnalysisType.objects.filter(title=kwargs['at'])
 
-        while loc is not None:
-            ra_matches = DamageAssessment.objects.filter(region=region, phenomena__administrative_division=loc)                           
-            if ra_matches:
-                if hazard_type:
-                    ra_matches = ra_matches.filter(hazard_type=hazard_type)
-                if scope:
-                    ra_matches = ra_matches.filter(analysis_type__scope=scope)
-                if analysis_type:
-                    at_ids = analysis_type.values_list('pk', flat=True)
-                    ra_matches = ra_matches.filter(analysis_type__in=at_ids)                
-                ra_matches = ra_matches.exclude(pk__in=ra_ids) 
-                ra_ids += list(ra_matches.values_list('pk', flat=True))
-                lookup_data += self.prepare_data(ra_matches, region, loc)                
-            loc = loc.parent                                           
-        
-        return json_response(lookup_data) if lookup_data else json_response(errors=['No data found'], status=204)
+        available_datasets, dataset_rule_association = user_auth.resolve_available_datasets(request, region)
+        if available_datasets:
+            while loc is not None:
+                ra_matches = available_datasets.filter(administrative_divisions=loc)     
+                # example with damage assessment which contains all values as JSONField
+                # location_matches = Location.objects.filter(location_type='damage', administrative_division=loc).values_list('id', flat=True)
+                # available_datasets.filter(values__location__in=location_matches)  
+                # alternative: values contain location_geom and adm_division_id
+                # ra_matches = available_datasets.filter(values__adm_division=loc)                      
+                if ra_matches:
+                    if hazard_type:
+                        ra_matches = ra_matches.filter(hazard_type=hazard_type)
+                    if scope:
+                        ra_matches = ra_matches.filter(analysis_type__scope=scope)
+                    if analysis_type:
+                        at_ids = analysis_type.values_list('pk', flat=True)
+                        ra_matches = ra_matches.filter(analysis_type__in=at_ids)                
+                    ra_matches = ra_matches.exclude(pk__in=ra_ids) 
+                    ra_ids += list(ra_matches.values_list('pk', flat=True))
+                    lookup_data += self.prepare_data(ra_matches, region, loc)                
+                loc = loc.parent                                           
+        out = {
+            'lookupData': lookup_data,
+            'datasetRuleAssociation': dataset_rule_association
+        }
+        return json_response(out) if lookup_data else json_response(errors=['No data found'], status=204)

@@ -12,7 +12,7 @@ module.exports = {
         MapLoadingPlugin: require('./plugins/MapLoading'),
         MapPlugin: require('../MapStore2/web/client/plugins/Map'),
         DataExplorerPlugin: require('./plugins/DataExplorer'),
-        TOCPlugin: require('./plugins/RiskTOC'),
+        TOCPlugin: require('./plugins/TOC'),
         
         NotificationsPlugin: require('../MapStore2/web/client/plugins/Notifications'),
         OmniBarPlugin: require('../MapStore2/web/client/plugins/OmniBar'),

@@ -1,14 +1,101 @@
 import json
+from collections import namedtuple
 from risk_data_hub import settings as rdh_settings
 from geonode.utils import json_response
 from django.views.generic import View
 from risks.views.base import ContextAware
-from risks.models import Region
+from risks.models import Region, AccessRule, AccessType, DamageAssessment
+from risks.models.user import get_generic_filter
 
 
 UNRESTRICTED_REGIONS = ['Europe', 'EUWaters', 'South_Eastern_Europe']
 
-class UserAuth(object):
+class UserAuth(object):            
+    def filter_damage_assessment(self, request, region, prev_data, rule, dataset_rule_association):                
+        data = None
+        res = prev_data
+        skip = False        
+        if rule.user:
+            if rule.user != request.user:
+                data = prev_data
+                skip = True  
+        if not skip:
+            if rule.group:
+                if not request.user.groups.all().filter(pk=rule.group.pk).exists():
+                    data = prev_data
+                    skip = True
+        if not skip:
+            # allow rule
+            if rule.access == AccessType.ALLOW:            
+                data = DamageAssessment.objects.filter(region=region)                            
+                if rule.scope:
+                    data = data.filter(analysis_type__scope=rule.scope)
+                if rule.damage_assessment:
+                    data = data.filter(pk=rule.damage_assessment.pk)                                                                            
+                res = (data | prev_data).distinct() if prev_data else data.distinct()               
+            # deny rule
+            else:
+                if prev_data:                                
+                    if rule.scope:
+                        data = prev_data.exclude(analysis_type__scope=rule.scope)
+                    if rule.damage_assessment:
+                        data = prev_data.exclude(pk=rule.damage_assessment.pk)                
+                res = data
+            # dataset rule association
+            for d in data:
+                if d.pk in dataset_rule_association:
+                    dataset_rule_association[d.pk] += [rule]
+                else:
+                    dataset_rule_association = [rule]                            
+        return res, dataset_rule_association 
+
+    def filter_values(self, dataset_id, dataset_rule_association):        
+        if dataset_id in dataset_rule_association:
+            prev_data = None
+            data = prev_data
+            res = prev_data
+            for rule in dataset_rule_association[dataset_id]:
+                # allow rule
+                if rule.access == AccessType.ALLOW:            
+                    data = DamageAssessment.objects.filter(pk=dataset_id)                            
+                    if rule.min_adm_level:
+                        data = data.filter(values__adm_division__level__gte=rule.min_adm_level)
+                    if rule.max_adm_level:
+                        data = data.filter(values__adm_division__level__lte=rule.max_adm_level)
+                    if rule.administrative_division_regex:
+                        data = data.filter(values__adm_division__code__iregex=r'{}'.format(rule.administrative_division_regex))
+                    res = (data | prev_data).distinct()                
+                # deny rule
+                else:
+                    if prev_data:                                
+                        if rule.min_adm_level:
+                            data = prev_data.exclude(values__adm_division__level__gte=rule.min_adm_level)
+                        if rule.max_adm_level:
+                            data = prev_data.exclude(values__adm_division__level__lte=rule.max_adm_level)
+                        if rule.administrative_division_regex:
+                            data = prev_data.exclude(values__adm_division__code__iregex=r'{}'.format(rule.administrative_division_regex))
+                    res = data
+                prev_data = res
+            return res
+        return None
+    
+    def resolve_available_datasets(self, request, region):   
+        """
+        Returns: 
+        data -> all datasets that current user is allowed to access (DamageAssessment Queryset)
+        dataset_rule_association -> ids of accessible datasets and relative rule(s) to be applied in given order to filter values
+        """                     
+        prev_data = None
+        data = prev_data
+        dataset_rule_association = {}
+        rules = AccessRule.objects.filter(region=region).order_by('order')
+        allow_filter = get_generic_filter()
+        deny_filter = get_generic_filter()
+        for rule in rules:            
+            data, dataset_rule_association = self.filter_damage_assessment(request, region, prev_data, rule, dataset_rule_association)            
+            prev_data = data
+        available_datasets = data
+        return available_datasets, dataset_rule_association                            
     
     def is_user_allowed(self, request, **kwargs):
         if request.user.is_superuser:

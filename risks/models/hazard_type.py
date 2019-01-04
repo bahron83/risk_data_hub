@@ -43,7 +43,7 @@ class Hazard(RiskAppAware, LocationAware, Exportable, Schedulable, models.Model)
     def risk_analysis_count(self):
         loc = self.get_location()
         reg = self.get_region()
-        ra = DamageAssessment.objects.filter(phenomena__administrative_division=loc,
+        ra = DamageAssessment.objects.filter(administrative_divisions=loc,
                                          region=reg,
                                          hazard=self)
         return ra.count()
@@ -51,7 +51,7 @@ class Hazard(RiskAppAware, LocationAware, Exportable, Schedulable, models.Model)
     def get_analysis_types(self):
         loc = self.get_location()
         reg = self.get_region()
-        ra = DamageAssessment.objects.filter(phenomena__administrative_division=loc,
+        ra = DamageAssessment.objects.filter(administrative_divisions=loc,
                                          region=reg,
                                          app=self.app,
                                          hazard=self)

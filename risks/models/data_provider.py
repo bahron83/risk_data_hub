@@ -3,9 +3,12 @@ from risks.models import DamageTypeValue
 
 
 def dyminfo_values():        
-    dym_infos = DamageTypeValue.objects.values('value').distinct()
-    if dym_infos:
-        return tuple([(str(d['value']), str(d['value'])) for d in dym_infos])    
+    try:
+        dym_infos = DamageTypeValue.objects.values('value').distinct()
+        if dym_infos:
+            return tuple([(str(d['value']), str(d['value'])) for d in dym_infos])    
+    except:
+        return ()
 
 class DataProvider(models.Model):
     name = models.CharField(max_length=50)

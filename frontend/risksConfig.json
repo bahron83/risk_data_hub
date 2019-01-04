@@ -21,6 +21,7 @@
 													
 					}
 				},
+				"DataExplorer",
 				"TOC",				
 				{
 					"name": "Identify",
@@ -43,12 +44,6 @@
 						}
 					}
 				},
-				{
-					"name": "DataExplorer",
-					"cfg": {
-							"containerPosition": "columns"
-					}
-				},				
 				"ZoomAll",				
 				{
 					"name": "ZoomIn",
@@ -65,7 +60,7 @@
 									"alwaysVisible": true
 							}
 					}
-				}
+				}				
 			]
 	 }
 }
