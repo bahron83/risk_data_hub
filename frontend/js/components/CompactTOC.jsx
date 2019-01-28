@@ -55,8 +55,7 @@ class CompactTOC extends React.Component {
         filterText: ''
     }
 
-    render() {
-        console.log('props', this.props);        
+    render() {        
         const isDraggable = !this.state.filterText && this.props.layers.length > 1;
         return this.props.enabled ? (
             <div key="et-compact-toc" className="et-compact-toc et-open risk-toc-container">

@@ -164,10 +164,10 @@ class DataContainer extends Component {
                     </div>
                 </div>
                 <div className="row">
-                    <h4 style={{margin: 0}}>{hazardSet.title}</h4>
+                    <h4 style={{margin: 0}}>{hazardSet && hazardSet.title || null}</h4>
                 </div>
                 <div className="row">
-                    <p>{hazardSet.purpose}</p>
+                    <p>{hazardSet && hazardSet.purpose || null}</p>
                 </div>
                 <div id="disaster-chart-container" className="row">
                     {data.dimensions[dim.dim1].values.length - 1 === 0 ? (
@@ -199,7 +199,7 @@ class DataContainer extends Component {
                     </div>
                     )}                                        
                     
-                    {fullContext.analysis_class == 'event' ? (                        
+                    {fullContext.scope == 'event' ? (                        
                         <div>
                             {fullContext.adm_level > 0 ? (
                                 <Panel className="panel-box">   

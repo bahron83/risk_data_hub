@@ -36,26 +36,41 @@ class ResultList extends Component {
                     <th scope="col" className="table-cell">{loc.label}</th>
                 </tr>
             )*/
-            const { title, fa_icon: faIcon, abstract } = rs.riskAnalysis.hazardSet;
-            const { label: locationName } = rs.location;
-            const tooltip = (<Tooltip id={"tooltip-icon-cat-" + idx} className="disaster">{'Analysis Data'}</Tooltip>);
-            return (
-                <div key={idx} className="row">
-                    <div className="col-xs-1 text-center">
-                        <OverlayTrigger placement="bottom" overlay={tooltip}>
-                        <i className={'disaster-category fa ' + faIcon} onClick={()=> this.loadAnalysis(rs)}></i>
-                        </OverlayTrigger>
-                    </div>
-                    <div className="col-xs-11">
-                        <Panel collapsible header={this.renderRiskAnalysisHeader(title, idx, locationName)}>
-                            {abstract}
-                            <br/>
-                            <GetAnalysisBtn onClick={()=> this.loadAnalysis(rs)}
-                            iconClass="fa fa-bar-chart" label="Analysis Data"/>
-                        </Panel>
+            if (rs.riskAnalysis.hazardSet) {
+                const { title, fa_icon: faIcon, abstract } = rs.riskAnalysis.hazardSet;
+                const { label: locationName } = rs.location;
+                const tooltip = (<Tooltip id={"tooltip-icon-cat-" + idx} className="disaster">{'Analysis Data'}</Tooltip>);
+                return (
+                    <div key={idx} className="row">
+                        <div className="col-xs-1 text-center">
+                            <OverlayTrigger placement="bottom" overlay={tooltip}>
+                            <i className={'disaster-category fa ' + faIcon} onClick={()=> this.loadAnalysis(rs)}></i>
+                            </OverlayTrigger>
+                        </div>
+                        <div className="col-xs-11">
+                            <Panel collapsible header={this.renderRiskAnalysisHeader(title, idx, locationName)}>
+                                {abstract}
+                                <br/>
+                                <GetAnalysisBtn onClick={()=> this.loadAnalysis(rs)}
+                                iconClass="fa fa-bar-chart" label="Analysis Data"/>
+                            </Panel>
+                        </div>                
                     </div>                
-                </div>                
-            )
+                )
+            }
+            else 
+                return (
+                    <div key={idx} className="row">
+                        <div className="col-xs-11">
+                            <Panel>
+                                {rs.riskAnalysis.name}
+                                <br/>
+                                <GetAnalysisBtn onClick={()=> this.loadAnalysis(rs)}
+                                iconClass="fa fa-bar-chart" label="Analysis Data"/>
+                            </Panel>
+                        </div>                        
+                    </div>
+                );
         })
     }
 
@@ -66,7 +81,7 @@ class ResultList extends Component {
     }
     
     render() {   
-        const { filteredAnalysis } = this.props;          
+        const { filteredAnalysis } = this.props;                  
         return (
             <div id="disaster-filter-results" className="disaster-analysis">                    
                 {filteredAnalysis ? (

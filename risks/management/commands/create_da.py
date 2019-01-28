@@ -174,7 +174,7 @@ Loss Impact and Impact Analysis Types.'
         da_name = Config.get('DEFAULT', 'name')        
         analysis_type_name = Config.get('DEFAULT', 'analysis_type')
         hazard_type_name = Config.get('DEFAULT', 'hazard_type')
-        layer_name = Config.get('DEFAULT', 'layer')
+        
         assessment_date_str = Config.get('DEFAULT', 'assessment_date')
         tags = Config.get('DEFAULT', 'tags')
         try:
@@ -201,13 +201,11 @@ Loss Impact and Impact Analysis Types.'
             raise CommandError("An Analysis Type with name '" +
                                analysis_type_name + "' does not exist on DB!")
 
-        if not Layer.objects.filter(name=layer_name).exists():
-            raise CommandError("A Layer with name '" + layer_name +
-                               "' does not exist on DB!")
+        
 
         hazard = Hazard.objects.get(mnemonic=hazard_type_name, app=app)
         analysis = AnalysisType.objects.get(name=analysis_type_name, app=app)
-        layer = Layer.objects.get(name=layer_name)
+        
         matched_user = User.objects.get(id=user_id)
         owner = RdhUser.objects.get(id=user_id)
 
@@ -221,8 +219,7 @@ Loss Impact and Impact Analysis Types.'
             app=app,            
             analysis_type = analysis,
             hazard = hazard,
-            region = owner.region,
-            layer = layer,
+            region = owner.region,            
             assessment_date = assessment_date
         ) 
 

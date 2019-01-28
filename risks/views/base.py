@@ -54,7 +54,8 @@ class ContextAware(AppAware):
             related to Hazard type (assigned to Risk Analysis). Region may be used to narrow results.
 
         """
-        if an.hazardset is None:
+        hazardset = an.get_hazard_set()
+        if hazardset is None:
             return []
         region = None
         #if kwargs.get('loc'):
@@ -62,7 +63,7 @@ class ContextAware(AppAware):
         if kwargs.get('reg'):
             region = kwargs['reg']
 
-        return FurtherResource.for_hazard_set(an.hazardset, region=region)
+        return FurtherResource.for_hazard_set(hazardset, region=region)
 
 
     def fr_for_dym(self, dym, **kwargs):
@@ -157,8 +158,7 @@ class ContextAware(AppAware):
         """
         inputs = kwargs.pop('inputs', None) or self.get_further_resources_inputs(**kwargs)
         out = {}
-        for res_type, key_name in (('at', 'analysisType',),
-                                    ('dym', 'hazardSet',),
+        for res_type, key_name in (('dym', 'hazardSet',),
                                     ('an', 'hazardType',)):
             res_type_handler = getattr(self, 'fr_for_{}'.format(res_type))
             if kwargs.get(res_type):

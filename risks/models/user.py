@@ -1,4 +1,3 @@
-from collections import namedtuple
 from django.db import models
 from django.contrib.auth.models import UserManager
 from geonode.people.models import Profile
@@ -30,10 +29,3 @@ class RdhGroup(models.Model):
         null=True
     )    
     users = models.ManyToManyField(RdhUser)
-
-def get_generic_filter():
-    d = {}
-    for field in AccessRule._meta.get_fields():
-        d[field.name] = []
-    qfilter = namedtuple("GenericFilter", d.keys())(*d.values())
-    return qfilter

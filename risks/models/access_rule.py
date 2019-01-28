@@ -1,3 +1,4 @@
+from collections import namedtuple
 from django.db import models
 from risks.models.analysis_type import scopes
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -51,3 +52,10 @@ class AccessRule(models.Model):
 
     def __unicode__(self):
         return u"{0}".format(self.id)
+
+def get_generic_filter():
+    d = {}
+    for field in AccessRule._meta.get_fields():
+        d[field.name] = []
+    qfilter = namedtuple("GenericFilter", d.keys())(*d.values())
+    return qfilter

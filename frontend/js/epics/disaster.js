@@ -62,7 +62,7 @@ const {
     filtersApplied    
 } = require('../actions/disaster');
 const {configureMap, configureError} = require('../../MapStore2/web/client/actions/config');
-const {getMainViewStyle, getSearchLayerStyle, getBBOXStyle} = require('../utils/StyleUtils');
+const {getMainViewStyle, getSearchLayerStyle, getRiskAnStyle} = require('../utils/StyleUtils');
 
 const createBaseVectorLayer = name => ({
     type: 'vector',
@@ -173,7 +173,7 @@ const getAnalysisEpic = (action$, store) =>
                 const baseUrl = val.wms && val.wms.baseurl;
                 const anLayers = val.riskAnalysisData && val.riskAnalysisData.additionalLayers || [];
                 const referenceLayer = val.riskAnalysisData && val.riskAnalysisData.referenceLayer;
-                const layers = (store.getState()).layers;                  
+                const layers = (store.getState()).layers;                 
                 const {app, dim} = (store.getState()).disaster;                                                                 
                 //additional gis layers
                 let anLayerDim = [];
@@ -196,7 +196,7 @@ const getAnalysisEpic = (action$, store) =>
                 }
                 
                 const hasGis = find(layers.groups, g => g.id === 'Gis Overlays');
-                const hasAnalysisLayer = find(layers.flat, l => l.id === '_riskAn_');                                                
+                //const hasAnalysisLayer = find(layers.flat, l => l.id === '_riskAn_') || false;                 
                 //data adjustment for event grouped_values
                 let adjustedVal = val;                
                 if(val.riskAnalysisData.data.grouped_values !== undefined) {
@@ -204,12 +204,16 @@ const getAnalysisEpic = (action$, store) =>
                         const {riskAnalysis} = (store.getState()).disaster;
                         adjustedVal.riskAnalysisData.data.grouped_values = riskAnalysis.riskAnalysisData.data.grouped_values
                     }
-                }
+                }  
+                
+                //const layerStyle = val.riskAnalysisData && val.riskAnalysisData.style || getRiskAnStyle();
                 
                 const actions = [                    
                     analysisDataLoaded(adjustedVal),
                     hasGis && removeNode("Gis Overlays", "groups"),
-                    !hasAnalysisLayer && addLayer(configLayer(baseUrl, "", '_riskAn_', getLayerTitle({riskAnalysis: val, app}), true, "Default"), false),
+                    /*!hasAnalysisLayer && addLayer(
+                        {...createBaseVectorLayer('_riskAn_'), features: [], style: layerStyle},
+                        false),*/
                     app !== 'costs' && referenceLayer && referenceLayer.layerName && referenceLayer.layerTitle && addLayer(configRefLayer(baseUrl, referenceLayer.layerName, "_refLayer_", referenceLayer.layerTitle, getStyleRef(val), true, "Gis Overlays"), false)
                 ].concat(anLayerDim.map((l) => addLayer(configLayer(baseUrl, l[1], `ral_${l[0]}`, l[2] || l[1].split(':').pop(), true, 'Gis Overlays')))).filter(a => a);
 
@@ -221,7 +225,7 @@ const getAnalysisEpic = (action$, store) =>
         });
 const getEventEpic = (action$, store) =>
     action$.ofType(GET_EVENT_DATA).switchMap(action => 
-        Rx.Observable.defer(() => Api.getData(action.url))
+        Rx.Observable.defer(() => Api.postData(action.url, action.values))
             .retry(1)
             .map(val => {
                 const baseUrl = val.wms && val.wms.baseurl;
@@ -229,11 +233,11 @@ const getEventEpic = (action$, store) =>
                 const layers = (store.getState()).layers;
                 const {app} = (store.getState()).disaster;                
                 const hasGis = find(layers.groups, g => g.id === 'Gis Overlays');
-                const hasEventLayer = find(layers.flat, l => l.id === '_eventAn_');                                                
+                //const hasEventLayer = find(layers.flat, l => l.id === '_eventAn_');                                                
                 const actions = [                                        
                     eventDataLoaded(val),
                     hasGis && removeNode("Gis Overlays", "groups"),
-                    !hasEventLayer && addLayer(configLayer(baseUrl, "", '_eventAn_', getLayerTitleEvents({eventAnalysis: val, app}), true, "Default"), false)                    
+                    //!hasEventLayer && addLayer(configLayer(baseUrl, "", '_eventAn_', getLayerTitleEvents({eventAnalysis: val, app}), true, "Default"), false)                    
                 ].concat(anLayers.map((l) => addLayer(configLayer(baseUrl, l[1], `ral_${l[0]}`, l[2] || l[1].split(':').pop(), true, 'Gis Overlays')))).filter(a => a);
 
                 return actions;
@@ -272,7 +276,7 @@ const zoomInOutEpic = (action$, store) =>
 
 const selectEventEpic = (action$, store) =>
     action$.ofType(SELECT_EVENT) 
-        .map(action => {                           
+        .map(action => {              
             const { app, contextUrl, riskAnalysis, selectedEventIds, showEventDetail } = (store.getState()).disaster;             
             const urlPrefix = `${contextUrl}/${app}/data_extraction`;
             const fullContext = riskAnalysis && riskAnalysis.fullContext;
@@ -285,12 +289,18 @@ const selectEventEpic = (action$, store) =>
                 return [eventDetails(eventHref)];
             }
             if(selectedEventIds !== undefined && selectedEventIds.length > 0) {                
-                const { loc } = action;            
-                const dataHref = `${urlPrefix}/loc/${loc}/`;
-                const geomHref = `${urlPrefix}/geom/${loc}/`;
-                const evtString = selectedEventIds.join("__");
-                const eventHref = `${dataHref}lvl/${fullContext.adm_level}/ht/${fullContext.ht}/an/${fullContext.an}/evt/${evtString}/`;            
-                return [getEventData(eventHref)];            
+                /*callKey is needed to make url unique for data needed,
+                otherwise no API calls would be made after the first one, until
+                cache expires*/
+                const callKey = selectedEventIds.reduce((a, b) => a + b, 0).toString();
+                const url = `${urlPrefix}/selectevents/${callKey}/`;
+                const reqValues = {
+                    'ht': fullContext.ht,
+                    'an': fullContext.an,
+                    'lvl': fullContext.adm_level,
+                    'evt': selectedEventIds
+                }        
+                return [getEventData(url, reqValues)];            
             }
             return [];
         })
@@ -347,10 +357,10 @@ const loadingError = action$ =>
     action$.ofType(DATA_ERROR).map(
         action => error({title: "Loading error", message: action.error.message,
             autoDismiss: 3}));
-const dataLoadingEpic = (action$) =>
+/*const dataLoadingEpic = (action$) =>
     action$.ofType(DATA_LOADING)
         .map(action => { return [removeLayer('_riskAn_'), removeLayer('_eventAn_')] })
-        .mergeAll();            
+        .mergeAll();*/
 const getSpecificFurtherResources = (action$) =>
     action$.ofType(GET_S_FURTHER_RESOURCE_DATA).switchMap(action => {
         return Rx.Observable.defer(() => Api.getData(action.url))
@@ -371,4 +381,4 @@ const chartSliderUpdateEpic = action$ =>
 
     );
 
-module.exports = {initDataLayerEpic, getRiskDataEpic, getRiskMapConfig, getRiskFeatures, applyFiltersEpic, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, dataLoadingEpic, zoomInOutEpic, initStateEpic, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, switchContextAnalysisEpic};
+module.exports = {initDataLayerEpic, getRiskDataEpic, getRiskMapConfig, getRiskFeatures, applyFiltersEpic, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, zoomInOutEpic, initStateEpic, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, switchContextAnalysisEpic};

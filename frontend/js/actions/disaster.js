@@ -88,10 +88,11 @@ function getAnalysisData(url) {
         url        
     };
 }
-function getEventData(url) {    
+function getEventData(url, values) {    
     return {
         type: GET_EVENT_DATA,
-        url        
+        url,
+        values    
     };
 }
 function analysisDataLoaded(data) {

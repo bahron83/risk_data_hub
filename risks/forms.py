@@ -36,13 +36,13 @@ from django_json_widget.widgets import JSONEditorWidget
 
 from dateutil.parser import parse
 
-from risks.models.event import Event, EventImport, EventImportDamage
+from risks.models.event import Event, EventImportData
 from risks.models.eav_attribute import EavAttribute, data_types
 from risks.models.region import Region
 from risks.models.hazard_set import HazardSet, DamageAssessmentImportMetadata
-from risks.models.risk_analysis import DamageAssessment, DamageAssessmentCreate, DamageAssessmentImportData
-from risks.tasks import (create_damage_assessment, import_damage_assessment_data,
-                            import_damage_assessment_metadata, import_event_data, import_event_attributes)
+from risks.models.risk_analysis import DamageAssessment, DamageAssessmentCreate, DamageAssessmentImportData, Style
+from risks.tasks import (create_damage_assessment, import_risk_data,
+                            import_risk_metadata, import_event_data, import_event_attributes)
 
 
 def is_valid_attribute(attribute, value):
@@ -110,6 +110,36 @@ class EventForm(forms.ModelForm):
                     raise forms.ValidationError("Invalid data for attribute {}. Please, check that is a valid {}".format(k, attribute.data_type))
         return self.cleaned_data
 
+class StyleForm(forms.ModelForm):
+    class Meta:
+        model = Style                
+        fields = '__all__'        
+        widgets = {
+            # choose one mode from ['text', 'code', 'tree', 'form', 'view']
+            'content': JSONEditorWidget(mode='tree')
+        }  
+
+    
+    base_style = {
+        'color': 'black',
+        'fillColor': 'transparent',
+        'weight': 1,
+        'opacity': 1,
+        'fillOpacity': 1,
+        'rules': [
+            {
+                'max_value': 0,
+                'fillColor': '#FFF'
+            }
+        ]
+    }
+    json_schema = {
+        'country': base_style,
+        'nuts2': base_style,
+        'nuts3': base_style,
+        'city': base_style
+    }  
+
 class CreateDamageAssessmentForm(models.ModelForm):
     """
     """
@@ -165,7 +195,7 @@ class ImportDataDamageAssessmentForm(models.ModelForm):
         da = self.cleaned_data['damage_assessment']
         current_user = self.current_user   
                 
-        import_risk_data.delay(tmp_file, risk_app.name, da.name, region.name, final_name, current_user.id)        
+        import_risk_data(tmp_file, risk_app.name, da.name, region.name, final_name, current_user.id)        
 
         return file_xlsx
 
@@ -200,7 +230,7 @@ class ImportMetadataDamageAssessmentForm(models.ModelForm):
         da = self.cleaned_data['damage_assessment']
 
         try:
-            import_damage_assessment_metadata(tmp_file, risk_app.name, da.name, region.name, final_name)
+            import_risk_metadata(tmp_file, risk_app.name, da.name, region.name, final_name)
         except ValueError, e:
             raise forms.ValidationError(e)
 
@@ -213,14 +243,15 @@ class ImportDataEventForm(models.ModelForm):
     class Meta:
         """
         """
-        model = EventImport
-        fields = ('riskapp', 'region', "data_file",)
+        model = EventImportData
+        fields = ('riskapp', 'region', 'damage_assessment', 'data_file',)
 
     def __init__(self, *args, **kwargs):
         super(ImportDataEventForm, self).__init__(*args, **kwargs)        
         if not self.current_user.is_superuser:
-            self.fields['region'].queryset = Region.objects.filter(
-                                            owner=self.current_user)            
+            self.fields['region'].queryset = self.current_user.region
+            self.fields['damage_assessment'].queryset = DamageAssessment.objects.filter(
+                                            owner=self.current_user)
 
     def clean_data_file(self):
         file_xlsx = self.cleaned_data['data_file']
@@ -231,44 +262,10 @@ class ImportDataEventForm(models.ModelForm):
 
         risk_app = self.cleaned_data['riskapp']
         region = self.cleaned_data['region']     
+        da = self.cleaned_data['damage_assessment']
         current_user = self.current_user   
         
-        import_event_data.delay(tmp_file, risk_app.name, region.name, final_name, current_user.id)                    
+        import_event_data(tmp_file, risk_app.name, da.name, region.name, final_name, current_user.id)                    
         
         return file_xlsx
 
-class ImportDataEventAttributeForm(models.ModelForm):
-    """
-    """
-
-    class Meta:
-        """
-        """
-        model = EventImportDamage
-        fields = ('riskapp', 'region', 'damage_assessment', "adm_level_precision", "data_file",) #allow_null_values checkbox not shown
-
-    def __init__(self, *args, **kwargs):
-        super(ImportDataEventAttributeForm, self).__init__(*args, **kwargs)        
-        if not self.current_user.is_superuser:
-            self.fields['region'].queryset = Region.objects.filter(
-                                            owner=self.current_user)
-            self.fields['damage_assessment'].queryset = DamageAssessment.objects.filter(
-                                            owner=self.current_user)
-    
-    def clean_data_file(self):
-        file_xlsx = self.cleaned_data['data_file']
-        path = default_storage.save('tmp/'+file_xlsx.name,
-                                    ContentFile(file_xlsx.read()))
-        tmp_file = os.path.join(settings.MEDIA_ROOT, path)
-        final_name = os.path.join('data_files', file_xlsx.name)
-
-        risk_app = self.cleaned_data['riskapp']
-        region = self.cleaned_data['region']  
-        da = self.cleaned_data['damage_assessment']
-        allow_null_values = False#self.cleaned_data['allow_null_values']
-        adm_level_precision = self.cleaned_data['adm_level_precision']
-        current_user = self.current_user
-                
-        import_event_attributes.delay(tmp_file, risk_app.name, da.name, region.name, allow_null_values, final_name, current_user.id, adm_level_precision)        
-
-        return file_xlsx

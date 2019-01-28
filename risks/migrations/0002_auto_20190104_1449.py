@@ -17,8 +17,7 @@ import risks.models.risk_app
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('base', '0034_auto_20180606_1543'),
-        ('layers', '0033_auto_20180606_1543'),
+        ('base', '0034_auto_20180606_1543'),        
         ('risks', '0001_initial'),
     ]
 
@@ -177,8 +176,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='DamageTypeValue',
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('dimension', models.CharField(choices=[(b'dim1', b'dim1'), (b'dim2', b'dim2'), (b'dim3', b'dim3')], max_length=50)),
+                ('id', models.AutoField(primary_key=True, serialize=False)),                
                 ('order', models.IntegerField()),
                 ('value', models.CharField(db_index=True, max_length=80)),
                 ('axis', models.CharField(db_index=True, max_length=10)),
@@ -421,12 +419,7 @@ class Migration(migrations.Migration):
             model_name='damageassessment',
             name='hazard',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='damageass_hazard', to='risks.Hazard'),
-        ),
-        migrations.AddField(
-            model_name='damageassessment',
-            name='layer',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='base_layer', to='layers.Layer'),
-        ),
+        ),        
         migrations.AddField(
             model_name='damageassessment',
             name='owner',
@@ -436,12 +429,7 @@ class Migration(migrations.Migration):
             model_name='damageassessment',
             name='region',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='damageass_region', to='risks.Region'),
-        ),
-        migrations.AddField(
-            model_name='damageassessment',
-            name='style',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='style_layer', to='layers.Style'),
-        ),
+        ),        
         migrations.AddField(
             model_name='damageassessment',
             name='users',

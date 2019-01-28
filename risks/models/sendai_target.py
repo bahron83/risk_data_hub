@@ -1,4 +1,5 @@
 from django.db import models
+from risks.models import Exportable
 
 
 class SendaiTarget(models.Model):
@@ -7,7 +8,12 @@ class SendaiTarget(models.Model):
                             db_index=True)
     description = models.TextField(default='', null=True, blank=False)    
 
-class SendaiIndicator(models.Model):
+class SendaiIndicator(Exportable, models.Model):
+    EXPORT_FIELDS = (
+            ('name', 'name'),
+            ('description', 'description'),            
+        )
+
     id = models.AutoField(primary_key=True)
     sendai_target = models.ForeignKey(SendaiTarget)
     name = models.CharField(max_length=100, null=False, blank=False,

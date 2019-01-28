@@ -6451,7 +6451,8 @@ a.disaster .label:focus {
   height: calc(100% - 253px);
 }
 .disaster .disaster-header {
-  max-height: calc(100% - 253px);
+  /*max-height: calc(~"100% - 253px");*/
+  height: 100%;
 }
 .disaster .autocomplete-box {
   position: absolute;
@@ -6926,7 +6927,7 @@ a.disaster .label:focus {
   position: absolute;
   margin: -5px 0 0 15px;
   background: rgba(0, 0, 0, 0.6);
-  max-width: 50%;
+  /*max-width: 50%;*/
   color: #CCCCCC;
   overflow-y: auto;
 }
@@ -6990,7 +6991,7 @@ a.disaster .label:focus {
 @media (min-width: 1200px) {
   .disaster #disaster-overview-list,
   .disaster .disaster-header {
-    max-width: 600px;
+    width: 600px;
   }
   .disaster #disaster-filters-container {
     position: absolute;
@@ -7004,8 +7005,7 @@ a.disaster .label:focus {
   .disaster #disaster-filter-results {
     position: relative;
     float: left;
-    min-width: 500px;
-    max-width: 600px;
+    width: 600px;
   }
   .disaster #disaster-filter-results {
     color: #333;

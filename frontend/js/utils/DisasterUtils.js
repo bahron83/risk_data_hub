@@ -102,8 +102,9 @@ function getLayerName({riskAnalysis, app, selectedEventIds, eventAnalysis}) {
     return getLayerNameCosts(riskAnalysis);
 }
 function getStyleRisks(riskAnalysis) {
-    const {layer} = riskAnalysis.riskAnalysisData;
-    return layer.layerStyle && layer.layerStyle.name;
+    //const {layer} = riskAnalysis.riskAnalysisData;
+    //return layer.layerStyle && layer.layerStyle.name;
+    return '';
 }
 function getStyleCosts(riskAnalysis) {
     const {referenceStyle} = riskAnalysis.riskAnalysisData;

@@ -39,7 +39,7 @@ def create_damage_assessment(input_file, final_name, current_user_id):
         raise ValueError(error_message)
 
 @shared_task
-def import_damage_assessment_data(filepath, risk_app_name, damage_assessment_name, region_name, final_name, current_user_id):
+def import_risk_data(filepath, risk_app_name, damage_assessment_name, region_name, final_name, current_user_id):
         try:
             da = DamageAssessment.objects.get(name=damage_assessment_name)
         except DamageAssessment.DoesNotExist:
@@ -48,7 +48,7 @@ def import_damage_assessment_data(filepath, risk_app_name, damage_assessment_nam
         out = StringIO.StringIO()         
         try:            
             da.set_processing()            
-            call_command('import_da_data',
+            call_command('importriskdata',
                          commit=False,
                          risk_app=risk_app_name,
                          region=region_name,
@@ -68,7 +68,7 @@ def import_damage_assessment_data(filepath, risk_app_name, damage_assessment_nam
         complete_upload(current_user_id, final_name, region_name)
 
 @shared_task
-def import_damage_assessment_metadata(filepath, risk_app_name, damage_assessment_name, region_name, final_name):        
+def import_risk_metadata(filepath, risk_app_name, damage_assessment_name, region_name, final_name):        
         try:
             da = DamageAssessment.objects.get(name=damage_assessment_name)
         except DamageAssessment.DoesNotExist:
@@ -77,7 +77,7 @@ def import_damage_assessment_metadata(filepath, risk_app_name, damage_assessment
         out = StringIO.StringIO()
         try:            
             da.set_processing()
-            call_command('import_da_metadata',
+            call_command('import_risk_metadata',
                          commit=False,
                          risk_app=risk_app_name,
                          region=region_name,
@@ -101,21 +101,36 @@ def import_damage_assessment_metadata(filepath, risk_app_name, damage_assessment
             raise ValueError(error_message)
 
 @shared_task
-def import_event_data(filepath, risk_app_name, region_name, filename_ori, current_user_id):
+def import_event_data(filepath, risk_app_name, damage_assessment_name, region_name, filename_ori, current_user_id):
+        try:
+            da = DamageAssessment.objects.get(name=damage_assessment_name)
+        except DamageAssessment.DoesNotExist:
+            raise ValueError("Damage Assessment not found")
+        try:
+            region = Region.objects.get(name=region_name)
+        except Region.DoesNotExist:
+            raise ValueError("Region not found")
+        da.set_queued()      
         out = StringIO.StringIO()        
         event_codes = None       
         try:            
-            call_command('import_events',
-                         commit=False,
+            call_command('importeventdata',                         
                          risk_app=risk_app_name,
                          region=region_name,
                          excel_file=filepath,                         
+                         damage_assessment=damage_assessment_name,
                          stdout=out)  
             event_codes = out.getvalue()                       
         except Exception, e:
+            da.save()
+            da.set_error()        
             report_processing_error(current_user_id, filename_ori, region_name, e)    
             return None
         
+        da.refresh_from_db()        
+        da.data_file = filename_ori
+        da.save()
+        da.set_ready()            
         complete_upload(current_user_id, filename_ori, region_name, event_codes)           
 
 @shared_task

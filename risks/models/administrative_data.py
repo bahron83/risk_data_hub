@@ -47,4 +47,4 @@ class AdministrativeData(LocationAware, models.Model):
 
     def get_by_association(self):
         loc = self.get_location()
-        return AdministrativeDataValue.filter(adm=loc, data=self).order_by('-dimension').first()
+        return AdministrativeDataValue.objects.filter(adm=loc, data=self).order_by('-dimension').first()

@@ -26,17 +26,63 @@ const disasterSelector = state => ({
 // TODO currently loading flag causes a re-creation of the selector on any pan
 // to avoid this separate loading from the layer object
 const layersSelector = createSelector([layersSelectorO, disasterSelector],
-    (layers = [], disaster) => {
+    (layers = [], disaster) => {           
         let newLayers;
-        const layerId = disaster.selectedEventIds.length > 0 ? '_eventAn_' : '_riskAn_';        
+        let newFeatures;
+        //const layerId = disaster.selectedEventIds.length > 0 ? '_eventAn_' : '_riskAn_';           
+        const layerId = 'adminunits'
         const riskAnWMSIdx = findIndex(layers, l => l.id === layerId);        
-        if (disaster.riskAnalysis && riskAnWMSIdx !== -1) {            
-            const riskAnWMS = assign({}, layers[riskAnWMSIdx], {name: getLayerName(disaster), style: getStyle(disaster), params: getViewParam(disaster)});
+        const riskAnLayer = layers.find(l => l.id === layerId) || false;
+        const adminUnitsAnLayer = layers.find(l => l.id === layerId) || false;         
+        if (disaster.riskAnalysis && adminUnitsAnLayer) {  
+            const dim1Value = disaster.riskAnalysis.riskAnalysisData.data.dimensions[0].values[disaster.dim.dim1Idx];
+            const dim2Value = disaster.riskAnalysis.riskAnalysisData.data.dimensions[1].values[disaster.dim.dim2Idx];
+            const styleIndex = disaster.riskAnalysis && parseFloat(disaster.riskAnalysis.fullContext.adm_level) + 1;
+            const newStyle = disaster.riskAnalysis.riskAnalysisData.style[styleIndex];                         
+            const { scope, adm_level } = disaster.riskAnalysis.fullContext;
+            if(scope == 'risk') {
+                newFeatures = adminUnitsAnLayer.features.map(f => { 
+                    let value = null;                                    
+                    for (const v of disaster.riskAnalysis.riskAnalysisData.data.subunits_values) {
+                        if (v[0] == f.properties.code && v[1] == dim1Value && v[2] == dim2Value) {
+                            value = v[3];                        
+                            break;
+                        }                        
+                    }                            
+                    return {id: f.id, type: f.type, geometry: f.geometry, properties: {...f.properties, value}};
+                });              
+                
+            }
+            else if(scope == 'event') {                
+                newFeatures = adminUnitsAnLayer.features.map(f => { 
+                    let value = null;  
+                    if(adm_level < 1 && disaster.selectedEventIds.length == 0) {
+                        const values_group_coutry = disaster.riskAnalysis.riskAnalysisData.data.event_group_country || {}
+                        if(f.properties.code in values_group_coutry) {
+                            value = values_group_coutry[f.properties.code]
+                        }                        
+                    }
+                    else {                        
+                        const { eventLocations, eventData } = disaster.eventAnalysis;
+                        if(eventLocations) {                            
+                            const match = eventData.find(e => {
+                                return disaster.selectedEventIds.includes(e.entry.event.id)
+                            })
+                            if(match !== undefined) {
+                                const location = eventLocations[f.properties.code];
+                                value = location && location.occurrences || null;
+                            }                                
+                        }                                                
+                    }
+                    return {id: f.id, type: f.type, geometry: f.geometry, properties: {...f.properties, value}};
+                });                              
+            }   
+            const riskAnWMS = assign({}, adminUnitsAnLayer, {features: newFeatures, style: newStyle});            
             newLayers = layers.slice();
-            newLayers.splice(riskAnWMSIdx, riskAnWMSIdx, riskAnWMS);
-        }else {
+            newLayers.splice(riskAnWMSIdx, 1, riskAnWMS);                     
+        } else {
             newLayers = [...layers];
-        }
+        }             
         return newLayers;
     });
 

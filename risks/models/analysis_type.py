@@ -44,7 +44,7 @@ class AnalysisType(RiskAppAware, HazardTypeAware, LocationAware, Exportable, mod
         reg = self.get_region()
         loc = self.get_location()
         ht = self.get_hazard_type().set_region(reg).set_location(loc)
-        ra = self.damageass_analysistype.filter(hazard_type=ht,
+        ra = self.damageass_analysistype.filter(hazard=ht,
                                                    region=reg,
                                                    administrative_divisions__in=[loc])
         if kwargs:

@@ -24,10 +24,10 @@ class EventTable  extends Component {
         return false;
     }
 
-    handleRowSelect(row, isSelected, e) {
+    handleRowSelect(row, isSelected, e) {        
         const detailViewEnabled = true; //to remove
         const { selectEvent, fullContext } = this.props;        
-        const list = Array.isArray(row) ? row.map(item => { return item.id}) : [row.id];        
+        const list = Array.isArray(row) ? row.map(item => { return item.id}) : [row.id];                
         selectEvent(list, isSelected, fullContext.loc);
     }
 
@@ -35,7 +35,7 @@ class EventTable  extends Component {
         this.handleRowSelect(rows, isSelected, null);
     }
 
-    render() {                
+    render() {             
         const { data, selectedEventIds } = this.props;                   
         if(data.length == 0)
             return null;        

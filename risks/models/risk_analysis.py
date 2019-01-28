@@ -5,12 +5,15 @@ from geonode.layers.models import Layer, Style
 from risks.models.risk_app import RiskAppAware
 from risks.models.entity import OwnedModel, Schedulable, LocationAware, HazardTypeAware, AnalysisTypeAware, Exportable
 from risks.models import HazardSet
+from risks.models.location import levels as adm_levels
 
 
 class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardTypeAware, AnalysisTypeAware, Exportable):
     """
     JSON schema of object in values field (array of objects)
     {
+        "region":"Europe",
+        "damage_assessment":"Potential_Impact_flood_on_esmCommercial",
         "dim1": {
             "id": "1",
             "dim_id": "1",
@@ -25,7 +28,12 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
             "value": "10 years",
         },
         "dim3": {},
-        "phenomenon_id": "1",
+        "phenomenon": {
+            "id": "1", 
+            "event_id":"1"           
+            "value": "0.5"
+        },
+        "year":"2016",
         "item_id": "1",
         "linked_item_id": "2",
         "value": "10.7",
@@ -42,20 +50,21 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
             "parent_id": "1",
             "parent_code": "IT"
             "level": "2",
-        }
+        },
+        "geometry":"geom.WKT",
     }
     """
     
     EXPORT_FIELDS = (('name', 'name',),
                      ('unitOfMeasure', 'unit_of_measure'),
-                     ('hazardSet', 'get_hazard_set',),
+                     ('hazardSet', 'export_hazard_set',),
                      ('href', 'href',),)
     EXPORT_FIELDS_EXTENDED = (('name', 'name',),
                               ('descriptorFile', 'descriptor_file',),
                               ('dataFile', 'data_file',),
                               ('metadataFile',  'metadata_file',),
                               ('layer', 'get_layer_data',),                              
-                              ('hazardSet', 'get_hazard_set_extended',),
+                              ('hazardSet', 'export_hazard_set_extended',),
                               ('unit_of_measure', 'unit_of_measure',))
 
     
@@ -65,7 +74,7 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
     unit_of_measure = models.CharField(max_length=255, null=True, blank=True)    
     tags = models.CharField(max_length=255, null=True, blank=True)    
     assessment_date = models.DateField()
-    insert_date = models.DateField(default=datetime.date.today)
+    insert_date = models.DateField(default=datetime.date.today)    
     descriptor_file = models.FileField(upload_to='descriptor_files', max_length=255)
     data_file = models.FileField(upload_to='data_files', max_length=255)
     metadata_file = models.FileField(upload_to='metadata_files', max_length=255)
@@ -91,20 +100,14 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
         blank=False,
         null=False
     )
-    layer = models.ForeignKey(
-        Layer,
-        blank=False,
-        null=False,
-        unique=False,
-        related_name='base_layer'
-    )
     style = models.ForeignKey(
-        Style,
+        'Style',
+        related_name='damageassessment_association',
+        on_delete=models.DO_NOTHING,
         blank=True,
-        null=True,
-        unique=False,
-        related_name='style_layer'
+        null=True
     )
+    additional_layers = models.ManyToManyField(Layer, blank=True)
     app = models.ForeignKey('RiskApp')  
 
     damage_types = models.ManyToManyField('DamageType', through='DamageTypeValue')
@@ -112,7 +115,7 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
     phenomena = models.ManyToManyField('Phenomenon', through='DamageAssessmentValue', related_name='assessment_for_phenomenon')
     locations = models.ManyToManyField('Location', through='DamageAssessmentValue', related_name='assessment_for_location')
     '''
-    values = JSONField(null=True, blank=True)
+    #values = JSONField(null=True, blank=True)
     
     administrative_divisions = models.ManyToManyField('AdministrativeDivision', related_name='assessment_adm_division')
     users = models.ManyToManyField('RdhUser', through='AccessRule', through_fields=('damage_assessment', 'user'), related_name='damage_assessment_user_access')
@@ -135,14 +138,17 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
         out = self.export(self.EXPORT_FIELDS_EXTENDED)
         return out
 
-    def get_hazard_set_extended(self):
-        return self.get_hazard_set(HazardSet.EXPORT_FIELDS_EXTENDED)
+    def export_hazard_set_extended(self):
+        return self.export_hazard_set(HazardSet.EXPORT_FIELDS_EXTENDED)
 
-    def get_hazard_set(self, fields=None):
-        hazardset = HazardSet.objects.filter(damage_assessment=self).first()        
+    def export_hazard_set(self, fields=None):
+        hazardset = self.get_hazard_set()
         if hazardset:
             return hazardset.export(fields)
         return {}
+
+    def get_hazard_set(self):
+        return HazardSet.objects.filter(damage_assessment=self).first()        
 
     def href(self):
         reg = self.get_region()
@@ -151,26 +157,12 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
         at = self.get_analysis_type()
         return self.get_url('analysis', reg.name, loc.code, ht.mnemonic, at.name, self.id)
 
-    def get_style(self):
-        if self.style:
-            return {'name': self.style.name,
-                    'title': self.style.sld_title,
-                    'url': self.style.sld_url}
-        return {}
+    
 
-    def get_layer_data(self):
-        l = self.layer
-        layer_name = l.typename
-        layer_title = l.title
-        layer_style = self.get_style()
-        out = {'layerName': layer_name,
-               'layerTitle': l.title,
-               'layerStyle': layer_style}
-        return out
-
-'''class DamageAssessmentValue(models.Model):
+class DamageAssessmentEntry(models.Model):
     id = models.AutoField(primary_key=True)
-    damage_assessment = models.ForeignKey(DamageAssessment)
+    entry = JSONField()
+    '''damage_assessment = models.ForeignKey(DamageAssessment)
     damage_type_value_1 = models.ForeignKey(
         'DamageTypeValue',
         related_name='assessment_dim1'
@@ -206,6 +198,12 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
         blank=True,
         null=True
     )'''
+
+    class Meta:
+        """
+        """        
+        db_table = 'risks_damage_assessment_entry'
+        verbose_name_plural = 'Damage Assessment Entries'
 
 class DamageAssessmentCreate(models.Model):
     descriptor_file = models.FileField(upload_to='descriptor_files', max_length=255)
@@ -272,3 +270,27 @@ class DamageAssessmentImportData(models.Model):
         db_table = 'risks_data_files'
         verbose_name = 'Damage Assessment: Import Risk Data from XLSX file'
         verbose_name_plural = 'Damage Assessment: Import Risk Data from XLSX file'
+
+class Style(models.Model):
+    name = models.CharField(max_length=100)
+    content = JSONField()
+
+    def sync_details_field(self):
+        content = {}
+        if self.content:
+            content = dict(self.content)
+        for attr in adm_levels:
+            if attr not in content.keys():
+                content[attr] = ''
+        Style.objects.filter(pk=self.id).update(content=content)
+
+    def custom_export(self):
+        json_exp = {}
+        for l in adm_levels:
+            if l in self.content:                 
+                adm_level_index = str(adm_levels.index(l))
+                json_exp[adm_level_index] = self.content[l]                
+        return json_exp
+
+    def __unicode__(self):
+        return u"{0}".format(self.name)

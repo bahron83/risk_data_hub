@@ -4,13 +4,13 @@ import ChartTooltip from "./ChartTooltip";
 
 class EventCountryChart extends Component {    
     getChartData() {         
-        const { data } = this.props; 
+        const { data } = this.props;         
         if(data) {
-            return (
-                data.map(v => {
-                    return {'name': v[0], 'value': parseFloat(v[3], 10)}
-                })
-            )
+            let chartData = []
+            for(let k in data) {
+                chartData.push({'name': k, 'value': data[k]})
+            }
+            return chartData.sort((a,b) => (a.value < b.value) ? 1 : ((b.value < a.value) ? -1 : 0));
         }               
         return [];
     }

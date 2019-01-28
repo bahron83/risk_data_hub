@@ -136,21 +136,38 @@ class Feature extends React.Component {
         options: PropTypes.object        
     };
 
+    adjustProps(feature) {         
+        if(feature && 'value' in feature.properties) {
+            const { rules } = feature && feature.style || null;
+            if(rules) {            
+                for(let rule of rules) {                 
+                    if(feature.properties.value != null) {
+                        if (feature.properties.value < rule.max_value) {                                                         
+                            const style = {...feature.style, fillColor: rule.fillColor}                            
+                            return {...feature, style}
+                        }                        
+                    }                
+                }             
+            }                                        
+        }        
+        return feature;        
+    }
+
     componentDidMount() {
         if (this.props.container && this.props.geometry) {
-            this._tooltip = L.popup({closeButton: false, offset: [85, 35], className: 'disaster-map-tooltip', autoPan: false});
-            this.createLayer(this.props);            
+            this._tooltip = L.popup({closeButton: false, offset: [85, 35], className: 'disaster-map-tooltip', autoPan: false});                        
+            this.createLayer(this.adjustProps(this.props));                                      
         }
-    }
+    }    
 
     componentWillReceiveProps(newProps) {
         if (!isEqual(newProps.properties, this.props.properties) || !isEqual(newProps.geometry, this.props.geometry) || !isEqual(newProps.style, this.props.style)) {            
-            this.props.container.removeLayer(this._layer);
-            this.createLayer(newProps);            
+            this.props.container.removeLayer(this._layer);            
+            this.createLayer(this.adjustProps(newProps)); 
         }
     }
 
-    shouldComponentUpdate(nextProps) {
+    shouldComponentUpdate(nextProps) {        
         return !isEqual(nextProps.properties, this.props.properties) || !isEqual(nextProps.geometry, this.props.geometry);
     }
 
@@ -158,9 +175,9 @@ class Feature extends React.Component {
         if (this._layer) {
             this.props.container.removeLayer(this._layer);
         }
-    }
+    }    
 
-    render() {
+    render() {        
         return null;
     }
 

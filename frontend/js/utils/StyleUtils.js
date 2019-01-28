@@ -6,11 +6,21 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-module.exports = {
-    getMainViewStyle: hover => ({
-        color: '#ffffff',
-        fillColor: hover ? 'rgba(33, 186, 176, 0.6)' : 'rgba(33, 186, 176, 0.25)',
-        weight: 1
+module.exports = {     
+    getMainViewStyle: () => ({
+        color: 'black',
+        fillColor: 'transparent',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0
+    }),
+    getRiskAnStyle: rangeValues => ({
+        color: 'black',
+        fillColor: 'transparent',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 1,
+        rules: rangeValues
     }),
     getSearchLayerStyle: () => ({
         iconUrl: "/static/dataexplorationtool/img/marker.svg",

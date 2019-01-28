@@ -238,10 +238,15 @@ const DataExplorer = connect(
     }
 )(DataExplorerComponent);
 
+
+const dEpics = require('../epics/disaster');
+const rEpics = require('../epics/report');
+
 module.exports = {
     DataExplorerPlugin: DataExplorer,
     reducers: {
-        disaster: require('../reducers/disaster')
+        disaster: require('../reducers/disaster'),
+        report: require('../reducers/report')
     },
-    epics: require('../epics/disaster')
+    epics: {...dEpics, ...rEpics}
 };

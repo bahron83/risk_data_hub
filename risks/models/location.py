@@ -5,7 +5,7 @@ from risks.models import RiskAppAware, LocationAware, Exportable
 
 
 location_types = (('fiexd_asset', 'fixed_asset'), ('non_fixed_asset', 'non_fixed_asset'), ('people', 'people'), ('damage', 'damage'),)
-levels = ['continent', 'country', 'nuts2', 'nuts3', 'municipality']
+levels = ['continent', 'country', 'nuts2', 'nuts3', 'city', 'municipality']
 
 class AdministrativeDivisionManager(models.Manager):
     """
@@ -15,11 +15,20 @@ class AdministrativeDivisionManager(models.Manager):
 
 
 class AdministrativeDivision(RiskAppAware, LocationAware, Exportable, MPTTModel):
-    EXPORT_FIELDS = (('label', 'name',),
+    EXPORT_FIELDS = (('code', 'code',),
+                     ('label', 'name',),
+                     ('level', 'level',),
                      ('href', 'href',),
                      ('geom', 'geom_href',),
                      ('parent_geom', 'parent_geom_href',),
                      )
+    EXPORT_FIELDS_ANALYSIS = (('id', 'id'),
+                              ('code', 'code'),
+                              ('name', 'name'),
+                              ('parent_id', 'pparent_id'),
+                              ('parent_code', 'pparent_code'),
+                              ('level', 'level'),
+                              )
     
     id = models.AutoField(primary_key=True)
     code = models.CharField(max_length=30, null=False, unique=True,
@@ -49,6 +58,16 @@ class AdministrativeDivision(RiskAppAware, LocationAware, Exportable, MPTTModel)
             self.parent.set_region(self.get_region())
             return self.parent.geom_href
 
+    @property
+    def pparent_id(self):
+        if self.parent:
+            return self.parent.id
+
+    @property
+    def pparent_code(self):
+        if self.parent:
+            return self.parent.code
+
     def __unicode__(self):
         return u"{0}".format(self.name)
 
@@ -72,6 +91,12 @@ class AdministrativeDivision(RiskAppAware, LocationAware, Exportable, MPTTModel)
             parent = parent.parent
         out.reverse()
         return out
+
+    def has_children(self):
+        return self.get_children().exists()
+    
+    def get_children(self):
+        return AdministrativeDivision.objects.filter(parent=self)
 
 class Location(models.Model):
     id = models.AutoField(primary_key=True)

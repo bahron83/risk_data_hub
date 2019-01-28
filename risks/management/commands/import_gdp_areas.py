@@ -4,7 +4,9 @@ from optparse import make_option
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
-from risks.models import AdministrativeDivision, AdministrativeData, AdministrativeDivisionDataAssociation
+from django.db.models.functions import Cast
+from django.db.models import FloatField, Sum
+from risks.models import AdministrativeDivision, AdministrativeData, AdministrativeDataValue
 
 import xlrd
 
@@ -33,14 +35,14 @@ class Command(BaseCommand):
             action='store_true',
             dest='commit',
             default=True,
-            help='Commits Changes to the storage.')
+            help='Commits Changes to the storage.')        
         return parser    
 
     def handle(self, **options):
-        commit = options.get('commit')        
+        commit = options.get('commit')                
         basedir = "/home/geonode/import_data/countries"
-        allowed_extensions = [".xlsx"]
-                
+        allowed_extensions = [".xlsx"]                                    
+        
         for file in os.listdir(basedir):
             if file.endswith(tuple(allowed_extensions)):                    
                 wb = xlrd.open_workbook(filename=os.path.join(basedir, file))
@@ -66,12 +68,12 @@ class Command(BaseCommand):
                                 value = sheet.cell(row_num, idx).value
                                 if value:
                                     admin_data, created = AdministrativeData.objects.get_or_create(name=dataset)
-                                    association, created = AdministrativeDivisionDataAssociation.objects.get_or_create(
+                                    association, created = AdministrativeDataValue.objects.get_or_create(
                                         adm=adm_div,
                                         data=admin_data,
                                         dimension=dimension
                                     )
-                                    association_updated = AdministrativeDivisionDataAssociation.objects.filter(pk=association.pk).update(value=value)                                
+                                    association_updated = AdministrativeDataValue.objects.filter(pk=association.pk).update(value=value)                                
 
                                 
                                     print('Imported data: ADM = {} - TYPE = {} - DIMENSION = {} - VALUE = {}'.format(adm_div.code, dataset, dimension, value))

@@ -101,7 +101,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             if(state.showEventDetail)
                 return assign({}, state, { eventDetails: {}, visibleEventDetail: true });
             const { events, isSelected } = action;                        
-            let ids = state && state.selectedEventIds || [];            
+            let ids = state && state.selectedEventIds || [];             
             //set the array of ids             
             if(typeof events !== undefined && events.length > 1) {
                 ids = isSelected ? events : [];                    
@@ -109,7 +109,7 @@ function disaster(state = {dim: {dim1: 0, dim2: 1, dim1Idx: 0, dim2Idx: 0}}, act
             else if(events.length > 0) {                
                 ids = isSelected ? [...ids, events[0]] : ids.filter(item => item !== events[0]);
             }                        
-            ids = ids.filter((v, i, a) => a.indexOf(v) === i);                        
+            ids = ids.filter((v, i, a) => a.indexOf(v) === i);             
             return assign({}, state, { selectedEventIds: ids, zoomJustCalled: 1 });
         } 
         case SET_FILTERS: {

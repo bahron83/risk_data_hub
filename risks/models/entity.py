@@ -1,3 +1,4 @@
+import datetime
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core import files
@@ -137,6 +138,8 @@ class Exportable(object):
                     val = val.url
                 except ValueError:
                     val = None
+            elif isinstance(val, (datetime.date, datetime.datetime)):
+                val = val.isoformat()
             out[fname] = val
         return out
 

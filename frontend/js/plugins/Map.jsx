@@ -55,7 +55,7 @@ class ResizableMapComponent extends React.Component {
         return layers && layers.getArray && layers.getArray();
     }
 
-    render() {
+    render() {        
         return (
             <MapPlugin
                 options={{
@@ -92,7 +92,7 @@ class ResizableMapComponent extends React.Component {
                             }
                         }
                     },
-                    onMoveEvent: event => {
+                    onMoveEvent: event => {                        
                         const layers = this.getLayers(event);
                         if (layers && !head(layers.filter(layer => layer.get('msId') === 'adminunits' && layer.getVisible()))) {
                             if (this.props.mousePointer !== 'default') {
@@ -157,7 +157,7 @@ const ResizableMap = connect(
 )(ResizableMapComponent);
 
 class ResizableContainer extends React.Component {
-    render() {
+    render() {        
         return (
             <ContainerDimensions>
             { ({width, height}) =>

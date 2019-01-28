@@ -11,14 +11,14 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
             if(rtype == 'risk_analysis'):
                 reg=region.name
                 loc = location.code
-                ht = r.hazard_type.mnemonic
+                ht = r.hazard.mnemonic
                 at = r.analysis_type.name
                 an = r.id
                 analysisData.append({
-                    'riskAnalysis': r.set_region(region).set_location(location).set_hazard_type(r.hazard_type).set_analysis_type(r.analysis_type).export(),
+                    'riskAnalysis': r.set_region(region).set_location(location).set_hazard_type(r.hazard).set_analysis_type(r.analysis_type).export(),
                     'context': {'ht': ht, 'at': at, 'an': r.id, 'reg': reg, 'loc': loc},
                     'analysisType': r.analysis_type.export(r.analysis_type.EXPORT_FIELDS_BASIC),
-                    'hazardType': r.hazard_type.set_region(region).set_location(location).export(),
+                    'hazardType': r.hazard.set_region(region).set_location(location).export(),
                     'location': location.set_region(region).export(),                    
                     'apiUrl': '/risks/data_extraction/reg/{}/loc/{}/ht/{}/at/{}/an/{}/'.format(reg, loc, ht, at, an)
                 })
@@ -71,7 +71,7 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
                 # ra_matches = available_datasets.filter(values__adm_division=loc)                      
                 if ra_matches:
                     if hazard_type:
-                        ra_matches = ra_matches.filter(hazard_type=hazard_type)
+                        ra_matches = ra_matches.filter(hazard=hazard_type)
                     if scope:
                         ra_matches = ra_matches.filter(analysis_type__scope=scope)
                     if analysis_type:
@@ -82,7 +82,7 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
                     lookup_data += self.prepare_data(ra_matches, region, loc)                
                 loc = loc.parent                                           
         out = {
-            'lookupData': lookup_data,
-            'datasetRuleAssociation': dataset_rule_association
+            'lookupData': lookup_data#,
+            #'datasetRuleAssociation': dataset_rule_association
         }
-        return json_response(out) if lookup_data else json_response(errors=['No data found'], status=204)
+        return json_response(lookup_data) if lookup_data else json_response(errors=['No data found'], status=204)

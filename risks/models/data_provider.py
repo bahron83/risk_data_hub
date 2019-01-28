@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.functional import lazy
 from risks.models import DamageTypeValue
 
 
@@ -8,7 +9,7 @@ def dyminfo_values():
         if dym_infos:
             return tuple([(str(d['value']), str(d['value'])) for d in dym_infos])    
     except:
-        return ()
+        return []
 
 class DataProvider(models.Model):
     name = models.CharField(max_length=50)
@@ -29,7 +30,11 @@ class DataProviderMappings(models.Model):
         unique=False
     )
     provider_value = models.CharField(max_length=80)
-    rdh_value = models.CharField(max_length=80, choices=dyminfo_values())
+    rdh_value = models.CharField(max_length=80)
+
+    def __init__(self, *args, **kwargs):
+        super(DataProviderMappings, self).__init__(*args, **kwargs)
+        self._meta.get_field('rdh_value').choices = lazy(dyminfo_values,list)()
         
     class Meta:
         db_table = 'risks_data_provider_mappings'        

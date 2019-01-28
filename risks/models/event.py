@@ -1,6 +1,9 @@
 import datetime
+from datetime import timedelta
+import re
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex
+from geonode.layers.models import Layer
 from risks.models.risk_app import RiskAppAware
 from risks.models.entity import LocationAware, HazardTypeAware, Exportable, Schedulable
 from risks.models import (EntityAbstract, AdministrativeDivision)
@@ -25,7 +28,15 @@ class EventAttributeValueDecimal(AttributeValueDecimal):
 class EventAttributeValueDate(AttributeValueDate):    
     event = models.ForeignKey('Event')'''   
 
-class Phenomenon(models.Model):
+class Phenomenon(Exportable, models.Model):
+    EXPORT_FIELDS = (
+        ('id', 'id'),
+        ('begin_date', 'begin_date'),
+        ('end_date', 'end_date'),                
+        ('value', 'pvalue'),
+        ('event_id', 'pevent_id'),
+    )
+
     id = models.AutoField(primary_key=True)
     event = models.ForeignKey('Event')
     administrative_division = models.ForeignKey('AdministrativeDivision', limit_choices_to={'id__in': AdministrativeDivision.objects.filter(level__gte=1)})
@@ -38,7 +49,27 @@ class Phenomenon(models.Model):
     def __unicode__(self):
         return u"id: {0} - date: {1} - location: {2}".format(self.event.code, self.begin_date, self.administrative_division.code)
 
+    @property
+    def padministrative_division(self):
+        adm = self.administrative_division
+        return adm.export(adm.EXPORT_FIELDS_ANALYSIS)
+
+    @property
+    def pvalue(self):
+        return None
+
+    @property
+    def pevent_id(self):
+        return self.event.pk    
+
 class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Exportable, Schedulable):                
+    EXPORT_FIELDS = (
+        ('id', 'id'),
+        ('code', 'code'),
+        ('year', 'year'),                
+        ('country', 'pcountry'),        
+    )
+    
     id = models.AutoField(primary_key=True)    
     entity_type = models.CharField(max_length=20, null=False, choices=entity_types, default=DEFAULT_ENTITY_TYPE)        
     code = models.CharField(max_length=25, null=True, blank=True, db_index=True)    
@@ -64,7 +95,8 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
         blank=True,
         null=True,
         unique=False,        
-    )    
+    )  
+    related_layers = models.ManyToManyField(Layer, blank=True)  
 
     class Meta:
         """
@@ -81,7 +113,7 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
         return u"Event ID {0}".format(self.id)    
 
     def get_phenomena(self):
-        return Phenomenon.objects.filter(event=self)
+        return Phenomenon.objects.filter(event=self)    
 
     def sync_details_field(self):
         details = {}
@@ -92,23 +124,36 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
                 details[attr.name] = ''
         Event.objects.filter(pk=self.id).update(details=details)
 
+    @property
+    def phazard_type(self):
+        return self.hazard_type.mnemonic
+
+    @property
+    def pcountry(self):
+        return self.country.code
+    
+    @property
+    def pregion(self):
+        return self.region.name
+    
     @staticmethod
     def get_fields_basic():
         return ['entity_type','code','year','begin_date','end_date','country','hazard_type','region']  
     
     def custom_export(self):
         phenomena = self.get_phenomena()
+        phenomena_exp = [p.export() for p in phenomena]
         nuts2_adm_divs = [p.administrative_division for p in phenomena if p.administrative_division.level==levels.index('nuts2')]                
         nuts3_adm_divs = [p.administrative_division for p in phenomena if p.administrative_division.level==levels.index('nuts3')]
         if not nuts2_adm_divs:
             if nuts3_adm_divs:
                 nuts2_adm_divs = list(set([adm.parent for adm in nuts3_adm_divs]))
 
-        atts_varchar = EventAttributeValueVarchar.objects.filter(event=self)
+        '''atts_varchar = EventAttributeValueVarchar.objects.filter(event=self)
         atts_text = EventAttributeValueText.objects.filter(event=self)
         atts_int = EventAttributeValueInt.objects.filter(event=self)
         atts_decimal = EventAttributeValueDecimal.objects.filter(event=self)
-        atts_date = EventAttributeValueDate.objects.filter(event=self)
+        atts_date = EventAttributeValueDate.objects.filter(event=self)'''
 
         obj = {
             'id': self.id,
@@ -117,16 +162,17 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
             'hazard_title': self.hazard_type.title,
             'region': self.region.name,
             'iso2': self.country.code,
-            'nuts2': ', '.join([adm.code for adm in nuts2_adm_divs]),
+            'nuts2': ','.join([adm.code for adm in nuts2_adm_divs]),
             'nuts2_names': ', '.join([adm.name for adm in nuts2_adm_divs]),
-            'nuts3': ', '.join([adm.code for adm in nuts3_adm_divs]),
+            'nuts3': ','.join([adm.code for adm in nuts3_adm_divs]),
             'nuts3_names': ', '.join([adm.name for adm in nuts3_adm_divs]),
             'begin_date': self.begin_date,
             'end_date': self.end_date,
-            'year': self.begin_date.year            
+            'year': self.begin_date.year,
+            'phenomena': phenomena_exp
         }
 
-        if atts_varchar:
+        '''if atts_varchar:
             for a in atts_varchar:
                 obj[a.code] = a.value
         if atts_text:
@@ -140,7 +186,7 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
                 obj[a.code] = a.value
         if atts_date:
             for a in atts_date:
-                obj[a.code] = a.value
+                obj[a.code] = a.value'''
         
         return obj
         
@@ -158,7 +204,7 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
         next_serial = 1
         duplicates = Event.objects.none()
         if events_to_check:           
-            duplicates = events_to_check.filter(iso2=country.code, begin_date=begin_date)
+            duplicates = events_to_check.filter(country=country, begin_date=begin_date)
             serials = [str(ev.code[-4:]) for ev in events_to_check]            
             serials.sort(reverse=True)
             next_serial = int(serials[0]) + 1        
@@ -182,7 +228,26 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
             if 'sources' in obj:
                 matches = matches.filter(sources=obj['sources'])
             return matches
-        return None     
+        return None
+
+    @staticmethod
+    def find_exact_match(obj):
+        temp_matches = Event.find_matches(obj)
+        if 'begin_date' in obj:
+            temp_matches = temp_matches.filter(begin_date=obj['begin_date'])
+        if 'end_date' in obj:
+            temp_matches = temp_matches.filter(begin_date=obj['begin_date'])
+        if 'state' in obj:
+            temp_matches = temp_matches.filter(state=obj['state'])
+        return temp_matches.first()
+
+    def has_exact_match(self):
+        return Event.objects.filter(
+            region=self.region,
+            hazard_type=self.hazard_type,
+            country=self.country,
+            begin_date=self.begin_date,
+            end_date=self.end_date).exists()
 
     def get_attributes_saved(self):
         attributes_saved = []
@@ -197,47 +262,7 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
         attributes_saved = self.get_attributes_saved()
         return len(Event.get_attributes(data_type)) - len(attributes_saved)
 
-class EventImport(models.Model):
-    data_file = models.FileField(upload_to='data_files', max_length=255)
-
-    # Relationships
-    riskapp = models.ForeignKey(
-        'RiskApp',
-        blank=False,
-        null=False,
-        unique=False,
-    )
-
-    region = models.ForeignKey(
-        'Region',
-        blank=False,
-        null=False,
-        unique=False,
-    )    
-
-    def file_link(self):
-        if self.data_file:
-            return "<a href='%s'>download</a>" % (self.data_file.url,)
-        else:
-            return "No attachment"
-
-    file_link.allow_tags = True
-
-    def __unicode__(self):
-        return u"{0}".format(self.data_file.name)
-
-    class Meta:
-        """
-        """
-        ordering = ['riskapp', 'region']
-        db_table = 'risks_data_event_files'
-        verbose_name = 'Events: Import Data (Main) from XLSX file'
-        verbose_name_plural = 'Events: Import Data (Main) from XLSX file'      
-
-    def __unicode__(self):
-        return u"{0}".format(self.data_file.name)
-
-class EventImportDamage(models.Model):
+class EventImportData(models.Model):
     data_file = models.FileField(upload_to='data_files', max_length=255)
 
     # Relationships
@@ -260,13 +285,7 @@ class EventImportDamage(models.Model):
         blank=False,
         null=False,
         unique=False,
-    )
-
-    allow_null_values = models.BooleanField(default=False)
-
-    adm_level_precision = models.CharField(max_length=10,
-                                    choices=(("1", "Country"), ("2", "Nuts3")),
-                                    default="1")
+    )    
 
     def file_link(self):
         if self.data_file:
@@ -282,10 +301,10 @@ class EventImportDamage(models.Model):
     class Meta:
         """
         """
-        ordering = ['riskapp', 'region', 'damage_assessment', 'adm_level_precision']
-        db_table = 'risks_event_damage_files'
-        verbose_name = 'Damage Assessment: Import Events Data (Attributes) from XLSX file'
-        verbose_name_plural = 'Damage Assessment: Import Events Data (Atributes) from XLSX file'      
+        ordering = ['riskapp', 'region', 'damage_assessment']
+        db_table = 'risks_event_data_files'
+        verbose_name = 'Damage Assessment: Import Events Data from XLSX file'
+        verbose_name_plural = 'Damage Assessment: Import Events Data from XLSX file'      
 
     def __unicode__(self):
         return u"{0}".format(self.data_file.name)

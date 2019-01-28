@@ -1,7 +1,8 @@
 from django.dispatch import Signal, receiver
 #from django.db.models.signals import m2m_changed, post_save
 from geonode.notifications_helper import send_now_notification
-from geonode.people.models import Profile
+#from geonode.people.models import Profile
+from risks.models.user import RdhUser
 #from django.core.management import call_command
 #import inspect
 
@@ -21,7 +22,7 @@ def notify_user_data_uploaded(sender, **kwargs):
     if kwargs['filename']:
         filename = kwargs['filename']
     if kwargs['user']:
-        user = Profile.objects.get(id=kwargs['user'])    
+        user = RdhUser.objects.get(id=kwargs['user'])    
     region = kwargs['region'] if kwargs['region'] else ''
     additional_content = kwargs['additional_content'] if kwargs['additional_content'] else ''
 
@@ -37,7 +38,7 @@ def notify_user_data_processing_failed(sender, **kwargs):
     if kwargs['filename']:
         filename = kwargs['filename']
     if kwargs['user']:
-        user = Profile.objects.get(id=kwargs['user'])    
+        user = RdhUser.objects.get(id=kwargs['user'])    
     region = kwargs['region'] if kwargs['region'] else ''
     error_message = kwargs['error_message'] if kwargs['error_message'] else ''
 

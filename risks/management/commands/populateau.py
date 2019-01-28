@@ -96,6 +96,7 @@ is mandatory")
                 if isinstance(geom, geos.Polygon):
                     geom = geos.MultiPolygon(geom)
 
+                # level 0 => Continent (eg. Europe)
                 if adm_level == 0:
                     (adm_division, is_new_amdiv) = \
                         AdministrativeDivision.objects.get_or_create(
@@ -111,6 +112,7 @@ is mandatory")
                         adm_division.geom = geom                        
                         adm_division.save()                    
 
+                # level 1 => Country (eg. Italy)
                 if adm_level == 1:
                     print 'adm level 1' 
                     print 'declared parent = {}'.format(feat.get('HRparent')[:2])                                       
@@ -134,35 +136,37 @@ is mandatory")
                         adm_division.parent = adm_division_0
                         adm_division.save()                    
 
-                if adm_level == 2:
+                # level 2,3 => NUTS2, NUTS3 (eg. Lombardia, Varese)
+                if adm_level in [2,3]:
                     print('region = {}'.format(feat.get('HRpcode')))
-                    adm_division_1 = AdministrativeDivision.objects.get(code=feat.get('HRparent'))
+                    adm_parent = AdministrativeDivision.objects.get(code=feat.get('HRparent'))
                     (adm_division, is_new_amdiv) = AdministrativeDivision.objects.get_or_create(
                         code=feat.get('HRpcode'),
                         defaults=dict(
                             name=feat.get('HRname'),
                             geom=geom,                            
-                            parent=adm_division_1
+                            parent=adm_parent
                         )
                     )
 
                     if not is_new_amdiv:
                         adm_division.name = feat.get('HRname')
                         adm_division.geom = geom                        
-                        adm_division.parent = adm_division_1
+                        adm_division.parent = adm_parent
                         adm_division.save()                    
                 
-                if adm_level == 3:                                                             
+                # level 4 => Municipality (eg. Ispra)
+                if adm_level == 4:                                                             
                     print('adm = {}'.format(feat.get('HRpcode')))
                     print('parent = {}'.format(feat.get('HRparent')))
-                    adm_division_2 = AdministrativeDivision.objects.get(code=feat.get('HRparent'))
+                    adm_parent = AdministrativeDivision.objects.get(code=feat.get('HRparent'))
                     '''(adm_division, is_new_amdiv) = AdministrativeDivision.objects.get_or_create(
                         code=feat.get('HRpcode'),
                         defaults=dict(
                             name=feat.get('HRname'),
                             geom=geom.wkt,
                             region=region_obj,
-                            parent=adm_division_2
+                            parent=adm_parent
                         )
                     )
                     
@@ -170,7 +174,7 @@ is mandatory")
                         adm_division.name = feat.get('HRname')
                         adm_division.geom = geom.wkt
                         adm_division.region = region_obj
-                        adm_division.parent = adm_division_2
+                        adm_division.parent = adm_parent
                         adm_division.save()
                     else:
                         region_obj.administrative_divisions.add(adm_division)'''                    
@@ -180,7 +184,7 @@ is mandatory")
                         adm_division = AdministrativeDivision.objects.get(code=feat.get('HRpcode'))
                         adm_division.name = feat.get('HRname')
                         adm_division.geom = geom                       
-                        adm_division.parent = adm_division_2
+                        adm_division.parent = adm_parent
                         adm_division.save()                        
                         print('updated object {}'.format(feat.get('HRpcode')))
                     else:
@@ -189,7 +193,7 @@ is mandatory")
                             name=feat.get('HRname'),
                             geom=geom,                            
                             level=adm_level,
-                            parent=adm_division_2,
+                            parent=adm_parent,
                             lft=1,
                             rght=1,
                             tree_id=1,

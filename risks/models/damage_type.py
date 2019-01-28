@@ -1,9 +1,16 @@
 from django.db import models
+from risks.models.entity import Exportable, RiskAnalysisAware
 
 
-dimensions = (('dim1', 'dim1'), ('dim2', 'dim2'), ('dim3', 'dim3'))
-
-class DamageType(models.Model):
+class DamageType(Exportable, RiskAnalysisAware, models.Model):
+    EXPORT_FIELDS = (('id', 'id',),
+                     ('name', 'name',),
+                     ('abstract', 'abstract',),
+                     ('unit', 'unit',),
+                     ('layers', 'get_axis_descriptions',),
+                     ('values', 'get_axis_values',),
+                     )
+    
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30, null=False, blank=False,
                             db_index=True)
@@ -13,9 +20,64 @@ class DamageType(models.Model):
     def __unicode__(self):
         return u"{0}".format(self.name)
 
-class DamageTypeValue(models.Model):
+    class Meta:
+        """
+        """
+        ordering = ['name']
+        db_table = 'risks_damagetype'
+
+    def get_axis(self):
+        risk = self.get_risk_analysis()
+        return self.damageassessment_association.filter(damage_assessment=risk).order_by('order')
+
+    def get_axis_values(self):
+        axis = self.get_axis()
+        return list(axis.values_list('value', flat=True))
+
+    def get_axis_layers(self):
+        axis = self.get_axis()
+        return dict((a.value, a.layer.typename,) for a in axis)
+
+    def get_axis_order(self):
+        axis = self.get_axis()
+        return list(axis.values_list('value', 'order'))
+
+    def get_axis_layer_attributes(self):
+        axis = self.get_axis()
+        return dict((v.value, v.axis_attribute(),) for v in axis)
+
+    def get_axis_styles(self):
+        axis = self.get_axis()
+        return dict((v.value, v.get_style(),) for v in axis)
+
+    def get_axis_descriptions(self):
+        axis = self.get_axis()
+        out = {}
+        for ax in axis:
+            n = ax.value
+            layer_attribute = ax.axis_attribute()
+            layer_reference_attribute = ax.layer_reference_attribute
+            scenario_description = ax.scenario_description
+            resource = ax.resource.export() if ax.resource else None
+            sendai_indicator = ax.sendai_indicator.export() if ax.sendai_indicator else None
+            out[n] = {'layerAttribute': layer_attribute,
+                      'layerReferenceAttribute': layer_reference_attribute,
+                      'resource': resource,
+                      'description': scenario_description,
+                      'sendaiIndicator': sendai_indicator
+                     }
+        return out
+
+class DamageTypeValue(Exportable, models.Model):
+    EXPORT_FIELDS_ANALYSIS = (('damage_type', 'pdamage_type'),
+                              ('id', 'id'),
+                              ('axis', 'axis'),
+                              ('layer_attribute', 'layer_attribute'),
+                              ('value', 'value'),
+                              ('sendai_indicator_id', 'psendai_indicator_id'),                              
+                              )
+
     id = models.AutoField(primary_key=True)    
-    dimension = models.CharField(max_length=50, choices=dimensions)
     order = models.IntegerField()
     value = models.CharField(max_length=80, null=False, blank=False,
                              db_index=True)
@@ -49,6 +111,15 @@ class DamageTypeValue(models.Model):
         ordering = ['order', 'value']
         db_table = 'risks_damage_type_value'
 
+    @property
+    def psendai_indicator_id(self):
+        if self.sendai_indicator:
+            return self.sendai_indicator.id
+
+    @property
+    def pdamage_type(self):        
+        return self.damage_type.name
+    
     @classmethod
     def get_axis(cls, risk):
         """

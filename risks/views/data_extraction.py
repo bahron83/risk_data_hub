@@ -1,15 +1,18 @@
 import os
 import datetime
 from decimal import *
+from itertools import groupby
 from dateutil.parser import parse
 from django.conf import settings
+from django.db.models import FloatField
+from django.db.models.functions import Cast
 from risk_data_hub import settings as rdh_settings
 from geonode.utils import json_response
 from risks.views.base import FeaturesSource, LocationSource
 from risks.views.hazard_type import HazardTypeView
 from risks.views.auth import UserAuth
-from risks.models.risk_analysis import DamageAssessment
-from risks.models import DamageType, AnalysisType, Event, AdministrativeData
+from risks.models import DamageAssessment, DamageType, AnalysisType, Event, AdministrativeData
+from risks.overrides.postgres_jsonb import KeyTextTransform, KeyTransform
 
 
 EVENTS_TO_LOAD = 50
@@ -18,92 +21,7 @@ SENDAI_TO_YEAR = 2015
 SENDAI_YEARS_TIME_SPAN = 10
 DEFAULT_DECIMAL_POINTS = 5
 
-class DataExtractionView(FeaturesSource, HazardTypeView):   
-
-    def reformat_features(self, risk, dimension, dimensions, features, capitalize=False):
-        """
-        Returns risk data as proper structure
-
-        """
-        values = []
-        dims = [dimension.set_risk_analysis(risk)] + [d.set_risk_analysis(risk) for d in dimensions if d.id != dimension.id]
-
-        _fields = [self.get_dim_association(risk, d) for d in dims]
-        fields = ['{}_value'.format(f[1]) for f in _fields]
-        field_orders = ['{}_order'.format(f[1]) for f in _fields]
-
-        orders = [dict(d.get_axis_order()) for d in dims]
-
-        orders_len = len(orders)
-
-        def make_order_val(feat):
-            """
-            compute order value
-            """
-            _order_vals = []
-
-            for idx, o in enumerate(orders):
-                field_name = field_orders[idx]
-                val = feat['properties'].get(field_name)
-                # order_val = o.get(val)
-                order_val = val
-
-                if order_val is None:
-                    order_val = 0
-                # 111 > 1, 1, 1
-                # mag = 10 ** (orders_len - idx)
-                mag = 1000 if idx == 0 else 1
-                _order_vals.append(int('{}'.format(order_val * mag)))
-            # return ''.join(_order_vals)
-            return sum(_order_vals)
-
-        def order_key(val):
-            # order by last val
-            order = val.pop(-1)
-            return order
-
-        for feat in features:
-            p = feat['properties']
-            line = []
-            [line.append(p[f]) for f in fields]
-            line.append(p['value'])
-            line.append(make_order_val(feat))
-            if capitalize:
-                line = [str(item).capitalize() for item in line]
-            values.append(line)
-
-        values.sort(key=order_key)
-
-        out = {'dimensions': [dim.set_risk_analysis(risk).export() for dim in dims],
-               'values': values}
-
-        return out  
-
-    def features_to_list(self, features, field_list):
-        features_list = []
-        for f in features['features']:
-            temp = []                
-            for l in field_list:
-                temp.append(f['properties'][l])
-            features_list.append(temp)
-        return features_list
-
-    def features_to_object(self, features, field_list, key):
-        features_obj = {}
-        for f in features['features']:
-            temp = []                
-            for l in field_list:
-                temp.append(f['properties'][l])            
-            features_obj[temp[field_list.index(key)]] = temp
-        return features_obj
-
-    def get_features_list(self, layer_name, field_list, **kwargs):
-        features = self.get_features_base(layer_name, field_list, **kwargs)
-        return self.features_to_list(features, field_list)
-
-    def get_features_obj(self, layer_name, field_list, object_key, **kwargs):
-        features = self.get_features_base(layer_name, field_list, **kwargs)
-        return self.features_to_object(features, field_list, object_key)
+class DataExtractionView(FeaturesSource, HazardTypeView):             
 
     def calculate_sendai_indicator(self, loc, indicator, events_total, output_type = 'sum', n_of_years = 1):
         result = None 
@@ -111,11 +29,17 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         adm_data_value = None
         baseline_unit = ''
         if indicator:             
-            if indicator.code.startswith('A') or indicator.code.startswith('B'):
-                adm_data = AdministrativeData.objects.get(name='Population')
+            if indicator.name.startswith('A') or indicator.name.startswith('B'):
+                try:
+                    adm_data = AdministrativeData.objects.get(name='Population')
+                except AdministrativeData.DoesNotExist:
+                    pass
                 multiplier = 100000           
-            elif indicator.code.startswith('C'):
-                adm_data = AdministrativeData.objects.get(name='GDP')                 
+            elif indicator.name.startswith('C'):
+                try:
+                    adm_data = AdministrativeData.objects.get(name='GDP')                 
+                except AdministrativeData.DoesNotExist:
+                    pass
                 #adm_data_value = 1
                 multiplier = 100
                 baseline_unit = '%'
@@ -128,6 +52,25 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                     if output_type == 'average' and n_of_years > 0:
                         result = round(Decimal(result / n_of_years), DEFAULT_DECIMAL_POINTS)
         return result, baseline_unit
+
+    def format_risk_analysis_values(self, features, locations=[], include_loc=False):
+        values = []                
+        loc_codes = [l.code for l in locations] if locations else []
+        for f in features: 
+            entry = f.entry
+            check = True
+            if locations and entry['administrative_division']['code'] not in loc_codes:
+                check = False
+            if check:                
+                row_value = [entry['dim1']['value'], entry['dim2']['value'], entry['value']]
+                if include_loc and locations:
+                    row_value.insert(0, entry['administrative_division']['code'])
+                values.append(row_value)        
+        return values
+
+    def format_data_dimensions(self, risk, dimension, dimensions):
+        dims = [dimension.set_risk_analysis(risk)] + [d.set_risk_analysis(risk) for d in dimensions if d.id != dimension.id]
+        return [dim.set_risk_analysis(risk).export() for dim in dims]
 
     def get(self, request, *args, **kwargs):   
         
@@ -147,33 +90,30 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         # Check analysis type
         (atype_r, atype_e, atypes, scope,) = self.get_analysis_type(reg, loc, hazard_type, **kwargs)        
         current_atype = None
-        risks = None
+        risk = None
         if not atype_r:
             if atype_e:
-                if atype_e.analysis_class == scope:
+                if atype_e.scope == scope:
                     current_atype = atype_e
         else:
-            if atype_r.analysis_class == scope:
+            if atype_r.scope == scope:
                 current_atype = atype_r
             if atype_e: 
-                if atype_e.analysis_class == scope:
+                if atype_e.scope == scope:
                     current_atype = atype_e        
         if not current_atype:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404) 
         
         # Check risk analysis
-        risks = current_atype.get_risk_analysis_list(id=kwargs['an'])
-        if not risks:
-            return json_response(errors=['No risk analysis found for given parameters'], status=404)
-        risk = risks[0]
+        try:
+            risk = DamageAssessment.objects.get(pk=kwargs['an'])
+        except DamageAssessment.DoesNotExist:
+            return json_response(errors=['No risk analysis found for given parameters'], status=404)        
 
         # Check user permissions
         user_auth = UserAuth()
-        user_auth_args = {
-            'requestContext': 'risk_analysis',
-            'risk_analysis': risk
-        }
-        if not user_auth.is_user_allowed(request, **user_auth_args):
+        available_datasets, dataset_rule_association = user_auth.resolve_available_datasets(request, reg)        
+        if risk not in available_datasets:
             return json_response(errors=['Data not available for current user'], status=403)         
                 
         # Context parameters
@@ -187,44 +127,61 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             'ht': hazard_type.mnemonic,
             'at': current_atype.name,
             'an': risk.id,
-            'analysis_class': risk.analysis_type.analysis_class.name,
+            'scope': risk.analysis_type.scope,
             'full_url': context_url + '/risks/' + app.name + '/reg/' + reg.name + '/loc/' + loc.code + '/ht/' + hazard_type.mnemonic + '/at/' + current_atype.name + '/an/' + str(risk.id) + '/'
         }
         
-        # Get risk analysis main features        
-        dymlist = risk.dymension_infos.all().distinct()
+        # Resolve main dimension/axis        
+        dymlist = risk.damage_types.all().distinct()
         if kwargs.get('dym'):
             dimension = dymlist.get(id=kwargs['dym'])
         else:
-            dimension = dymlist.filter(damageassessment_association__axis=self.AXIS_X).distinct().get()
+            dimension = dymlist.filter(damageassessment_association__axis=self.AXIS_X).distinct().get()        
 
-        feat_kwargs = self.url_kwargs_to_query_params(**kwargs)
-        feat_kwargs['risk_analysis'] = risk.name        
-        features = self.get_features(risk, dimension, dymlist, **feat_kwargs)
-        
+        # Apply visibility rules
+        values_after_visibility_rules = user_auth.filter_dataset_values(risk, dataset_rule_association)
+
         # Start building output
         out = {'riskAnalysisData': risk.get_risk_details()}
-        out['riskAnalysisData']['data'] = self.reformat_features(risk, dimension, dymlist, features['features'])        
-        out['context'] = self.get_context_url(**kwargs)
-        out['wms'] = {'style': None,
-                      'viewparams': self.get_viewparams(risk, hazard_type, loc),
-                      'baseurl': settings.OGC_SERVER['default']['PUBLIC_LOCATION']}
+        #out['riskAnalysisData']['data'] = self.format_risk_analysis_features(risk, dimension, dymlist, features)        
+        out['riskAnalysisData']['style'] = risk.style.custom_export() if risk.style else None
+        out['riskAnalysisData']['data'] = {}
+        out['riskAnalysisData']['data']['dimensions'] = self.format_data_dimensions(risk, dimension, dymlist)
+        
+        out['context'] = self.get_context_url(**kwargs)        
         out['riskAnalysisData']['unitOfMeasure'] = risk.unit_of_measure
         out['riskAnalysisData']['additionalLayers'] = [(l.id, l.typename, l.title, ) for l in risk.additional_layers.all()]
         out['furtherResources'] = self.get_further_resources(**kwargs)
         #url(r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/pdf/$', views.pdf_report, name='pdf_report'),
         out['pdfReport'] = app.url_for('pdf_report', loc.code, hazard_type.mnemonic, current_atype.name, risk.id)
         out['fullContext'] = full_context
+        
+        # RISK ANALYSIS
+        if risk.analysis_type.scope == 'risk':        
+            # Retrieve values of current location (for charts) and children locations (for map)
+            locations_needed = [loc] + list(loc.get_children()) if loc.has_children() else [loc]        
+            loc_codes = [l.code for l in locations_needed]
+            values = values_after_visibility_rules \
+                .filter(entry__administrative_division__code__in=loc_codes) \
+                .annotate(
+                    adm_code=KeyTextTransform('code', KeyTransform('administrative_division', 'entry')),
+                    dim1_value=KeyTextTransform('value', KeyTransform('dim1', 'entry')),
+                    dim2_value=Cast(KeyTextTransform('value', KeyTransform('dim2', 'entry')), FloatField())
+                ) \
+                .order_by('adm_code', 'dim1_value', 'dim2_value')
+            loc_values = self.format_risk_analysis_values(values, [loc])
+            children_values = self.format_risk_analysis_values(values, list(loc.get_children()), True)
+        
+            out['riskAnalysisData']['data']['values'] = loc_values
+            out['riskAnalysisData']['data']['subunits_values'] = children_values
 
-        # Handling of events
-        if risk.analysis_type.analysis_class.name == 'event':                                    
+        # HISTORICAL EVENTS
+        elif risk.analysis_type.scope == 'event':                                    
 
             # Retrieve events from Django
             events = Event.objects.filter(hazard_type=hazard_type, region=reg, state='ready')
-            if loc.level == 1:
-                events = events.filter(iso2=loc.code)
-            elif loc.level >= 2:
-                events = events.filter(nuts3__contains=loc.code)
+            if loc.level > 0:
+                events = events.filter(country__in=[loc]+loc.get_parents_chain())            
             
             # Check if need to filter by date
             if events and 'from' in kwargs and 'to' in kwargs:
@@ -240,83 +197,117 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             
             # Limit number of results
             if events and 'load' not in kwargs and 'from' not in kwargs:
-                events = events[:EVENTS_TO_LOAD]
-                #set limit also for Geoserver query
-                feat_kwargs['limit'] = EVENTS_TO_LOAD            
+                events = events[:EVENTS_TO_LOAD]                
 
-            # Retrieve values for events aggregated by country from Geoserver
-            field_list = ['adm_code', 'dim1_value', 'dim2_value', 'value', 'event_id']
-            field_list_group = ['adm_code', 'dim1_value', 'dim2_value', 'value']
-            feat_kwargs['level'] = loc.level                        
-            event_group_country = self.get_features_list('geonode:risk_analysis_event_group', field_list_group, **feat_kwargs) if loc.level == 0 else None
-            values_events = self.get_features_obj('geonode:risk_analysis_event_details', field_list, 'event_id', **feat_kwargs)
+            # Retrieve Damage Assessment Entries for Events
+            event_entries = values_after_visibility_rules \
+                .filter(entry__has_key='phenomenon', entry__administrative_division__level__gte=loc.level)
             
-            # Build final event list (~ [Django] LEFT JOIN [Geoserver])
+            # Retrieve values for events aggregated by country
+            # Since Django doesn't allow yet Subquery expression with aggregation, sum operations are computed in memory
+            # The equivalent SQL query would be
+            # SELECT country, SUM(val) AS totals FROM (
+            #    SELECT entry->'event'->>'country' as country, (entry->>'value')::float AS val
+            #    FROM risks_damage_assessment_entry
+            #    WHERE entry->'event'->>'country' IS NOT null
+            #    AND entry->>'region' = '%region%'
+            #    AND entry->>'damage_assessment' = '%damage_assessment%'
+            #    GROUP BY country, val
+            # ) t1
+            # GROUP BY country                        
+            
+            event_entries_by_country = event_entries \
+                .annotate(
+                    country=KeyTextTransform('country', KeyTransform('event', 'entry')),
+                    value=Cast(KeyTextTransform('value', 'entry'), FloatField())
+                ) \
+                .order_by('country') \
+                .values('country', 'value')
+
+            event_values_group_country = {}            
+            for k,v in groupby(event_entries_by_country,key=lambda x:x['country']):
+                event_values_group_country[k] = sum(f['value'] for f in v)                                            
+
+            # Build final event list (~ [Events] LEFT JOIN [DamageAssessmentEntry])
             ev_list = []
-            data_key = values_events.values()[0][1]
+            data_key = None
             for event in events:
-                e = event.get_event_plain()                
-                e[data_key] = None                
-                try:              
-                    value_arr = values_events[e['event_id']]
-                    e[data_key] = round(Decimal(value_arr[3]), DEFAULT_DECIMAL_POINTS)
-                except:                    
-                    pass
-                e['data_key'] = data_key                
+                e = event.custom_export()  
+                if event_entries.exists():
+                    phenomenon_ids = [p['id'] for p in e['phenomena']]                    
+                    e[data_key] = None                
+                    try:              
+                        event_entry = event_entries.filter(entry__phenomenon__id__in=phenomenon_ids)
+                        data_key = event_entry[0].entry['dim1']['value']
+                        e[data_key] = round(Decimal(event_entry[0].entry['value']), DEFAULT_DECIMAL_POINTS)
+                        index_of_p = 0
+                        for p in e['phenomena']:                            
+                            e['phenomena'][index_of_p]['value'] = event_entry.get(entry__phenomenon__id=p['id']).entry['phenomenon']['value']
+                            index_of_p += 1
+                    except:                    
+                        pass
+                    e['data_key'] = data_key                
                 ev_list.append(e)
 
             # Sendai indicator
-            sendai_final_array = []
-            field_list = ['year', 'value']
-            feat_kwargs = {
-                'risk_analysis': risk.name,
-                'adm_code': loc.code,
-                'from_year': SENDAI_FROM_YEAR
-            }            
-            diminfo = dimension.set_risk_analysis(risk).get_axis().first()
-            if diminfo:
-                sendai_indicator = diminfo.sendai_target
-                if sendai_indicator: 
-                    features_sendai = self.get_features_list('geonode:ra_event_values_grouped_by_year', field_list, **feat_kwargs)                                                       
-                    total = 0
-                    n_of_years = 0
-                    '''for year in range(SENDAI_TO_YEAR, datetime.datetime.now().year + 1):                    
-                        from_year = year - SENDAI_YEARS_TIME_SPAN
-                        for s in features_sendai:                        
-                            if s[0] >= from_year and s[0] <= year:                             
-                                total += s[1]                                                        
-                        sendai_final_array.append(['{}_{}'.format(from_year, year), self.calculate_sendai_indicator(loc, sendai_indicator, total)])
-                        total = 0'''
-                    for s in features_sendai:
-                        if s[0] >= SENDAI_FROM_YEAR:
-                            if s[0] <= SENDAI_TO_YEAR:                            
-                                total += s[1]
-                                n_of_years += 1
-                            #else: #removing else will display all years instead of grouping years from 2005 to 2015
-                            rounded_value = round(Decimal(s[1]), DEFAULT_DECIMAL_POINTS)
-                            sendai_value, baseline_unit = self.calculate_sendai_indicator(loc, sendai_indicator, rounded_value)
-                            sendai_final_array.append([s[0], sendai_value, baseline_unit])
-                    sendai_average_value, baseline_unit = self.calculate_sendai_indicator(loc, sendai_indicator, total, 'average', n_of_years)
-                    sendai_final_array.insert(0, ['{}_{}'.format(SENDAI_FROM_YEAR, SENDAI_TO_YEAR), sendai_average_value, baseline_unit])
+            sendai_final_array = []   
+            diminfo = dimension.set_risk_analysis(risk).get_axis().first()                     
+            if diminfo.sendai_indicator:                     
+                
+                # Getting values needs an additional in memory process, since Django ORM does not allow complex subqueries
+                # Equivalent SQL is
+                # SELECT country, ev_year, sum(val) AS totals FROM (
+                # 	SELECT entry->'event'->>'country' as country, entry->'event'->>'year' as ev_year, (entry->>'value')::float AS val
+                # 	FROM risks_damage_assessment_entry
+                # 	WHERE entry->'event'->>'country' IS NOT null
+                # 	AND entry->>'region' = 'Europe'
+                # 	--AND entry->>'damage_assessment' = ''
+                # 	GROUP BY country, ev_year, val
+                # 	ORDER BY country, ev_year
+                # ) t1
+                # GROUP BY country, ev_year
+                features_sendai_temp = event_entries \
+                    .filter(entry__event__country=loc.code, entry__event__year__gte=SENDAI_FROM_YEAR) \
+                    .annotate(
+                        country=KeyTextTransform('country', KeyTransform('event', 'entry')),
+                        year=KeyTextTransform('year', KeyTransform('event', 'entry')),
+                        value=Cast(KeyTextTransform('value', 'entry'), FloatField())
+                    ) \
+                    .order_by('country', 'year') \
+                    .values('country', 'year', 'value')
+
+                features_sendai = {}
+                for k,v in groupby(features_sendai_temp,key=lambda x:x['year']):
+                    features_sendai[k] = sum(f['value'] for f in v)                    
+                    
+                total = 0
+                n_of_years = 0
+                '''for year in range(SENDAI_TO_YEAR, datetime.datetime.now().year + 1):                    
+                    from_year = year - SENDAI_YEARS_TIME_SPAN
+                    for s in features_sendai:                        
+                        if s[0] >= from_year and s[0] <= year:                             
+                            total += s[1]                                                        
+                    sendai_final_array.append(['{}_{}'.format(from_year, year), self.calculate_sendai_indicator(loc, sendai_indicator, total)])
+                    total = 0'''
+                                
+                for key,value in features_sendai.iteritems():
+                    if int(key) >= SENDAI_FROM_YEAR:
+                        if int(key) <= SENDAI_TO_YEAR:                            
+                            total += value
+                            n_of_years += 1
+                        #else: #removing else will display all years instead of grouping years from 2005 to 2015
+                        rounded_value = round(Decimal(value), DEFAULT_DECIMAL_POINTS)
+                        sendai_value, baseline_unit = self.calculate_sendai_indicator(loc, diminfo.sendai_indicator, rounded_value)
+                        sendai_final_array.append([key, sendai_value, baseline_unit])
+                sendai_average_value, baseline_unit = self.calculate_sendai_indicator(loc, diminfo.sendai_indicator, total, 'average', n_of_years)
+                sendai_final_array.insert(0, ['{}_{}'.format(SENDAI_FROM_YEAR, SENDAI_TO_YEAR), sendai_average_value, baseline_unit])
                       
             # Finishing building output            
-            out['riskAnalysisData']['eventAreaSelected'] = ''
-            out['riskAnalysisData']['eventsLayer'] = {}
-            out['riskAnalysisData']['eventsLayer']['layerName'] = '{}_events'.format(out['riskAnalysisData']['layer']['layerName'])
-            out['riskAnalysisData']['eventsLayer']['layerStyle'] = {
-                'name': 'monochromatic',
-                'title': None,
-                'url': 'http://localhost:8080/geoserver/rest/styles/monochromatic.sld'
-            }
-            #out['riskAnalysisData']['eventsLayer']['layerStyle']['url'] = out['riskAnalysisData']['layer']['layerStyle']['url']
-            out['riskAnalysisData']['eventsLayer']['layerTitle'] = '{}_events'.format(out['riskAnalysisData']['layer']['layerTitle'])
-            out['riskAnalysisData']['data']['event_group_country'] = event_group_country
+            out['riskAnalysisData']['eventAreaSelected'] = ''            
+            out['riskAnalysisData']['data']['event_group_country'] = event_values_group_country
             out['riskAnalysisData']['data']['total_events'] = total_events         
             out['riskAnalysisData']['events'] = ev_list
             out['riskAnalysisData']['data']['sendaiValues'] = sendai_final_array
             out['riskAnalysisData']['decimalPoints'] = DEFAULT_DECIMAL_POINTS
         
-        return json_response(out)
-
-    def get_viewparams(self, risk, htype, loc):
-        return 'risk_analysis:{};hazard_type:{};adm_code:{};d1:{{}};d2:{{}}'.format(risk.name, htype.mnemonic, loc.code)
+        return json_response(out)    

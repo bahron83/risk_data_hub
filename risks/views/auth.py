@@ -1,11 +1,11 @@
+import sys
 import json
-from collections import namedtuple
 from risk_data_hub import settings as rdh_settings
 from geonode.utils import json_response
 from django.views.generic import View
 from risks.views.base import ContextAware
-from risks.models import Region, AccessRule, AccessType, DamageAssessment
-from risks.models.user import get_generic_filter
+from risks.models import Region, AccessRule, AccessType, DamageAssessment, DamageAssessmentEntry
+from risks.models.access_rule import get_generic_filter
 
 
 UNRESTRICTED_REGIONS = ['Europe', 'EUWaters', 'South_Eastern_Europe']
@@ -46,37 +46,47 @@ class UserAuth(object):
                 if d.pk in dataset_rule_association:
                     dataset_rule_association[d.pk] += [rule]
                 else:
-                    dataset_rule_association = [rule]                            
+                    dataset_rule_association[d.pk] = [rule]                            
         return res, dataset_rule_association 
 
-    def filter_values(self, dataset_id, dataset_rule_association):        
-        if dataset_id in dataset_rule_association:
+    def filter_dataset_values(self, dataset, dataset_rule_association):        
+        if dataset.id in dataset_rule_association:
             prev_data = None
             data = prev_data
-            res = prev_data
-            for rule in dataset_rule_association[dataset_id]:
+            available_data = prev_data
+            for rule in dataset_rule_association[dataset.id]:
                 # allow rule
                 if rule.access == AccessType.ALLOW:            
-                    data = DamageAssessment.objects.filter(pk=dataset_id)                            
+                    data = DamageAssessmentEntry.objects.filter(entry__damage_assessment=dataset.name)                                          
                     if rule.min_adm_level:
-                        data = data.filter(values__adm_division__level__gte=rule.min_adm_level)
+                        data = data.filter(entry__administrative_division__level__lte=rule.min_adm_level)
                     if rule.max_adm_level:
-                        data = data.filter(values__adm_division__level__lte=rule.max_adm_level)
+                        data = data.filter(entry__administrative_division__level__lte=rule.max_adm_level)                        
                     if rule.administrative_division_regex:
-                        data = data.filter(values__adm_division__code__iregex=r'{}'.format(rule.administrative_division_regex))
-                    res = (data | prev_data).distinct()                
+                        data = data.filter(entry__administrative_division__code__iregex=r'{}'.format(rule.administrative_division_regex))
+                    available_data = (data | prev_data).distinct()  if prev_data else data.distinct()              
                 # deny rule
                 else:
                     if prev_data:                                
                         if rule.min_adm_level:
-                            data = prev_data.exclude(values__adm_division__level__gte=rule.min_adm_level)
+                            data = prev_data.exclude(entry__administrative_division__level__gte=rule.min_adm_level)
                         if rule.max_adm_level:
-                            data = prev_data.exclude(values__adm_division__level__lte=rule.max_adm_level)
+                            data = prev_data.exclude(entry__administrative_division__level__lte=rule.max_adm_level)
                         if rule.administrative_division_regex:
-                            data = prev_data.exclude(values__adm_division__code__iregex=r'{}'.format(rule.administrative_division_regex))
-                    res = data
-                prev_data = res
-            return res
+                            data = prev_data.exclude(entry__administrative_division__code__iregex=r'{}'.format(rule.administrative_division_regex))
+                    available_data = data
+                prev_data = available_data
+            return available_data
+        return None
+    
+    def is_dataset_available_for_user(self, dataset, request, region):
+        avaiable_datasets, dataset_rule_association = self.resolve_available_datasets(request, region)
+        return dataset in avaiable_datasets
+
+    def get_dataset_values(self, dataset, request, region):
+        avaiable_datasets, dataset_rule_association = self.resolve_available_datasets(request, region)
+        if dataset in avaiable_datasets:
+            return self.filter_dataset_values(dataset, dataset_rule_association)
         return None
     
     def resolve_available_datasets(self, request, region):   
@@ -88,12 +98,19 @@ class UserAuth(object):
         prev_data = None
         data = prev_data
         dataset_rule_association = {}
-        rules = AccessRule.objects.filter(region=region).order_by('order')
-        allow_filter = get_generic_filter()
-        deny_filter = get_generic_filter()
-        for rule in rules:            
-            data, dataset_rule_association = self.filter_damage_assessment(request, region, prev_data, rule, dataset_rule_association)            
-            prev_data = data
+        check = False
+        if request.user.is_superuser:
+            check = True
+        elif request.user.region:
+            if request.user.region == region:
+                check = True
+        if check:
+            rules = AccessRule.objects.filter(region=region).order_by('order')
+            allow_filter = get_generic_filter()
+            deny_filter = get_generic_filter()
+            for rule in rules:            
+                data, dataset_rule_association = self.filter_damage_assessment(request, region, prev_data, rule, dataset_rule_association)            
+                prev_data = data
         available_datasets = data
         return available_datasets, dataset_rule_association                            
     

@@ -85,7 +85,7 @@ INSTALLED_APPS += (
     'data_harvester',
     'nested_admin',
     'jet',
-    'django_json_widget',
+    'django_json_widget',    
 )
 
 AUTH_USER_MODEL = os.getenv('AUTH_USER_MODEL', 'risks.RdhUser')
