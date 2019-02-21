@@ -1,6 +1,6 @@
 from collections import namedtuple
 from django.db import models
-from risks.models.analysis_type import scopes
+from risks.models.risk_analysis import scopes
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 

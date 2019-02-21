@@ -3,14 +3,15 @@ var path = require("path");
 var LoaderOptionsPlugin = require("webpack/lib/LoaderOptionsPlugin");
 var ParallelUglifyPlugin = require("webpack-parallel-uglify-plugin");
 var DefinePlugin = require("webpack/lib/DefinePlugin");
+//var OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 var NormalModuleReplacementPlugin = require("webpack/lib/NormalModuleReplacementPlugin");
 const extractThemesPlugin = require('./MapStore2/themes.js').extractThemesPlugin;
-var CopyWebpackPlugin = require('copy-webpack-plugin');
+//var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 webpackConfig.plugins = [
-    new CopyWebpackPlugin([
+    /*new CopyWebpackPlugin([
         { from: path.join(__dirname, 'node_modules', 'bootstrap', 'less'), to: path.join(__dirname, "web", "client", "dist", "bootstrap", "less") }
-    ]),
+    ]),*/
     new LoaderOptionsPlugin({
         debug: false,
         options: {
@@ -34,19 +35,34 @@ webpackConfig.plugins = [
     new NormalModuleReplacementPlugin(/openlayers$/, path.join(__dirname, "MapStore2", "web", "client", "libs", "openlayers")),
     new NormalModuleReplacementPlugin(/cesium$/, path.join(__dirname, "MapStore2", "web", "client", "libs", "cesium")),
     new NormalModuleReplacementPlugin(/proj4$/, path.join(__dirname, "MapStore2", "web", "client", "libs", "proj4")),    
-    //new NormalModuleReplacementPlugin(/map\/leaflet\/Feature/, path.join(__dirname, "js", "ms2Override", "LeafletFeature.jsx")),
-    //new NormalModuleReplacementPlugin(/reducers\/map$/, path.join(__dirname, "js", "ms2Override", "mapreducer.js")),
+    new NormalModuleReplacementPlugin(/map\/leaflet\/Feature/, path.join(__dirname, "js", "ms2Override", "LeafletFeature.jsx")),
+    new NormalModuleReplacementPlugin(/map\/leaflet\/Layer/, path.join(__dirname, "js", "ms2Override", "LeafletLayer.jsx")),
+    new NormalModuleReplacementPlugin(/map\/leaflet\/plugins\/WMSLayer/, path.join(__dirname, "js", "ms2Override", "LeafletWMSLayer.js")),
+    //new NormalModuleReplacementPlugin(/reducers\/layers$/, path.join(__dirname, "js", "ms2Override", "layersReducer.js")),
+    new NormalModuleReplacementPlugin(/reducers\/map$/, path.join(__dirname, "js", "ms2Override", "mapreducer.js")),
+    new NormalModuleReplacementPlugin(/map\/leaflet\/snapshot\/GrabMap/, path.join(__dirname, "js", "ms2Override", "LGrabMap.jsx")),
+    new NormalModuleReplacementPlugin(/map\/openlayers\/Map/, path.join(__dirname, "js", "ms2Override", "components", "OlMap.jsx")),
+    new NormalModuleReplacementPlugin(/map\/openlayers\/DrawSupport/, path.join(__dirname, "js", "ms2Override", "components", "DrawSupport.jsx")),
+    new NormalModuleReplacementPlugin(/DockPanel.jsx/, path.join(__dirname, "js", "ms2Override", "components", "DockPanel.jsx")),
+    new NormalModuleReplacementPlugin(/PanelHeader.jsx/, path.join(__dirname, "js", "ms2Override", "components", "PanelHeader.jsx")),
+    //new NormalModuleReplacementPlugin(/selectors\/layers/, path.join(__dirname, "js", "ms2Override", "selectors", "layers.js")),
     new NormalModuleReplacementPlugin(/client\/selectors\/layer/, path.join(__dirname, "js", "ms2Override", "layersSelector.js")),
-    //new NormalModuleReplacementPlugin(/map\/leaflet\/snapshot\/GrabMap/, path.join(__dirname, "js", "ms2Override", "LGrabMap.jsx")),
-    //new NormalModuleReplacementPlugin(/client\/utils\/ConfigProvider/, path.join(__dirname, "js", "ms2Override", "configProvider.js")),
+    new NormalModuleReplacementPlugin(/VectorStyle.js/, path.join(__dirname, "js", "ms2Override", "components", "VectorStyle.js")),
+    new NormalModuleReplacementPlugin(/SideCard.jsx/, path.join(__dirname, "js", "ms2Override", "components", "SideCard.jsx")),
+    new NormalModuleReplacementPlugin(/SideGrid.jsx/, path.join(__dirname, "js", "ms2Override", "components", "SideGrid.jsx")),
+    new NormalModuleReplacementPlugin(/ToggleButton.jsx/, path.join(__dirname, "js", "ms2Override", "components", "ToggleButton.jsx")),
+    new NormalModuleReplacementPlugin(/ResizableModal.jsx/, path.join(__dirname, "js", "ms2Override", "components", "ResizableModal.jsx")),
     new ParallelUglifyPlugin({
-        uglifyJS: {
+        uglifyES: {
             sourceMap: false,
             compress: {warnings: false},
             mangle: true
         }
     }),
-    extractThemesPlugin    
+    extractThemesPlugin/*,
+    new OptimizeCssAssetsPlugin({
+        cssProcessorOptions: { discardComments: { removeAll: true } }
+      })*/
 ];
 webpackConfig.devtool = undefined;
 

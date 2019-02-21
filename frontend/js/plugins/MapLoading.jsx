@@ -17,7 +17,7 @@ class GlobalSpinner extends React.Component {
         loading: PropTypes.bool
     };
 
-    render() {
+    render() {        
         return this.props.loading ? <div
                 className="square-button"
                 style={{

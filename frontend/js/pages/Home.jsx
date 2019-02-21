@@ -7,7 +7,8 @@ const urlQuery = url.parse(window.location.href, true).query;
 
 const ConfigUtils = require('../../MapStore2/web/client/utils/ConfigUtils');
 
-const {loadMapConfig} = require('../../MapStore2/web/client/actions/config');
+//const {loadMapConfig} = require('../../MapStore2/web/client/actions/config');
+const {loadMapConfig} = require('../actions/disaster');
 const {resetControls} = require('../../MapStore2/web/client/actions/controls');
 const {mapSelector} = require('../../MapStore2/web/client/selectors/map');
 const HolyGrail = require('../../MapStore2/web/client/containers/HolyGrail');
@@ -42,7 +43,9 @@ class Home extends React.Component {
     }
 
     render() {
+        //console.log('homepage', this.props);
         let plugins = ConfigUtils.getConfigProp("plugins") || {};
+        //console.log('plugins from homepage', plugins);
         let pagePlugins = {
             "desktop": [], // TODO mesh page plugins with other plugins
             "mobile": []
@@ -54,7 +57,7 @@ class Home extends React.Component {
 
         return (<HolyGrail
             id="dataexplorationtool-view-container"
-            className="disaster"
+            className="RiskDataHubClient disaster"
             pagePluginsConfig={pagePlugins}
             pluginsConfig={pluginsConfig}
             plugins={this.props.plugins}

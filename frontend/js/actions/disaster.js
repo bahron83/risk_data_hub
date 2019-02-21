@@ -304,6 +304,7 @@ function toggleFiltersVisibility() {
 }
 
 module.exports = {
+    FEATURES_LOADED,
     DATA_LOADING,
     DATA_LOADED,
     DATA_ERROR,

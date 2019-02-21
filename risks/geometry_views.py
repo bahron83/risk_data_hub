@@ -65,8 +65,10 @@ class AdministrativeGeometry(AppAware, LocationAware, View):
         _features = [adm] + list(children)
 
         features = [self._make_feature(item, app, reg) for item in _features]
+        children_codes = [child.code for child in list(children)]
         out = {'type': 'FeatureCollection',
-               'features': features}
+               'features': features,
+               'childrenCodes': children_codes}
         return json_response(out)
                            
 

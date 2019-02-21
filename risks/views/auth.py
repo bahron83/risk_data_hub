@@ -29,7 +29,7 @@ class UserAuth(object):
             if rule.access == AccessType.ALLOW:            
                 data = DamageAssessment.objects.filter(region=region)                            
                 if rule.scope:
-                    data = data.filter(analysis_type__scope=rule.scope)
+                    data = data.filter(scope=rule.scope)
                 if rule.damage_assessment:
                     data = data.filter(pk=rule.damage_assessment.pk)                                                                            
                 res = (data | prev_data).distinct() if prev_data else data.distinct()               
@@ -37,7 +37,7 @@ class UserAuth(object):
             else:
                 if prev_data:                                
                     if rule.scope:
-                        data = prev_data.exclude(analysis_type__scope=rule.scope)
+                        data = prev_data.exclude(scope=rule.scope)
                     if rule.damage_assessment:
                         data = prev_data.exclude(pk=rule.damage_assessment.pk)                
                 res = data
@@ -101,9 +101,14 @@ class UserAuth(object):
         check = False
         if request.user.is_superuser:
             check = True
-        elif request.user.region:
-            if request.user.region == region:
-                check = True
+        elif request.user.is_anonymous and region.name in UNRESTRICTED_REGIONS:
+            check = True
+        else:
+            try: 
+                if request.user.region == region:
+                    check = True
+            except AttributeError:
+                pass
         if check:
             rules = AccessRule.objects.filter(region=region).order_by('order')
             allow_filter = get_generic_filter()

@@ -208,13 +208,11 @@ class DataExplorerComponent extends React.Component {
     };
 
     render() {
-
+        //('data explorer plugin');
         return (            
-            <div className="container-fluid container-main data-container">
-                <div className="row">
+            <div className="container-main data-container">                
                     <RiskDataContainer/>                                
-                    <EventDetails/>                                                    
-                </div>                        
+                    <EventDetails/>                                                                    
             </div>            
         )
     }

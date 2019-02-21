@@ -1,7 +1,8 @@
 from django.views.generic import View
 from geonode.utils import json_response
 from risks.views.base import ContextAware, LocationSource
-from risks.models import Hazard, AnalysisType, scopes
+from risks.models import Hazard, AnalysisType
+from risks.models.risk_analysis import scopes
 
 class LocationView(ContextAware, LocationSource, View):
 

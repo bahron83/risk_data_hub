@@ -13,6 +13,17 @@ class AdministrativeDivisionManager(models.Manager):
     def get_by_natural_key(self, code):
         return self.get(code=code)
 
+class LocationAbstract(models.Model):
+    code = models.CharField(max_length=30, null=False, unique=True,
+                            db_index=True)
+    name = models.CharField(max_length=100, null=False, blank=False,
+                            db_index=True)
+    geom = gismodels.MultiPolygonField(srid=4326)
+
+    class Meta:
+        """
+        """
+        abstract = True
 
 class AdministrativeDivision(RiskAppAware, LocationAware, Exportable, MPTTModel):
     EXPORT_FIELDS = (('code', 'code',),
@@ -90,13 +101,16 @@ class AdministrativeDivision(RiskAppAware, LocationAware, Exportable, MPTTModel)
             out.append(parent)
             parent = parent.parent
         out.reverse()
-        return out
-
-    def has_children(self):
-        return self.get_children().exists()
+        return out    
     
-    def get_children(self):
-        return AdministrativeDivision.objects.filter(parent=self)
+    def get_children(self, depth=1):
+        out = []
+        children = self.children.all()
+        for x in range(0, depth):
+            if children:
+                out.extend(list(children))
+            children = children[0].children.all() if children else None
+        return out
 
 class Location(models.Model):
     id = models.AutoField(primary_key=True)

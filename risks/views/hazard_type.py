@@ -2,7 +2,8 @@ from django.views.generic import View
 from geonode.utils import json_response
 from risks.views.base import ContextAware, LocationSource
 from risks.models.hazard_type import Hazard
-from risks.models.analysis_type import AnalysisType, scopes
+from risks.models.analysis_type import AnalysisType
+from risks.models.risk_analysis import scopes
 
 
 class HazardTypeView(ContextAware, LocationSource, View):    
@@ -16,7 +17,15 @@ class HazardTypeView(ContextAware, LocationSource, View):
 
     def get_analysis_type(self, region, location, hazard_type, **kwargs):
         atypes = hazard_type.get_analysis_types()        
-        if not atypes.exists():
+        if atypes.exists():            
+            if 'at' in kwargs:
+                atype = atypes.filter(name=kwargs['at']).first()
+                if atype:
+                    return atype.set_region(region).set_location(location).set_hazard_type(hazard_type)
+            else:
+                return atypes.first().set_region(region).set_location(location).set_hazard_type(hazard_type)
+        
+        '''if not atypes.exists():
             return None, None, None, None
         
         first_atype = atypes.filter(scope='risk').first()
@@ -38,7 +47,7 @@ class HazardTypeView(ContextAware, LocationSource, View):
                 atype_r = atype if atype.scope == 'risk' else first_atype
                 atype_e = atype if atype.scope == 'event' else first_atype_e
                 scope = atype.scope
-        return atype_r, atype_e, atypes, scope,
+        return atype_r, atype_e, atypes, scope,'''
 
     def get(self, request, *args, **kwargs):
         reg = self.get_region(**kwargs)
@@ -55,9 +64,9 @@ class HazardTypeView(ContextAware, LocationSource, View):
         if not hazard_type:
             return json_response(errors=['Invalid hazard type'], status=404)
 
-        (atype_r, atype_e, atypes, scope,) = self.get_analysis_type(reg, loc, hazard_type, **kwargs)
+        atype = self.get_analysis_type(reg, loc, hazard_type, **kwargs)
                 
-        if not atype_r and not atype_e:
+        if not atype:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404)        
 
         overview = {
@@ -73,8 +82,7 @@ class HazardTypeView(ContextAware, LocationSource, View):
             'context': self.get_context_url(**kwargs),
             'furtherResources': self.get_further_resources(**kwargs),
             'hazardType': hazard_type.get_hazard_details(),            
-            'analysisType': atype_r.get_analysis_details() if atype_r else {},
-            'analysisTypeE': atype_e.get_analysis_details() if atype_e else {}
+            'analysisType': atype.get_analysis_details() if atype else {}            
         }
 
         return json_response(out)

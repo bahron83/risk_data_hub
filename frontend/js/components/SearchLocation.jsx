@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
+/*import { connect } from 'react-redux';
 import { admDivisionLookup, applyFilters } from '../actions/disaster';
-import { lookupResultsSelector } from '../selectors/disaster';
+import { lookupResultsSelector } from '../selectors/disaster';*/
 
 
-class Search extends Component {
+class SearchLocation extends Component {
     constructor(props) {
         super(props);        
         this.state = {
@@ -92,10 +92,10 @@ class Search extends Component {
         return null;
     }
 
-    render() {        
+    render() {    
+        //console.log('search props', this.props);
         return (
-            <div className="form-group">
-                
+            <div id="main-search-widget" className="search-location form-group">                
                 <input type="text" className="form-control" placeholder="Search location" value={this.state.term} ref="searchTerm" onChange={this.updateSearch} />
                 {this.renderResetItem()}
                 {this.renderResultList()}                
@@ -105,4 +105,5 @@ class Search extends Component {
 
 }
 
-export default connect(lookupResultsSelector, { admDivisionLookup, applyFilters })(Search);
+//export default connect(lookupResultsSelector, { admDivisionLookup, applyFilters })(Search);
+module.exports = SearchLocation;

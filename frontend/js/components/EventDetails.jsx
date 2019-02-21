@@ -15,7 +15,7 @@ class EventDetails extends Component {
         };
     }
     
-    renderChart(data) {        
+    renderChart(data) {          
         const { dim } = this.props;          
         return Object.keys(data).map( key => {
             const { values, dimensions, eventAnalysis } = data[key];            
@@ -45,6 +45,7 @@ class EventDetails extends Component {
     computeAdminDataAggregation(adminLevel, event, values) {
         let res = 0;
         const admList = event[adminLevel].split(',');
+
         if(admList.length > 0) {            
             for(let k in admList) {
                 if(values[admList[k]])
@@ -64,22 +65,22 @@ class EventDetails extends Component {
         return null;
     }
     
-    renderAdministrativeData(overview) {     
-        const { administrativeData, event, threshold } = overview;     
+    renderAdministrativeData(overview, dataSource) {          
+        const { administrativeData, event, threshold } = overview;             
         return Object.keys(administrativeData).map(key => {               
             const { unitOfMeasure, values, ratios } = administrativeData[key];            
             const countryAdminData = this.computeAdminDataAggregation('iso2', event, values);            
             const countryAdminDataDim = this.computeAdmindataDimension('iso2', event, values);            
-            const eventByCountry = ratios && ratios.country * 100;            
+            const eventByCountry = ratios && ratios.country && ratios.country[dataSource] * 100;            
             const nuts2AdminData = this.computeAdminDataAggregation('nuts2', event, values);
             const nuts2AdminDataDim = this.computeAdmindataDimension('nuts2', event, values);
-            const eventByNuts2 = ratios && ratios.nuts2 * 100;
+            const eventByNuts2 = ratios && ratios.nuts2 && ratios.nuts2[dataSource] * 100;
             const nuts3AdminData = this.computeAdminDataAggregation('nuts3', event, values);
             const nuts3AdminDataDim = this.computeAdmindataDimension('nuts3', event, values);
-            const eventByNuts3 = ratios && ratios.nuts3 * 100;
+            const eventByNuts3 = ratios && ratios.nuts3 && ratios.nuts3[dataSource] * 100;
             
             //const { unitOfMeasure, countryAdminData, nuts2AdminData, nuts3AdminData, countryAdminDataDim, nuts2AdminDataDim, nuts3AdminDataDim, eventByCountry, eventByNuts2, eventByNuts3, threshold } = dataProcessed[key];            
-            const cssClass = key == 'GDP' ? overview.isEligibleForEUSF ? 'outset eligible' : 'outset not-eligible' : '';
+            const cssClass = key == 'GDP' ? this.isEligibleForEUSF(overview, dataSource) ? 'outset eligible' : 'outset not-eligible' : '';
             return (
                 <ul key={key} className="list-group">
                     <li key={`${key}-country`} className="list-group-item">
@@ -91,7 +92,7 @@ class EventDetails extends Component {
                         <label>{key} of NUTS2 affected</label>
                         {`${nuts2AdminData.toLocaleString()} ${unitOfMeasure} (${nuts2AdminDataDim})`}
                         <span className={`right ${eventByNuts2 > threshold ? 'eligible' : 'not-eligible'}`}>{eventByNuts2 ? `${this.round(eventByNuts2, 3)} %` : ''}</span>
-                        {this.renderGDPText(overview, key)}
+                        {this.renderGDPText(overview, dataSource, key)}
                     </li>
                     <li key={`${key}-nuts3`} className="list-group-item">
                         <label>{key} of NUTS3 affected</label>
@@ -150,10 +151,10 @@ class EventDetails extends Component {
         return dataProcessed;        
     }
     
-    renderGDPText(overview, key) {
+    renderGDPText(overview, dataSource, key) {
         if(key == 'GDP') {
             const { threshold } = overview;
-            if(overview.isEligibleForEUSF) 
+            if(this.isEligibleForEUSF(overview, dataSource)) 
                 return (                    
                     <p>{`Economic losses exceed ${threshold}% of the GDP in regions (NUTS2) affected`}</p>                                            
                 )            
@@ -165,8 +166,8 @@ class EventDetails extends Component {
         return null;
     }
     
-    renderEligibleText(overview) {        
-        if(overview.isEligibleForEUSF)             
+    renderEligibleText(overview, dataSource) {        
+        if(this.isEligibleForEUSF(overview, dataSource))             
             return (                
                 <p className="bigtext eligible">This event appears to be eligible for EU Solidarity Funds</p>                
             )
@@ -174,15 +175,19 @@ class EventDetails extends Component {
             return (            
                 <p className="bigtext not-eligible">This event DOES NOT appear to be eligible for EU Solidarity Funds</p>            
         )
-    }        
+    }  
+    
+    isEligibleForEUSF(overview, dataSource) {        
+        return overview.isEligibleForEUSF && overview.isEligibleForEUSF[dataSource] || false;
+    }
     
     render() {   
-        const { eventDetails, showEventDetail, visibleEventDetail, riskAnalysisData, toggleEventDetailVisibility } = this.props;
-        const { data, overview } = eventDetails;
-        const { event } = overview || {};         
-        //const showToggle = riskAnalysisData && riskAnalysisData.events ? true : false;        
-        if(data && showEventDetail) {
-            const dataProcessed = this.processAdministrativeData(overview, data);            
+        const { eventDetails, showEventDetail, visibleEventDetail, toggleEventDetailVisibility } = this.props;
+        const { data, overview, dataSources } = eventDetails;        
+        const { event } = overview || {}; 
+        const defaultDataSource = dataSources && dataSources[0];
+        const dataSource = defaultDataSource;                
+        if(data && showEventDetail) {            
             return (            
                 <div>
                     <Modal show={visibleEventDetail} onHide={toggleEventDetailVisibility}>
@@ -205,11 +210,11 @@ class EventDetails extends Component {
                             </ul>
                             <hr />
                             <h4>EU Solidarity funds</h4>
-                            {this.renderEligibleText(overview)}                            
+                            {this.renderEligibleText(overview, dataSource)}                            
                             <hr />
                             <h4>Administrative data for country</h4>
                             <p>Census data from Eurostat and percentage value of the event</p>
-                            {this.renderAdministrativeData(overview, dataProcessed)}                                                                                     
+                            {this.renderAdministrativeData(overview, dataSource)}                                                                                     
     
                             <hr />
                             <h4>Comparison Charts</h4>

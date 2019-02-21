@@ -1,0 +1,61 @@
+{% extends "site_base.html" %}
+
+{% block body_class %}about{% endblock %}
+
+{% block title %}About{% endblock %}
+{% block middle %}    
+    {% block mainbody %}    
+    <div class="container" style="margin-top:72px">                                    
+        <div class="row">                
+            <div class="col-sm-6">
+                <h1>About</h1>
+                <p>The <strong>DRMKC Risk Data Hub</strong> is a Web GIS platform for exchanging and sharing geospatial data. 
+                    It provides tools and methodologies for data collection, dissemination and visualization.</p>
+
+                <h4>OBJECTIVES</h4>
+                <p>The main objective of DRMKC Risk Data Hub is to improve the access and share of EU-wide 
+                    curated risk data for fostering Disaster Risk Management (DRM). 
+                    As a knowledge hub, the Risk Data Hub is projected to be the point of reference 
+                    for curated EU-wide risk data, through hosting relevant datasets and creating a network for knowledge transfer.</p>
+
+                
+
+            </div>
+            <div class="col-sm-6">                        
+                <img style="max-width:100%" alt="rdh_example_screenshot" src="{{ STATIC_URL }}img/rdh_analysis_screenshot.png" />
+            </div>
+        </div>  
+        <div class="row">
+                <div class="col-sm-6">
+                    <img style="max-width:100%" alt="rdh_example_screenshot" src="{{ STATIC_URL }}img/rdh_analysis_screenshot2.png" />
+                </div>
+                <div class="col-sm-6">
+                        <h4>PRACTICE AND POLICY </h4>
+                        <p>The DRMKC Risk Data Hub proposes a way to facilitate the link between practice and policy by creating a collaborative network for discovering data, actions, and practices for DRM. It offers means to assess the progress and to identify gaps in scope for DRM.
+                                The Risk Data Hub is developed as a decision support system that integrates spatial data along with statistical analysis. This helps decision makers have an indication for time and spatial coverage of economic damages and human losses across Europe from hazardous events, upon which consistent decisions can be made.
+                                Offering access to data, methodology and implementation showcase, the DRMKC Risk Data addresses the needs at national level regarding disaster risk management related actions (e.g. national risk assessment, loss data collection, Sendai indicators reporting, and Solidarity Fund request) improving risk management capabilities.</p>
+        
+                        <h4>USERS' COMMUNITY</h4>
+                        <p>The target community of users for the DRMKC Risk Data covers research, policy and operational actors, which have their own specificities but also need to converge towards the common DRM goals. The diversity and cross-disciplinary data and knowledge make all users as both data providers and also end-users. This creates a network for knowledge transfer.</p>
+                </div>
+        </div>               
+        <div class="row">
+            <div class="col-sm-4">
+                <h4>COLLECTING</h4>                
+                <p>A tool to collect pre- and post-event data for EU Countries, supporting communities in the creation of accurate datasets.</p>
+            </div>
+            <div class="col-sm-4">
+                <h4>SHARING</h4>                
+                <p>An open access platform to increase public access to risk information and to make the most effective use of the several hosted datasets.
+                        A link between practice and policy which provides scientific evidence for DRM actions and practices by combining data from national and local governments, scientists, and further organizations.
+                        </p>
+            </div>
+            <div class="col-sm-4">
+                <h4>ENGAGING</h4>                
+                <p>A way to communicate risk more effectively to different actors, engaging them in active involvement and use of the Risk Data Hub improving risk management capabilities addressing needs of DRM.</p>
+            </div>
+        </div>    
+        
+    </div>
+    {% endblock %}
+{% endblock %}

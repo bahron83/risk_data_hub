@@ -6443,12 +6443,10 @@ a.disaster .label:focus {
 .disaster .container-main {
   height: calc(100% - 56px);
 }
-.disaster .drc {
-  height: calc(100% - 44px);
-}
 .disaster #disaster-overview-list,
 .disaster #disaster-filters-container {
-  height: calc(100% - 253px);
+  /*height: calc(~"100% - 253px");*/
+  height: 100%;
 }
 .disaster .disaster-header {
   /*max-height: calc(~"100% - 253px");*/
@@ -6458,6 +6456,8 @@ a.disaster .label:focus {
   position: absolute;
   z-index: 501;
   /*height: calc(~"100% - 193px");  */
+  margin-top: 39px;
+  overflow: hidden;
 }
 .disaster .autocomplete-box li:hover {
   cursor: pointer;
@@ -6465,6 +6465,8 @@ a.disaster .label:focus {
   color: white;
 }
 .disaster .row,
+.disaster .row > div,
+.disaster .disaster-filters,
 .disaster .col,
 .disaster #disaster-map-main-container,
 .disaster .drc-map-container,
@@ -6472,15 +6474,19 @@ a.disaster .label:focus {
 .disaster #map {
   height: 100%;
 }
+.disaster .data-container {
+  height: calc(100% - 274px) !important;
+}
 .disaster #map {
   position: relative;
-  top: 0;
+  top: 28px;
   left: 0;
   width: 100%;
-  height: 100%;
+  /*height: 100%;*/
+  height: calc(100% - 113px) !important;
 }
 .disaster .disaster-breadcrumbs {
-  margin: 15px 0 0 500px;
+  float: left;
 }
 .disaster .disaster-breadcrumbs #disaster-navigation .btn {
   color: #2c689c;
@@ -6504,6 +6510,10 @@ a.disaster .label:focus {
 }
 .disaster .disaster-breadcrumbs .glyphicon {
   width: 15px;
+}
+.disaster #disaster-page-tools {
+  position: absolute;
+  right: 15px;
 }
 .disaster .disaster-risk-selector {
   /*padding: 20px 10px;
@@ -6788,10 +6798,10 @@ a.disaster .label:focus {
 }
 .disaster .risk-toc-container {
   position: absolute;
-  height: 100%;
-  top: 39px;
+  height: calc(100% - 113px) !important;
+  margin-top: 39px;
   left: 15px;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.7);
   -webkit-transition: all 2s;
   /* Safari */
   transition: all 2s;
@@ -6800,6 +6810,9 @@ a.disaster .label:focus {
   padding: 15px 10px;
   overflow-y: auto;
   z-index: 1001;
+}
+.disaster .risk-toc-container > div > div.container-fluid {
+  display: none;
 }
 .disaster .drc .toc-layer-tool.glyphicon.glyphicon-cog {
   display: none;
@@ -6925,7 +6938,7 @@ a.disaster .label:focus {
 .disaster #disaster-overview-list,
 .disaster .disaster-header {
   position: absolute;
-  margin: -5px 0 0 15px;
+  margin-top: -5px;
   background: rgba(0, 0, 0, 0.6);
   /*max-width: 50%;*/
   color: #CCCCCC;
@@ -6994,9 +7007,8 @@ a.disaster .label:focus {
     width: 600px;
   }
   .disaster #disaster-filters-container {
-    position: absolute;
-    margin: -5px 0 0 15px;
-    z-index: 500;
+    position: relative;
+    top: -6px;
     overflow-y: auto;
     background: rgba(0, 0, 0, 0.6);
     color: #dedede;
@@ -7005,9 +7017,10 @@ a.disaster .label:focus {
   .disaster #disaster-filter-results {
     position: relative;
     float: left;
-    width: 600px;
+    width: 570px;
   }
   .disaster #disaster-filter-results {
+    margin-top: 20px;
     color: #333;
   }
 }
@@ -7123,12 +7136,30 @@ a.disaster .label:focus {
 }
 .disaster .data-container {
   position: absolute;
-  top: 0;
+  clear: left;
+  margin-top: 40px;
+  /*margin-left: 15px;  */
+  display: flex;
+  max-width: 600px;
+  z-index: 500;
+}
+.disaster .search-location {
+  display: flex;
+  float: left;
+  width: 600px;
+}
+.disaster .search-location .lookup-reset-item {
+  position: absolute;
+  right: 2px;
+}
+.disaster .search-location .lookup-reset-item:hover {
+  cursor: pointer;
+  color: #2c689c;
 }
 @font-face {
-  font-family: 'thinkhazard';
-  src: url('../fonts/thinkhazard/thinkhazard.eot?-xr90r9');
-  src: url('../fonts/thinkhazard/thinkhazard.eot?#iefix-xr90r9') format('embedded-opentype'), url('../fonts/thinkhazard/thinkhazard.ttf?-xr90r9') format('truetype'), url('../fonts/thinkhazard/thinkhazard.woff?-xr90r9') format('woff'), url('../fonts/thinkhazard/thinkhazard.svg?-xr90r9#thinkhazard') format('svg');
+  font-family: 'rdh';
+  src: url('../fonts/rdh/rdh.eot?x61cmb');
+  src: url('../fonts/rdh/rdh.eot?x61cmb#iefix') format('embedded-opentype'), url('../fonts/rdh/rdh.ttf?x61cmb') format('truetype'), url('../fonts/rdh/rdh.woff?x61cmb') format('woff'), url('../fonts/rdh/rdh.svg?x61cmb#rdh') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -7137,7 +7168,7 @@ a.disaster .label:focus {
   top: 1px;
   position: relative;
   display: inline-block;
-  font-family: 'thinkhazard';
+  font-family: 'rdh';
   speak: none;
   font-style: normal;
   font-weight: normal;
@@ -7148,83 +7179,95 @@ a.disaster .label:focus {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-.disaster .icon-cross:before {
-  content: "\e608";
-}
-.disaster .icon-download-arrow:before {
-  content: "\e609";
-}
-.disaster .icon-house:before {
-  content: "\e60a";
-}
-.disaster .icon-list-square:before {
-  content: "\f04d";
-}
-.disaster .icon-list-arrow:before {
-  content: "\e60b";
-}
-.disaster .icon-magnifying-glass:before {
-  content: "\e60c";
-}
-.disaster .icon-pin:before {
-  content: "\e60d";
-}
-.disaster .icon-selector-arrow:before {
-  content: "\e60e";
-}
-.disaster .icon-separator:before {
-  content: "\e60f";
-}
-.disaster .icon-zoom-in:before {
-  content: "\e610";
-}
-.disaster .icon-zoom-out:before {
-  content: "\e613";
-}
-.disaster .icon-dg:before {
-  content: "\e600";
-}
-.disaster .icon-eq:before {
-  content: "\e601";
-}
-.disaster .icon-fl:before {
-  content: "\e602";
-}
-.disaster .icon-ls:before {
-  content: "\e603";
-}
-.disaster .icon-uf:before {
-  content: "\e902";
-}
-.disaster .icon-eh:before {
-  content: "\e901";
-}
-.disaster .icon-wf:before {
-  content: "\e907";
-}
-.disaster .icon-ap:before {
+.disaster .icon-dowload-arrow:before {
   content: "\e900";
 }
-.disaster .icon-overview:before {
+.disaster .icon-drought:before {
   content: "\e901";
 }
-.disaster .icon-cf:before {
-  content: "\e604";
+.disaster .icon-earthquake:before {
+  content: "\e902";
 }
-.disaster .icon-ts:before {
-  content: "\e605";
+.disaster .icon-extreme-heat:before {
+  content: "\e903";
 }
-.disaster .icon-va:before {
-  content: "\e606";
+.disaster .icon-flash-flood:before {
+  content: "\e904";
 }
-.disaster .icon-cy:before {
-  content: "\e607";
+.disaster .icon-flood:before {
+  content: "\e905";
 }
-.disaster .icon-spinner:before {
-  content: "\f110";
+.disaster .icon-house:before {
+  content: "\e906";
 }
-.disaster .icon-ah:before {
-  content: "\e611";
+.disaster .icon-landslide:before {
+  content: "\e907";
+}
+.disaster .icon-list-arrow:before {
+  content: "\e908";
+}
+.disaster .icon-magnifying-glass:before {
+  content: "\e909";
+}
+.disaster .icon-nuclear:before {
+  content: "\e90a";
+}
+.disaster .icon-oil-spill:before {
+  content: "\e90b";
+}
+.disaster .icon-overview:before {
+  content: "\e90c";
+}
+.disaster .icon-pin:before {
+  content: "\e90d";
+}
+.disaster .icon-Pollution2c:before {
+  content: "\e90e";
+}
+.disaster .icon-selector-arrow:before {
+  content: "\e90f";
+}
+.disaster .icon-separator:before {
+  content: "\e910";
+}
+.disaster .icon-storm-surge:before {
+  content: "\e911";
+}
+.disaster .icon-subsidence:before {
+  content: "\e912";
+}
+.disaster .icon-tsunami:before {
+  content: "\e913";
+}
+.disaster .icon-urban-flood:before {
+  content: "\e914";
+}
+.disaster .icon-volcano:before {
+  content: "\e915";
+}
+.disaster .icon-water-scarcity:before {
+  content: "\e916";
+}
+.disaster .icon-wildfire:before {
+  content: "\e917";
+}
+.disaster .icon-cyclone:before {
+  content: "\e918";
+}
+.disaster .icon-home3:before {
+  content: "\e919";
+}
+.disaster .icon-spinner6:before {
+  content: "\e97f";
+}
+.disaster .icon-search:before {
+  content: "\e986";
+}
+.disaster .icon-zoom-in:before {
+  content: "\e987";
+}
+.disaster .icon-zoom-out:before {
+  content: "\e988";
 }
 .tooltip {
   background-color: transparent;

@@ -23,20 +23,36 @@
     {% block hero %}
     <div class="jumbotron">
         <div class="container no-padding">                                                
-            <div class="row">
-                <div class="col-sm-6">                    
+            <div id="site-intro" class="row">
+                <div class="col-sm-7 heading">                    
                     <h1>Risk Data Hub</h1>        
-                    <p>The Disaster Risk Management Knowledge Centre (DRMKC) makes available a GIS web-platform – the Risk Data Hub – intended to improve the access and sharing of curated European-wide (EU, EFTA  and IPA  countries) risk data, tools and methodologies for fostering Disaster Risk Management (DRM) related actions.</p>                                    
+                    <p>A GIS web platform of European wide (EU, EFTA and IPA countries) risk data, tools and methodologies for Disaster Risk Reduction.</p>
                 </div>
-                <div class="col-sm-6">
-                    <img style="max-width: 100%" alt="Disaster Risk Management Cycle"  src="{{ STATIC_URL }}img/rdh_home_presentation_img.png" />
+                <div class="col-sm-5">
+                    <img alt="Disaster Risk Management Cycle"  src="{{ STATIC_URL }}img/drm-lifecycle.svg" />
                 </div>                            
             </div>
-            <div class="row">
+            <div id="hazard-links" class="row">
                 <div class="col-sm-12">
-                    <p>
-                        >> Join the event: <a href="https://drmkc.jrc.ec.europa.eu/partnership/Scientific-Partnerships/Risk-Data-Hub/Risk-Data-Hub-Austrian-Disaster-Network-Days">Risk Data Hub & Austrian Disaster Network Days</a> <<
-                    </p>                    
+                    <a href="http://139.191.12.199/risks/data_extraction/?init=%7B%22href%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Floc%2FEU%2F%22%2C%22geomHref%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Fgeom%2FEU%2F%22%2C%22gc%22%3A%22ht%2FFL%2F%22%2C%22d%22%3A%7B%22dim1%22%3A0%2C%22dim2%22%3A1%2C%22dim1Idx%22%3A0%2C%22dim2Idx%22%3A0%7D%2C%22s%22%3A%7B%7D%7D" 
+                        class="hazard-link"><i class="icon-flood"></i><span class="hazard-title">River Flood</span></a>
+                    <a href="http://139.191.12.199/risks/data_extraction/?init=%7B%22href%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Floc%2FEU%2F%22%2C%22geomHref%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Fgeom%2FEU%2F%22%2C%22gc%22%3A%22ht%2FFLSH%2F%22%2C%22d%22%3A%7B%22dim1%22%3A0%2C%22dim2%22%3A1%2C%22dim1Idx%22%3A0%2C%22dim2Idx%22%3A0%7D%2C%22s%22%3A%7B%7D%7D"
+                        class="hazard-link"><i class="icon-flash-flood"></i><span class="hazard-title">Flash Flood</span></a>
+                    <a href="http://139.191.12.199/risks/data_extraction/?init=%7B%22href%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Floc%2FEU%2F%22%2C%22geomHref%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Fgeom%2FEU%2F%22%2C%22gc%22%3A%22ht%2FCF%2F%22%2C%22d%22%3A%7B%22dim1%22%3A0%2C%22dim2%22%3A1%2C%22dim1Idx%22%3A0%2C%22dim2Idx%22%3A0%7D%2C%22s%22%3A%7B%7D%7D"
+                        class="hazard-link"><i class="icon-storm-surge"></i><span class="hazard-title">Coastal Flood</span></a>
+                    <a class="hazard-link"><i class="icon-wildfire"></i><span class="hazard-title">Forest Fire</span></a>
+                    <a href="https://drmkc.jrc.ec.europa.eu/risk-data-hub/risks/data_extraction/?init=%7B%22href%22%3A%22%2Frisk-data-hub%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Floc%2FEU%2F%22%2C%22geomHref%22%3A%22%2Frisk-data-hub%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Fgeom%2FEU%2F%22%2C%22gc%22%3A%22ht%2FFF%2F%22%2C%22d%22%3A%7B%22dim1%22%3A0%2C%22dim2%22%3A1%2C%22dim1Idx%22%3A0%2C%22dim2Idx%22%3A0%7D%2C%22s%22%3A%7B%7D%7D"
+                        class="hazard-link"><i class="icon-earthquake"></i><span class="hazard-title">Earthquake</span></a>
+                    <a class="hazard-link inactive"><i class="icon-volcano"></i><span class="hazard-title">Volcano</span></a>
+                    <a href="http://139.191.12.199/risks/data_extraction/?init=%7B%22href%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Floc%2FEU%2F%22%2C%22geomHref%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Fgeom%2FEU%2F%22%2C%22gc%22%3A%22ht%2FLS%2F%22%2C%22d%22%3A%7B%22dim1%22%3A0%2C%22dim2%22%3A1%2C%22dim1Idx%22%3A0%2C%22dim2Idx%22%3A0%7D%2C%22s%22%3A%7B%7D%7D"
+                        class="hazard-link"><i class="icon-landslide"></i><span class="hazard-title">Landslide</span></a>
+                    <a href="http://139.191.12.199/risks/data_extraction/?init=%7B%22href%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Floc%2FEU%2F%22%2C%22geomHref%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEurope%2Fgeom%2FEU%2F%22%2C%22gc%22%3A%22ht%2FSD%2F%22%2C%22d%22%3A%7B%22dim1%22%3A0%2C%22dim2%22%3A1%2C%22dim1Idx%22%3A0%2C%22dim2Idx%22%3A0%7D%2C%22s%22%3A%7B%7D%7D"
+                        class="hazard-link"><i class="icon-subsidence"></i><span class="hazard-title">Subsidence</span></a>
+                    <a href="http://139.191.12.199/risks/data_extraction/?init=%7B%22href%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEUWaters%2Floc%2FEW%2F%22%2C%22geomHref%22%3A%22%2Frisks%2Fdata_extraction%2Freg%2FEUWaters%2Fgeom%2FEW%2F%22%2C%22gc%22%3A%22ht%2FOS%2F%22%2C%22d%22%3A%7B%22dim1%22%3A0%2C%22dim2%22%3A1%2C%22dim1Idx%22%3A0%2C%22dim2Idx%22%3A0%7D%2C%22s%22%3A%7B%7D%7D"
+                        class="hazard-link"><i class="icon-oil-spill"></i><span class="hazard-title">Oil Spill</span></a>
+                    <a class="hazard-link inactive"><i class="icon-drought"></i><span class="hazard-title">Drought</span></a>
+                    <a class="hazard-link inactive"><i class="icon-cyclone"></i><span class="hazard-title">Cyclone</span></a>
+                    <a class="hazard-link inactive last"><i class="icon-nuclear"></i><span class="hazard-title">Nuclear</span></a>
                 </div>
             </div>
         </div>
@@ -46,24 +62,47 @@
     {% block mainbody %}
         <div class="container no-padding">                                    
             <div class="row">
+                <div class="col-sm-4 box-home">
+                    <div class="box-risk">
+                        <h2>Exposure Analysis</h2>
+                        <p>Exposure to potential disaster events (using data from models): discovery of most exposed areas for every hazard. This leads to <strong>Prevention and Preparedness</strong></p>
+                    </div>
+                    
+                </div>
+                <div class="col-sm-4 box-home">
+                    <div class="box-event">
+                        <h2>Historical Events</h2>
+                        <p>Damages and losses caused by past events: useful for statistical analysis, finding trends and check eligibility for <u>solidarity fund requests</u>. This leads to <strong>Response and Recovery</strong></p>
+                    </div>                    
+                </div>
+                <div class="col-sm-4 box-home">
+                    <div class="box-country-corner">
+                        <h2>Country Corner</h2>
+                        <p>The country corner aims to help single member states to prepare their national risk assessment, using detailed data coming from all administrative levels.</p>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <!--<div class="row">
                 <div class="col-sm-6">
                     <img style="max-width:100%" alt="rdh_example_screenshot" src="{{ STATIC_URL }}img/rdh_analysis_screenshot.png" />
                 </div>
                 <div class="col-sm-6">                    
-                    <h2>Rich analysis features</h2>        
+                    <h2>Analysis features</h2>        
                     <p>Large amounts of complex data rendered in an understandable and valuable way by:</p>
                     <ul class="list-group">
-                        <li class="list-group-item">Different levels of aggregation</li>
                         <li class="list-group-item">Interactive map</li>
                         <li class="list-group-item">Charts</li>
-                        <li class="list-group-item">Meaningful descriptions and metadata</li>
+                        <li class="list-group-item">Different aggregation levels</li>                        
+                        <li class="list-group-item">Sendai Framework for Disaster Risk Reduction specific indicators</li>                        
                     </ul>
                 </div>
             </div>            
             <div class="row">
                 <div class="col-sm-6">                    
                     <h2>Country corner</h2>        
-                    <p>Risk Data Hub aims to help single member states to prepare their own risk assessment, using detailed data coming from all administrative levels.</p>                    
+                    <p>The country corner aims to help single member states to prepare their own risk assessment, using detailed data coming from all administrative levels.</p>                    
                     <p>The online platform is helpful for two main types of assessment:</p>
                     <ul class="list-group">
                         <li class="list-group-item">Exposure to potential disaster events (using data from models): discovery of most exposed areas for every hazard. This leads to <strong>Prevention and Preparedness</strong></li>
@@ -86,7 +125,7 @@
                     <p><strong>Note: this release is a prototype. Please, refer to Contact section for suggestions or any further requests.</strong></p>
                 </div>             
             </div>
-        </div>
+        </div>-->
 
         {% block partners %}
         <div class="container section">            
@@ -352,9 +391,9 @@
         }
 
         //main map
-        bootstrapMap('mapid', 'rdh_maskprj.json');
+        //bootstrapMap('mapid', 'rdh_maskprj.json');
         //country corners map
-        bootstrapMap('mapid-country', 'rdh_country_corner.json');
+        //bootstrapMap('mapid-country', 'rdh_country_corner.json');
         
     </script>
 {% endblock extra_script %}

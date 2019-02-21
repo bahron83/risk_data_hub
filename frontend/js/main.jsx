@@ -90,7 +90,7 @@ module.exports = (config, pluginsDef) => {
             pluginsDef,
             initialActions,
             appComponent: StandardRouter,
-            printingEnabled: true
+            printingEnabled: false
         };
 
         ReactDOM.render(

@@ -9,12 +9,12 @@
 var {LAYER_LOADING, LAYER_LOAD, LAYER_ERROR, CHANGE_LAYER_PROPERTIES, CHANGE_GROUP_PROPERTIES,
     TOGGLE_NODE, SORT_NODE, REMOVE_NODE, UPDATE_NODE, ADD_LAYER, REMOVE_LAYER,
     SHOW_SETTINGS, HIDE_SETTINGS, UPDATE_SETTINGS, INVALID_LAYER
-    } = require('../actions/layers');
+    } = require('../../MapStore2/web/client/actions/layers');
 
 var assign = require('object-assign');
 var {isObject, isArray, head, isString} = require('lodash');
 
-const LayersUtils = require('../utils/LayersUtils');
+const LayersUtils = require('../../MapStore2/web/client/utils/LayersUtils');
 
 const deepChange = (nodes, findValue, propName, propValue) => {
     if (nodes && isArray(nodes) && nodes.length > 0) {
@@ -217,11 +217,12 @@ function layers(state = [], action) {
                 });
             }
         }
-        case ADD_LAYER: {
+        case ADD_LAYER: {            
             let newLayers = (state.flat || []).concat();
             let newGroups = (state.groups || []).concat();
             const newLayer = (action.layer.id) ? action.layer : assign({}, action.layer, {id: LayersUtils.getLayerId(action.layer, newLayers)});
             newLayers.push(newLayer);
+            //console.log('add layer reduced', newLayers);
             const groupId = newLayer.group || 'Default';
             if (groupId !== "background") {
                 newGroups = moveNode(newGroups, newLayer.id, groupId, newLayers, action.foreground);

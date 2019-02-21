@@ -29,7 +29,7 @@ class TOCButtonComponent extends React.Component {
     };
 
     render() {       
-        console.log('toc button props', this.props);
+        //console.log('toc button props', this.props);
         return (
             <ButtonT
                 className="et-layer-button square-button"

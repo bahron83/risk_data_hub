@@ -1,28 +1,37 @@
 import React, { Component } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, Cell, CartesianGrid, Tooltip, Legend } from 'recharts';
-import ChartTooltip from './ChartTooltip';
+import moment from 'moment';
+import SChartTooltip from './SChartTooltip';
 
 class SChart extends Component {           
-    shouldComponentUpdate(nextProps, nextState) {
-        const { selectedEventIds: ev, fullContext } = this.props;
+    shouldComponentUpdate(nextProps, nextState) {        
+        const { selectedEventIds: ev, fullContext, data } = this.props;
         const { loc } = fullContext;
-        const { selectedEventIds: nextEv, loc: nextLoc } = nextProps;
+        const { selectedEventIds: nextEv, data: nextData } = nextProps;
+        const nextLoc = nextProps && nextProps.fullContext && nextProps.fullContext.loc;        
         
-        if(JSON.stringify(ev) !== JSON.stringify(nextEv) || loc !== nextLoc)
+        if(JSON.stringify(ev) !== JSON.stringify(nextEv) || loc !== nextLoc || JSON.stringify(data) !== JSON.stringify(nextData))
             return true;
 
         return false;
     } 
     
     render () {        
-        const { selectedEventIds, data, unitOfMeasure } = this.props;         
+        const { selectedEventIds, data, unitOfMeasure } = this.props; 
+        //console.log('scatter chart', data);
         if(data.length == 0)
             return null;           
-        const dataKey = data[0]['data_key'];
+        const dataKey = data[0] && data[0].dataKey;        
         return (
           <ScatterChart width={500} height={400} margin={{top: 20, right: 0, bottom: 20, left: 0}}>
-            <XAxis domain={['auto', 'auto']} dataKey={'year'} type="number" name='Year' unit=''/>
-            <YAxis dataKey={dataKey} type="number" name={dataKey} unit={unitOfMeasure}/>
+            <XAxis 
+                dataKey='timestamp'
+                domain={['auto', 'auto']} 
+                name='Begin Date' 
+                tickFormatter={(unixTime) => moment(unixTime).format('YYYY-MM-DD')}
+                type="number" 
+                />
+            <YAxis dataKey='value' type='number' name={dataKey} unit={unitOfMeasure}/>
             <CartesianGrid />
             <Scatter onClick={this.handleClick.bind(this)} data={data} name='Events'>
                 {data.map((entry, index) => {
@@ -32,7 +41,7 @@ class SChart extends Component {
                 })
                 }
             </Scatter>
-            <Tooltip cursor={{strokeDasharray: '3 3'}}/>
+            <Tooltip content={<SChartTooltip xAxisUnit={unitOfMeasure} />} />
         </ScatterChart>
       );
     }

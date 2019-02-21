@@ -1,5 +1,9 @@
 from django.contrib.gis import geos
 from django.db import transaction
+from risks.overrides.postgres_jsonb import KeyTextTransform, KeyTransform
+from django.db.models.functions import Cast, Extract
+from django.db.models import F, DateTimeField
+from django.contrib.postgres.aggregates import ArrayAgg
 from risks.management.commands.action_utils import DbUtils
 from risks.models.location import AdministrativeDivision
 from risks.models.event import Event, Phenomenon
@@ -27,6 +31,25 @@ class EventHelper(object):
     
     def set_phenomena(self, phenomena):
         self._phenomena = phenomena
+
+    def prepare_event_entries(self, queryset):
+        if queryset.exists():
+            return queryset.annotate(
+                    _event=KeyTransform('event', 'entry'),
+                    _timestamp=Extract(Cast(KeyTextTransform('begin_date', KeyTransform('event', 'entry')), DateTimeField()), 'epoch')*1000,                
+                    _dim1=KeyTransform('dim1', 'entry'),
+                    _dim2=KeyTransform('dim2', 'entry')                
+                ).values(
+                    event=F('_event'),
+                    timestamp=F('_timestamp'),                
+                    dim1=F('_dim1'),
+                    dim2=F('_dim2'),                
+                ).annotate(
+                    values=ArrayAgg(KeyTransform('values', 'entry')),
+                    phenomena=ArrayAgg(KeyTransform('phenomenon', 'entry')),
+                    adm_divisions=ArrayAgg(KeyTransform('administrative_division', 'entry'))
+                ).order_by('-timestamp')
+        return queryset
 
     def save_event(self, event_obj, phenomena_list=None):
         event_fields = Event.get_fields_basic()
@@ -157,7 +180,10 @@ class EventHelper(object):
     
     def insert_assessment_values(self, values):        
         if values:
-            with transaction.atomic():
-                for v in values:
-                    self.insert_assessment_value(v)
+            try:
+                with transaction.atomic():
+                    for v in values:
+                        self.insert_assessment_value(v)
+            except:
+                transaction.rollback()
                                     

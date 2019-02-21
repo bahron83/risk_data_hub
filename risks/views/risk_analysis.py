@@ -53,10 +53,7 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
             except Hazard.DoesNotExist:
                 return json_response(errors=['Invalid hazard type'], status=404)
         if cleaned_args['ac']:
-            try:       
-                scope = AnalysisType.objects.get(scope=kwargs['ac'])
-            except AnalysisType.DoesNotExist:
-                return json_response(errors=['Invalid scope'], status=404)            
+            scope = kwargs['ac']
         if cleaned_args['at']:
             analysis_type = AnalysisType.objects.filter(title=kwargs['at'])
 
@@ -73,7 +70,7 @@ class RiskAnalysisView(ContextAware, LocationSource, View):
                     if hazard_type:
                         ra_matches = ra_matches.filter(hazard=hazard_type)
                     if scope:
-                        ra_matches = ra_matches.filter(analysis_type__scope=scope)
+                        ra_matches = ra_matches.filter(scope=scope)
                     if analysis_type:
                         at_ids = analysis_type.values_list('pk', flat=True)
                         ra_matches = ra_matches.filter(analysis_type__in=at_ids)                

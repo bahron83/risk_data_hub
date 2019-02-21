@@ -3,6 +3,13 @@ import { ComposedChart, Bar, Line, XAxis, Cell, YAxis, Tooltip, CartesianGrid, R
 
 
 class SendaiCountryChart extends Component {
+    shouldComponentUpdate(nextProps, nextState) {         
+        if(JSON.stringify(this.props.data) !== JSON.stringify(nextProps.data))
+            return true;
+
+        return false;
+    } 
+    
     getChartData() {
         const { data, round } = this.props;
         const { sendaiValues } = data;        
@@ -39,7 +46,7 @@ class SendaiCountryChart extends Component {
         const { dimensions } = data;
         const { values } = dimensions[dim.dim1];
         const dimension = values[dim.dim1];        
-        return dimensions[dim.dim1]['layers'][dimension]['sendaiTarget'];
+        return dimensions[dim.dim1]['layers'][dimension]['sendaiIndicator'];
     }
 
     renderTooltip(data) {        
@@ -66,7 +73,7 @@ class SendaiCountryChart extends Component {
             const chartData = this.getChartData();
             return (
                 <div>
-                    <p>{`Indicator ${sendaiIndicator.code}: ${sendaiIndicator.description}`}</p>
+                    <p>{`Indicator ${sendaiIndicator.name}: ${sendaiIndicator.description}`}</p>
                     <p>Reference value for years 2005/2015: <span>{`${this.getRefValue().toLocaleString()} ${this.getBaselineUnit()}`}</span></p>
                     {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={200}>                    

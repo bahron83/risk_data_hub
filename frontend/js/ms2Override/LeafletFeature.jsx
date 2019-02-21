@@ -41,8 +41,7 @@ const getPointLayer = function(pointToLayer, geojson, latlng, options) {
     return VectorUtils.pointToLayer(latlng, geojson, options.style);
 };
 
-const geometryToLayer = function(geojson, options) {
-
+const geometryToLayer = function(geojson, options) {    
     var geometry = geojson.type === 'Feature' ? geojson.geometry : geojson;
     var coords = geometry ? geometry.coordinates : null;
     var layers = [];
@@ -136,7 +135,7 @@ class Feature extends React.Component {
         options: PropTypes.object        
     };
 
-    adjustProps(feature) {         
+    adjustProps(feature) {            
         if(feature && 'value' in feature.properties) {
             const { rules } = feature && feature.style || null;
             if(rules) {            
@@ -153,14 +152,14 @@ class Feature extends React.Component {
         return feature;        
     }
 
-    componentDidMount() {
+    componentDidMount() {            
         if (this.props.container && this.props.geometry) {
-            this._tooltip = L.popup({closeButton: false, offset: [85, 35], className: 'disaster-map-tooltip', autoPan: false});                        
+            this._tooltip = L.popup({closeButton: false, offset: [85, 35], className: 'disaster-map-tooltip', autoPan: false});              
             this.createLayer(this.adjustProps(this.props));                                      
         }
     }    
 
-    componentWillReceiveProps(newProps) {
+    componentWillReceiveProps(newProps) {        
         if (!isEqual(newProps.properties, this.props.properties) || !isEqual(newProps.geometry, this.props.geometry) || !isEqual(newProps.style, this.props.style)) {            
             this.props.container.removeLayer(this._layer);            
             this.createLayer(this.adjustProps(newProps)); 
@@ -177,7 +176,8 @@ class Feature extends React.Component {
         }
     }    
 
-    render() {        
+    render() { 
+        //console.log('feature', this);
         return null;
     }
 
@@ -193,7 +193,7 @@ class Feature extends React.Component {
         return props.styleName === "marker" || (props.style && (props.style.iconUrl || props.style.iconGlyph));
     };
 
-    createLayer = (props) => {
+    createLayer = (props) => {        
         this._layer = geometryToLayer({
             type: props.type,
             geometry: props.geometry,
@@ -212,18 +212,24 @@ class Feature extends React.Component {
             } : null
         }
         );
-        props.container.addLayer(this._layer);
+        props.container.addLayer(this._layer); 
+        //props.container.bringToBack();          
+        //console.log('props', props.container);
 
         this._layer.on('click', () => {
-            if (props.onClick) {
+            const { options } = this.props;
+            if (props.onClick && options.id == "adminunits") {
                 props.onClick(this.props.properties.href, this.props.properties.geom);
             }
         });
 
-        this._layer.on('mouseover', (event) => {            
+        this._layer.on('mouseover', (event) => { 
+            //console.log('mouseover', this.props);
+            const { options } = this.props;
+            const tooltipContent = options.id == "adminunits" ? `Zoom to ${this.props.properties && this.props.properties.label}` : this.props.properties && this.props.properties.name;
             this._layer.setStyle({weight: 4, 'className': "admin"});
             this._tooltip.setLatLng(event.latlng)
-                .setContent(`Zoom to ${this.props.properties && this.props.properties.label}`);
+                .setContent(tooltipContent);
             this._layer.addLayer(this._tooltip);            
         });
 

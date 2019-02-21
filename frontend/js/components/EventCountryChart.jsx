@@ -4,25 +4,24 @@ import ChartTooltip from "./ChartTooltip";
 
 class EventCountryChart extends Component {    
     getChartData() {         
-        const { data } = this.props;         
-        if(data) {
-            let chartData = []
-            for(let k in data) {
-                chartData.push({'name': k, 'value': data[k]})
-            }
-            return chartData.sort((a,b) => (a.value < b.value) ? 1 : ((b.value < a.value) ? -1 : 0));
-        }               
-        return [];
+        const { data, currentAdminUnits, groupEventAnalysisData } = this.props;        
+        return groupEventAnalysisData(data, currentAdminUnits);
     }
 
-    shouldComponentUpdate(nextProps, nextState) {        
-        if(this.props.fullContext.loc !== nextProps.fullContext.loc)
+    /*shouldComponentUpdate(nextProps, nextState) {        
+        const { selectedEventIds: ev, fullContext, data } = this.props;
+        const { loc } = fullContext;
+        const { selectedEventIds: nextEv, data: nextData } = nextProps;
+        const nextLoc = nextProps && nextProps.fullContext && nextProps.fullContext.loc;        
+        
+        if(JSON.stringify(ev) !== JSON.stringify(nextEv) || loc !== nextLoc || JSON.stringify(data) !== JSON.stringify(nextData))
             return true;
 
         return false;
-    }  
+    }*/ 
 
-    render() {          
+    render() {  
+        //console.log('event country chart', this.props);
         const { uOm, skipLabel } = this.props;
         const chartData = this.getChartData(); 
         if(chartData.length > 0) {

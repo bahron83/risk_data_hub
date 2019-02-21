@@ -33,20 +33,22 @@ class EventTable  extends Component {
 
     handleSelectAll(isSelected, rows) {
         this.handleRowSelect(rows, isSelected, null);
-    }
+    }    
 
     render() {             
-        const { data, selectedEventIds } = this.props;                   
+        const { selectedEventIds, data } = this.props; 
+        //console.log(data);
         if(data.length == 0)
             return null;        
-        const dataKey = data[0]['data_key'];        
+        //const dataKey = data[0]['data_key'];        
+        const dataKey = data[0].dataKey;
         /*const dataFormatted = data.map(obj => {
             let newObj = obj;            
             newObj[dataKey] = newObj[dataKey] && newObj[dataKey].toLocaleString() || null;
             return newObj;
         })
         console.log(dataFormatted);*/
-        const dataKeyVerbose = dataKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const dataKeyVerbose = dataKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());        
         const options = {
             
         } 
@@ -62,8 +64,8 @@ class EventTable  extends Component {
                 <TableHeaderColumn dataField='id' isKey={true} hidden={true}>Event ID</TableHeaderColumn>
                 <TableHeaderColumn dataField='event_source'>Source</TableHeaderColumn>
                 <TableHeaderColumn dataField='begin_date' dataSort>Start Date</TableHeaderColumn>
-                <TableHeaderColumn dataField={dataKey} dataSort>{dataKeyVerbose}</TableHeaderColumn>
-                <TableHeaderColumn dataField='sources'>References</TableHeaderColumn>                
+                <TableHeaderColumn dataField='value' dataSort>{dataKeyVerbose}</TableHeaderColumn>
+                <TableHeaderColumn dataField='dataSource'>Data Source</TableHeaderColumn>                
             </BootstrapTable>
         );                        
     }        

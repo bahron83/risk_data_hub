@@ -10,14 +10,9 @@ const React = require('react');
 
 const RiskSelector = React.createClass({
     propTypes: {
-        riskItems: React.PropTypes.arrayOf(React.PropTypes.shape({
-          title: React.PropTypes.string.isRequired,
-          mnemonic: React.PropTypes.string.isRequired,
-          herf: React.PropTypes.string,
-          riskAnalysis: React.PropTypes.number
-        })),
+        riskItems: React.PropTypes.object,
         overviewHref: React.PropTypes.string,
-        activeRisk: React.PropTypes.string,
+        activeRisk: React.PropTypes.object,
         getData: React.PropTypes.func
     },
     getDefaultProps() {
@@ -27,15 +22,20 @@ const RiskSelector = React.createClass({
     },
     getItems() {
         const {riskItems, activeRisk, getData, overviewHref} = this.props;
+        let riskItem = [];
+        riskItems['hazardType'].map(r => {
+            if(r.mnemonic == activeRisk.mnemonic)
+                riskItem.push(r);
+        })
         const items = [{
                     "mnemonic": "Overview",
                     "title": "Overview",
                     "riskAnalysis": 1,
                     "href": overviewHref
-            }, ...riskItems];
+            }, ...riskItem];
         return items.map((item, idx) => {
             const {title, href, riskAnalysis, mnemonic} = item;
-            const active = activeRisk === mnemonic;
+            const active = activeRisk.mnemonic === mnemonic;
             const noData = !(riskAnalysis > 0);
             return (
             <li key={idx} className={`${noData ? 'no-data disabled' : ''} text-center  ${active ? 'active' : ''}`} onClick={active || noData ? undefined : () => getData(href, true)}>
@@ -46,9 +46,10 @@ const RiskSelector = React.createClass({
         });
     },
     render() {
+        const { showHazard } = this.props;
         return (
-            <ul className="nav nav-pills" role="tablist">
-            {this.getItems()}
+            <ul className="nav nav-pills disaster-breadcrumbs" role="tablist">
+                {showHazard ? this.getItems() : null}
             </ul> );
     }
 });

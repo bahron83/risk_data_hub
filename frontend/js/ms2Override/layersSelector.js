@@ -11,7 +11,7 @@ const {head, findIndex} = require('lodash');
 const assign = require('object-assign');
 const MapInfoUtils = require('../../MapStore2/web/client/utils/MapInfoUtils');
 const LayersUtils = require('../../MapStore2/web/client/utils/LayersUtils');
-const {getViewParam, getLayerName, getStyle} = require('../utils/DisasterUtils');
+const { groupEventAnalysisData } = require('../utils/DisasterUtils');
 const layersSelectorO = state => (state.layers && state.layers.flat) || (state.layers) || (state.config && state.config.layers);
 const markerSelector = state => (state.mapInfo && state.mapInfo.showMarker && state.mapInfo.clickPoint);
 const geoColderSelector = state => (state.search && state.search.markerPosition);
@@ -21,18 +21,20 @@ const disasterSelector = state => ({
     showSubUnit: state.disaster.showSubUnit,
     app: state.disaster && state.disaster.app,
     selectedEventIds: state.disaster && state.disaster.selectedEventIds || [],
-    eventAnalysis: state.disaster && state.disaster.eventAnalysis || {eventAnalysis: {}}
+    eventAnalysis: state.disaster && state.disaster.eventAnalysis || {eventAnalysis: {}},
+    currentAdminUnits: state.disaster && state.disaster.currentAdminUnits || []
 });
+const { prepareEventData } = require('../selectors/disaster');
 // TODO currently loading flag causes a re-creation of the selector on any pan
 // to avoid this separate loading from the layer object
-const layersSelector = createSelector([layersSelectorO, disasterSelector],
-    (layers = [], disaster) => {           
+const layersSelector = createSelector([layersSelectorO, disasterSelector, prepareEventData],
+    (layers = [], disaster, eventAnalysisData) => {           
         let newLayers;
-        let newFeatures;
-        //const layerId = disaster.selectedEventIds.length > 0 ? '_eventAn_' : '_riskAn_';           
-        const layerId = 'adminunits'
-        const riskAnWMSIdx = findIndex(layers, l => l.id === layerId);        
-        const riskAnLayer = layers.find(l => l.id === layerId) || false;
+        let newFeatures;        
+        const layerId = 'adminunits';
+        //console.log('layers', layers);
+        const riskAnBaseIdx = findIndex(layers, l => l.id === layerId);        
+        const eventLocationLayer = layers.find(l => l.id === 'event_geometry') || false;
         const adminUnitsAnLayer = layers.find(l => l.id === layerId) || false;         
         if (disaster.riskAnalysis && adminUnitsAnLayer) {  
             const dim1Value = disaster.riskAnalysis.riskAnalysisData.data.dimensions[0].values[disaster.dim.dim1Idx];
@@ -53,36 +55,57 @@ const layersSelector = createSelector([layersSelectorO, disasterSelector],
                 });              
                 
             }
-            else if(scope == 'event') {                
+            else if(scope == 'event') {                  
+                const valuesGroupAdminU = groupEventAnalysisData(eventAnalysisData, disaster.currentAdminUnits);
+                //console.log('layers selector', valuesGroupAdminU, eventAnalysisData, disaster.currentAdminUnits);
                 newFeatures = adminUnitsAnLayer.features.map(f => { 
                     let value = null;  
-                    if(adm_level < 1 && disaster.selectedEventIds.length == 0) {
-                        const values_group_coutry = disaster.riskAnalysis.riskAnalysisData.data.event_group_country || {}
-                        if(f.properties.code in values_group_coutry) {
-                            value = values_group_coutry[f.properties.code]
+                    if(disaster.selectedEventIds.length == 0) {                                                                                                
+                        const matches = valuesGroupAdminU.filter(i => i.name === f.properties.code);
+                        if(matches.length > 0) {
+                            value = matches[0].value;
                         }                        
                     }
-                    else {                        
+                    else {                             
                         const { eventLocations, eventData } = disaster.eventAnalysis;
+                        //console.log('running selector', eventLocations);
                         if(eventLocations) {                            
-                            const match = eventData.find(e => {
+                            const match = eventData.find(e => {                                
                                 return disaster.selectedEventIds.includes(e.entry.event.id)
                             })
-                            if(match !== undefined) {
-                                const location = eventLocations[f.properties.code];
-                                value = location && location.occurrences || null;
+                            //console.log('layer selector adm_level, feature - match', adm_level, f, match);
+                            if(match !== undefined) {                                
+                                const location = eventLocations[f.properties.code];                                
+                                if(location !== undefined && location.level == adm_level+1)
+                                    value = location && location.occurrences;                                                                                                
                             }                                
-                        }                                                
+                        }                        
                     }
                     return {id: f.id, type: f.type, geometry: f.geometry, properties: {...f.properties, value}};
                 });                              
-            }   
-            const riskAnWMS = assign({}, adminUnitsAnLayer, {features: newFeatures, style: newStyle});            
+            }
+            
+            /*let eventLocationFeatures = null;
+            if(eventLocationLayer) {
+                //console.log('eventLocationLayer', eventLocationLayer.features);
+                eventLocationFeatures = eventLocationLayer.features.map((f, i) => {
+                    //console.log('layer feature', f);
+                    const id = `p${i}`;
+                    return {...f, id}
+                });                
+            }*/
+            
+            const riskAnBase = assign({}, adminUnitsAnLayer, {features: newFeatures, style: newStyle});
+            //const riskAnEvent = assign({}, eventLocationLayer, {features: eventLocationFeatures});
+            //console.log('eventLocationLayer', riskAnEvent);
+            //const howmany = eventLocationFeatures ? 2 : 1;
+            //const layerList = riskAnEvent ? [riskAnBase, riskAnEvent] : [riskAnBase];
             newLayers = layers.slice();
-            newLayers.splice(riskAnWMSIdx, 1, riskAnWMS);                     
+            newLayers.splice(riskAnBaseIdx, 1, riskAnBase);                     
         } else {
             newLayers = [...layers];
-        }             
+        }
+        //console.log('layers in selector', newLayers);
         return newLayers;
     });
 

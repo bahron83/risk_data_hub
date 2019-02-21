@@ -2,7 +2,7 @@ from django.db import models
 from risks.models import RiskAppAware, HazardTypeAware, LocationAware, Exportable
 
 
-scopes = (('risk', 'Risk'), ('event', 'Event'),)
+
 
 class AnalysisType(RiskAppAware, HazardTypeAware, LocationAware, Exportable, models.Model):
     EXPORT_FIELDS_BASIC = (('name', 'name',),
@@ -14,14 +14,12 @@ class AnalysisType(RiskAppAware, HazardTypeAware, LocationAware, Exportable, mod
                      ('title', 'title',),
                      ('description', 'description',),
                      ('faIcon', 'fa_icon',),
-                     ('href', 'href',),
-                     ('scope', 'scope',),)
+                     ('href', 'href',),)
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30, null=False, blank=False,
                             db_index=True)
     title = models.CharField(max_length=80, null=False, blank=False)
-    description = models.TextField(default='', null=True, blank=False)    
-    scope = models.CharField(max_length=25, choices=scopes, default=scopes[0])
+    description = models.TextField(default='', null=True, blank=False)        
     fa_icon = models.CharField(max_length=30, null=True, blank=True)
     app = models.ForeignKey('RiskApp')
 

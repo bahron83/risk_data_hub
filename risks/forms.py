@@ -195,7 +195,7 @@ class ImportDataDamageAssessmentForm(models.ModelForm):
         da = self.cleaned_data['damage_assessment']
         current_user = self.current_user   
                 
-        import_risk_data(tmp_file, risk_app.name, da.name, region.name, final_name, current_user.id)        
+        import_risk_data.delay(tmp_file, risk_app.name, da.name, region.name, final_name, current_user.id)        
 
         return file_xlsx
 
@@ -265,7 +265,7 @@ class ImportDataEventForm(models.ModelForm):
         da = self.cleaned_data['damage_assessment']
         current_user = self.current_user   
         
-        import_event_data(tmp_file, risk_app.name, da.name, region.name, final_name, current_user.id)                    
+        import_event_data.delay(tmp_file, risk_app.name, da.name, region.name, final_name, current_user.id)                    
         
         return file_xlsx
 

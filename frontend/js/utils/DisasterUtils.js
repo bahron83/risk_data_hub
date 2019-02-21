@@ -17,7 +17,9 @@ function configLayer(baseurl, layerName, layerId, layerTitle, visibility = true,
     "title": layerTitle,
     "visibility": visibility,
     "format": "image/png",
-    "tiled": true    
+    "tiled": true,
+    "pane": "overlays",
+    "zIndex": 650
     }, group && {group} || {});
 }
 function configRefLayer(baseurl, layerName, layerId, layerTitle, style, visibility = true, group) {
@@ -169,4 +171,31 @@ function makeNotificationBody(data, title, head) {
     );
 }
 
-module.exports = {configLayer, getViewParam, getLayerName, getStyle, getStyleRef, configRefLayer, getLayerTitle, getLayerTitleEvents, makeNotificationBody};
+function groupEventAnalysisData(data, currentAdminUnits) {  
+    //console.log('function call', data, currentAdminUnits);
+    if(data) {
+        let chartData = []
+        for(let item of data) {                        
+            const admUnitMatch = currentAdminUnits.filter(a => {                
+                const matches = item.adm_divisions.filter(i => i.code.includes(a));
+                return matches.length > 0;                    
+            });                        
+            if(admUnitMatch.length > 0) {
+                const obj = {name: admUnitMatch[0], value: item.value}
+                if(chartData.length > 0) {
+                    const chartDataMatchIdx = chartData.map(o => o.name).indexOf(admUnitMatch[0])
+                    if(chartDataMatchIdx > -1)
+                        chartData[chartDataMatchIdx].value += item.value;
+                    else
+                        chartData.push(obj);
+                }
+                else
+                    chartData.push(obj);
+            }                                    
+        }
+        return chartData.sort((a,b) => (a.value < b.value) ? 1 : ((b.value < a.value) ? -1 : 0));
+    }               
+    return [];
+}
+
+module.exports = {configLayer, getViewParam, getLayerName, getStyle, getStyleRef, configRefLayer, getLayerTitle, getLayerTitleEvents, makeNotificationBody, groupEventAnalysisData};

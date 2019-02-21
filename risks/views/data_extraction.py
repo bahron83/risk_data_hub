@@ -1,17 +1,21 @@
 import os
-import datetime
+from datetime import datetime
 from decimal import *
 from itertools import groupby
 from dateutil.parser import parse
 from django.conf import settings
-from django.db.models import FloatField
-from django.db.models.functions import Cast
+from django.db.models import FloatField, F, DateTimeField, IntegerField, Q
+from django.db.models.functions import Cast, Extract
+from django.db.models.aggregates import Func
+from django.contrib.postgres.aggregates import ArrayAgg
 from risk_data_hub import settings as rdh_settings
 from geonode.utils import json_response
 from risks.views.base import FeaturesSource, LocationSource
 from risks.views.hazard_type import HazardTypeView
 from risks.views.auth import UserAuth
-from risks.models import DamageAssessment, DamageType, AnalysisType, Event, AdministrativeData
+from risks.models.location import levels as adm_levels
+from risks.models import DamageAssessment, DamageType, AnalysisType, Event, AdministrativeData, Phenomenon, DataProviderMappings
+from risks.helpers.event import EventHelper
 from risks.overrides.postgres_jsonb import KeyTextTransform, KeyTransform
 
 
@@ -20,6 +24,12 @@ SENDAI_FROM_YEAR = 2005
 SENDAI_TO_YEAR = 2015
 SENDAI_YEARS_TIME_SPAN = 10
 DEFAULT_DECIMAL_POINTS = 5
+
+class JsonbArrayElements(Func):
+
+    function = 'jsonb_array_elements'
+    template = '%(function)s(%(expressions)s)'
+    arity = 1
 
 class DataExtractionView(FeaturesSource, HazardTypeView):             
 
@@ -61,8 +71,11 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             check = True
             if locations and entry['administrative_division']['code'] not in loc_codes:
                 check = False
-            if check:                
-                row_value = [entry['dim1']['value'], entry['dim2']['value'], entry['value']]
+            if check:
+                try:                
+                    row_value = [entry['dim1']['value'], entry['dim2']['value'], entry['value']]
+                except KeyError, e:
+                    raise
                 if include_loc and locations:
                     row_value.insert(0, entry['administrative_division']['code'])
                 values.append(row_value)        
@@ -87,20 +100,8 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         if not hazard_type:
             return json_response(errors=['Invalid hazard type'], status=404)
 
-        # Check analysis type
-        (atype_r, atype_e, atypes, scope,) = self.get_analysis_type(reg, loc, hazard_type, **kwargs)        
-        current_atype = None
-        risk = None
-        if not atype_r:
-            if atype_e:
-                if atype_e.scope == scope:
-                    current_atype = atype_e
-        else:
-            if atype_r.scope == scope:
-                current_atype = atype_r
-            if atype_e: 
-                if atype_e.scope == scope:
-                    current_atype = atype_e        
+        # Check analysis type        
+        current_atype = self.get_analysis_type(reg, loc, hazard_type, **kwargs)        
         if not current_atype:
             return json_response(errors=['No analysis type available for location/hazard type'], status=404) 
         
@@ -127,7 +128,7 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             'ht': hazard_type.mnemonic,
             'at': current_atype.name,
             'an': risk.id,
-            'scope': risk.analysis_type.scope,
+            'scope': risk.scope,
             'full_url': context_url + '/risks/' + app.name + '/reg/' + reg.name + '/loc/' + loc.code + '/ht/' + hazard_type.mnemonic + '/at/' + current_atype.name + '/an/' + str(risk.id) + '/'
         }
         
@@ -155,14 +156,20 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
         #url(r'loc/(?P<loc>[\w\-]+)/ht/(?P<ht>[\w\-]+)/at/(?P<at>[\w\-]+)/an/(?P<an>[\w\-]+)/pdf/$', views.pdf_report, name='pdf_report'),
         out['pdfReport'] = app.url_for('pdf_report', loc.code, hazard_type.mnemonic, current_atype.name, risk.id)
         out['fullContext'] = full_context
+        out['wms'] = {
+            'style': None,                      
+            'baseurl': settings.OGC_SERVER['default']['PUBLIC_LOCATION']
+        }
         
         # RISK ANALYSIS
-        if risk.analysis_type.scope == 'risk':        
+        if risk.scope == 'risk':        
             # Retrieve values of current location (for charts) and children locations (for map)
-            locations_needed = [loc] + list(loc.get_children()) if loc.has_children() else [loc]        
+            locations_needed = [loc] + list(loc.children.all())
             loc_codes = [l.code for l in locations_needed]
             values = values_after_visibility_rules \
-                .filter(entry__administrative_division__code__in=loc_codes) \
+                .filter(
+                    phenomenon__isnull=True,
+                    entry__administrative_division__code__in=loc_codes) \
                 .annotate(
                     adm_code=KeyTextTransform('code', KeyTransform('administrative_division', 'entry')),
                     dim1_value=KeyTextTransform('value', KeyTransform('dim1', 'entry')),
@@ -170,38 +177,45 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 ) \
                 .order_by('adm_code', 'dim1_value', 'dim2_value')
             loc_values = self.format_risk_analysis_values(values, [loc])
-            children_values = self.format_risk_analysis_values(values, list(loc.get_children()), True)
+            children_values = self.format_risk_analysis_values(values, list(loc.children.all()), True)
         
             out['riskAnalysisData']['data']['values'] = loc_values
             out['riskAnalysisData']['data']['subunits_values'] = children_values
 
         # HISTORICAL EVENTS
-        elif risk.analysis_type.scope == 'event':                                    
+        elif risk.scope == 'event':                                                
+            eh = EventHelper()
 
-            # Retrieve events from Django
-            events = Event.objects.filter(hazard_type=hazard_type, region=reg, state='ready')
-            if loc.level > 0:
-                events = events.filter(country__in=[loc]+loc.get_parents_chain())            
+            # Retrieve list of data providers
+            data_sources = DataProviderMappings.objects.filter(hazard=risk.hazard).order_by('order')
+
+            # Retrieve Damage Assessment Entries for Events            
+            event_entries = values_after_visibility_rules \
+                .annotate(begin_date=Cast(KeyTextTransform('begin_date', KeyTransform('event', 'entry')), DateTimeField())) \
+                .filter(
+                    phenomenon__isnull=False,
+                    damage_assessment=risk                    
+                ) \
+                .order_by('-begin_date')
+
+            country_level = adm_levels.index('country')
+            if loc.level == country_level:                
+                event_entries = event_entries.filter(entry__event__country=loc.code)
+            elif loc.level > country_level:                
+                children = loc.get_children(len(adm_levels)) 
+                #children = loc.children.all()
+                loc_ids = [child.id for child in children] + [loc.id]
+                event_entries = event_entries.filter(entry__administrative_division__id__in=loc_ids)
             
             # Check if need to filter by date
-            if events and 'from' in kwargs and 'to' in kwargs:
+            if 'from' in kwargs and 'to' in kwargs:
                 try:
-                    date_from = parse(kwargs.get('from'))
-                    date_to = parse(kwargs.get('to'))
-                    events = events.filter(begin_date__range=(date_from, date_to))
+                    date_from = datetime.utcfromtimestamp(int(kwargs.get('from')) / 1000)
+                    date_to = datetime.utcfromtimestamp(int(kwargs.get('to')) / 1000)
+                    event_entries = event_entries \
+                        .filter(begin_date__range=(date_from, date_to))
                 except ValueError:
-                    return json_response(errors=['Invalid date format'], status=400)
-            
-            events = events.order_by('-begin_date')  
-            total_events = events.count()
-            
-            # Limit number of results
-            if events and 'load' not in kwargs and 'from' not in kwargs:
-                events = events[:EVENTS_TO_LOAD]                
-
-            # Retrieve Damage Assessment Entries for Events
-            event_entries = values_after_visibility_rules \
-                .filter(entry__has_key='phenomenon', entry__administrative_division__level__gte=loc.level)
+                    return json_response(errors=['Invalid date format'], status=400)                                    
             
             # Retrieve values for events aggregated by country
             # Since Django doesn't allow yet Subquery expression with aggregation, sum operations are computed in memory
@@ -216,38 +230,36 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
             # ) t1
             # GROUP BY country                        
             
-            event_entries_by_country = event_entries \
+            '''event_entries_by_country = event_entries \
                 .annotate(
                     country=KeyTextTransform('country', KeyTransform('event', 'entry')),
-                    value=Cast(KeyTextTransform('value', 'entry'), FloatField())
+                    value=Cast(KeyTextTransform('value_event', JsonbArrayElements(KeyTransform('values', 'entry'))), FloatField())
                 ) \
                 .order_by('country') \
                 .values('country', 'value')
 
             event_values_group_country = {}            
             for k,v in groupby(event_entries_by_country,key=lambda x:x['country']):
-                event_values_group_country[k] = sum(f['value'] for f in v)                                            
+                event_values_group_country[k] = sum(f['value'] for f in v)'''                                           
 
-            # Build final event list (~ [Events] LEFT JOIN [DamageAssessmentEntry])
-            ev_list = []
-            data_key = None
-            for event in events:
-                e = event.custom_export()  
-                if event_entries.exists():
-                    phenomenon_ids = [p['id'] for p in e['phenomena']]                    
-                    e[data_key] = None                
-                    try:              
-                        event_entry = event_entries.filter(entry__phenomenon__id__in=phenomenon_ids)
-                        data_key = event_entry[0].entry['dim1']['value']
-                        e[data_key] = round(Decimal(event_entry[0].entry['value']), DEFAULT_DECIMAL_POINTS)
-                        index_of_p = 0
-                        for p in e['phenomena']:                            
-                            e['phenomena'][index_of_p]['value'] = event_entry.get(entry__phenomenon__id=p['id']).entry['phenomenon']['value']
-                            index_of_p += 1
-                    except:                    
-                        pass
-                    e['data_key'] = data_key                
-                ev_list.append(e)
+            events = event_entries \
+                .annotate(
+                    _event=KeyTransform('event', 'entry'),
+                    _timestamp=Extract(Cast(KeyTextTransform('begin_date', KeyTransform('event', 'entry')), DateTimeField()), 'epoch')*1000,                
+                    _dim1=KeyTransform('dim1', 'entry'),
+                    _dim2=KeyTransform('dim2', 'entry')                    
+                ).values(
+                    event=F('_event'),
+                    timestamp=F('_timestamp'),                
+                    dim1=F('_dim1'),
+                    dim2=F('_dim2')
+                ).annotate(
+                    values=ArrayAgg(KeyTransform('values', 'entry')),
+                    phenomena=ArrayAgg(KeyTransform('phenomenon', 'entry')),
+                    adm_divisions=ArrayAgg(KeyTransform('administrative_division', 'entry'))
+                ).order_by('-timestamp')                                    
+            
+            total_events = events.count()
 
             # Sendai indicator
             sendai_final_array = []   
@@ -266,19 +278,50 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 # 	ORDER BY country, ev_year
                 # ) t1
                 # GROUP BY country, ev_year
-                features_sendai_temp = event_entries \
+                
+                '''features_sendai_temp = event_entries \
                     .filter(entry__event__country=loc.code, entry__event__year__gte=SENDAI_FROM_YEAR) \
                     .annotate(
                         country=KeyTextTransform('country', KeyTransform('event', 'entry')),
                         year=KeyTextTransform('year', KeyTransform('event', 'entry')),
-                        value=Cast(KeyTextTransform('value', 'entry'), FloatField())
+                        value=Cast(KeyTextTransform('value_event', JsonbArrayElements(KeyTransform('values', 'entry'))), FloatField())
                     ) \
                     .order_by('country', 'year') \
                     .values('country', 'year', 'value')
 
                 features_sendai = {}
                 for k,v in groupby(features_sendai_temp,key=lambda x:x['year']):
-                    features_sendai[k] = sum(f['value'] for f in v)                    
+                    features_sendai[k] = sum(f['value'] for f in v)'''
+
+                features_sendai_temp = event_entries \
+                    .filter(
+                        entry__event__country=loc.code,
+                        entry__event__year__gte=SENDAI_FROM_YEAR) \
+                    .annotate(
+                        country=KeyTextTransform('country', KeyTransform('event', 'entry')),
+                        year=KeyTextTransform('year', KeyTransform('event', 'entry')),
+                        event_id=KeyTextTransform('id', KeyTransform('event', 'entry'))
+                    ) \
+                    .order_by('country', 'year', 'event_id') \
+                    .values('country', 'year', 'event_id') \
+                    .annotate(values=ArrayAgg(KeyTransform('values', 'entry')))
+
+                features_sendai = {}
+                phenomena_assigned = []
+                for row in list(features_sendai_temp):
+                    data_source_assigned = False                    
+                    for data_source in data_sources:
+                        if not data_source_assigned:
+                            for v in row['values'][0]:                            
+                                if v['data_source'] == data_source.data_provider.name and v['phenomenon_id'] not in phenomena_assigned:
+                                    if row['year'] in features_sendai:
+                                        features_sendai[row['year']] += float(v['value_event'])                                        
+                                    else:
+                                        features_sendai[row['year']] = float(v['value_event'])
+                                    phenomena_assigned.append(v['phenomenon_id'])
+                                    data_source_assigned = True                                        
+                        else:
+                            break
                     
                 total = 0
                 n_of_years = 0
@@ -303,11 +346,11 @@ class DataExtractionView(FeaturesSource, HazardTypeView):
                 sendai_final_array.insert(0, ['{}_{}'.format(SENDAI_FROM_YEAR, SENDAI_TO_YEAR), sendai_average_value, baseline_unit])
                       
             # Finishing building output            
-            out['riskAnalysisData']['eventAreaSelected'] = ''            
-            out['riskAnalysisData']['data']['event_group_country'] = event_values_group_country
-            out['riskAnalysisData']['data']['total_events'] = total_events         
-            out['riskAnalysisData']['events'] = ev_list
-            out['riskAnalysisData']['data']['sendaiValues'] = sendai_final_array
+            out['riskAnalysisData']['eventAreaSelected'] = ''                        
+            out['riskAnalysisData']['data']['total_events'] = total_events                     
+            out['riskAnalysisData']['eventDataSources'] = [ds.export() for ds in data_sources]
+            out['riskAnalysisData']['events'] = list(events)
+            out['riskAnalysisData']['data']['sendaiValues'] = sendai_final_array            
             out['riskAnalysisData']['decimalPoints'] = DEFAULT_DECIMAL_POINTS
         
         return json_response(out)    

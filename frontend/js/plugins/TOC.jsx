@@ -21,7 +21,7 @@ const tocSelector = createSelector([
     layersSelector,
     currentDetailsSelector
 ], (enabled, hide, layers, currentDetails) => {
-    const tocLayers = layers.filter(layer => layer.group === 'Default');    
+    const tocLayers = layers.filter(layer => ['Default', 'Gis Overlays'].includes(layer.group));        
     return {
         enabled: enabled && head(tocLayers) && !hide,
         layers: [...tocLayers.reverse()],

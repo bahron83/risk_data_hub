@@ -8,6 +8,8 @@ from risks.models import HazardSet
 from risks.models.location import levels as adm_levels
 
 
+scopes = (('risk', 'Risk'), ('event', 'Event'),)
+
 class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, HazardTypeAware, AnalysisTypeAware, Exportable):
     """
     JSON schema of object in values field (array of objects)
@@ -71,7 +73,8 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, null=False, blank=False,
                             db_index=True)
-    unit_of_measure = models.CharField(max_length=255, null=True, blank=True)    
+    unit_of_measure = models.CharField(max_length=255, null=True, blank=True)
+    scope = models.CharField(max_length=25, choices=scopes, default=scopes[0])
     tags = models.CharField(max_length=255, null=True, blank=True)    
     assessment_date = models.DateField()
     insert_date = models.DateField(default=datetime.date.today)    
@@ -161,6 +164,20 @@ class DamageAssessment(OwnedModel, RiskAppAware, Schedulable, LocationAware, Haz
 
 class DamageAssessmentEntry(models.Model):
     id = models.AutoField(primary_key=True)
+    damage_assessment = models.ForeignKey(
+        DamageAssessment,
+        related_name='entries',
+        db_index=True,
+        on_delete=models.CASCADE
+    )
+    phenomenon = models.ForeignKey(
+        'Phenomenon',
+        related_name='damage_assessment_entries',
+        null=True,
+        blank=True,
+        db_index=True,
+        on_delete=models.CASCADE
+    )
     entry = JSONField()
     '''damage_assessment = models.ForeignKey(DamageAssessment)
     damage_type_value_1 = models.ForeignKey(

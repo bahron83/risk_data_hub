@@ -13,9 +13,10 @@ module.exports = {
         MapPlugin: require('../MapStore2/web/client/plugins/Map'),
         DataExplorerPlugin: require('./plugins/DataExplorer'),
         TOCPlugin: require('./plugins/TOC'),
-        
+        SearchPlugin: require('./plugins/Search'),
         NotificationsPlugin: require('../MapStore2/web/client/plugins/Notifications'),
         OmniBarPlugin: require('../MapStore2/web/client/plugins/OmniBar'),
+        TopnavPlugin: require('./plugins/Topnav'),
         //DataExplorerButtonPlugin: require('./plugins/DataExplorerButton'),
         //BrandNavbarPlugin: require('./plugins/BrandNavBar'),
         //ZoomToSearchPlugin: require('./plugins/ZoomToSearch'),
@@ -33,8 +34,8 @@ module.exports = {
         //ExpanderPlugin: require('../MapStore2/web/client/plugins/Expander'),
         //UndoPlugin: require('../MapStore2/web/client/plugins/History'),
         //RedoPlugin: require('../MapStore2/web/client/plugins/History'),
-        //ZoomInPlugin: require('../MapStore2/web/client/plugins/ZoomIn'),
-        //ZoomOutPlugin: require('../MapStore2/web/client/plugins/ZoomOut'),
+        ZoomInPlugin: require('../MapStore2/web/client/plugins/ZoomIn'),
+        ZoomOutPlugin: require('../MapStore2/web/client/plugins/ZoomOut'),
         //ZoomAllPlugin: require('../MapStore2/web/client/plugins/ZoomAll'),
         //FullScreenPlugin: require('../MapStore2/web/client/plugins/FullScreen'),
         

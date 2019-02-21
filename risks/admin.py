@@ -12,7 +12,7 @@ import nested_admin
 
 # Register your models here.
 from risks.models import (RiskApp, AnalysisType, AssetCategory, Asset, AssetItem, MarketValue, DamageType, DamageTypeValue,
-                                DamageAssessment, HazardSet, EavAttribute,
+                                DamageAssessment, HazardSet, EavAttribute, FurtherResource,
                                 Event, Phenomenon, Style,
                                 AttributeSet,
                                 Hazard, AdministrativeDivision, Location, Region, PointOfContact,
@@ -138,6 +138,7 @@ class SendaiIndicatorInline(admin.StackedInline):
 
 class DamageTypeValueInline(admin.TabularInline):
     model = DamageTypeValue
+    raw_id_fields = ('resource',)
     extra = 2
 
 class PhenomenonInline(admin.StackedInline):
@@ -148,12 +149,12 @@ class AdministrativeDivisionAdmin(admin.ModelAdmin):
     model = AdministrativeDivision
     list_display_links = ('id',)
     list_display = ('id', 'code', 'name',)
-    search_fields = ('code',)
+    search_fields = ('code', 'name',)
 
 class AnalysisTypeAdmin(admin.ModelAdmin):
     model = AnalysisType
     list_display_links = ('id',)
-    list_display = ('id', 'name', 'title', 'scope',)
+    list_display = ('id', 'name', 'title',)
 
 class AssetCategoryAdmin(admin.ModelAdmin):
     model = AssetCategory
@@ -303,6 +304,24 @@ class EventAdmin(admin.ModelAdmin):
             
     make_published.short_description = 'Publish selected events'
 
+class FurtherResourceAdmin(admin.ModelAdmin):
+    model = FurtherResource
+    list_display_links = ('resource',)
+    list_display = ('resource',)
+    group_fieldsets = True  
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(FurtherResourceAdmin, self).get_form(request, obj, **kwargs)
+        if not request.user.is_superuser:
+            form.base_fields['resource'].queryset = form.base_fields['resource'].queryset.filter(owner=request.user)
+        return form
+
+    def get_queryset(self, request):
+        qs = super(FurtherResourceAdmin, self).get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(owner=request.user)
+
 class HazardAdmin(admin.ModelAdmin):
     model = Hazard
     list_display_links = ('id',)
@@ -348,7 +367,12 @@ class DataProviderAdmin(admin.ModelAdmin):
     model = DataProvider
     list_display = ('name',)
     list_display_links = ('name',) 
-    inlines = [DataProviderInlineAdmin]       
+    inlines = [DataProviderInlineAdmin]  
+
+class DataProviderMappingsAdmin(admin.ModelAdmin):
+    model = DataProviderMappings    
+    list_display = ('data_provider', 'hazard', 'order',)
+    list_filter = ('hazard',)
 
 @admin.register(RiskApp)
 class RiskAppAdmin(admin.ModelAdmin):
@@ -582,9 +606,12 @@ admin.site.register(AttributeSet, AttributeSetAdmin)
 admin.site.register(DamageType, DamageTypeAdmin)
 admin.site.register(DamageAssessment, DamageAssessmentAdmin)
 #admin.site.register(DamageAssessmentValue, DamageAssessmentValueAdmin)
+admin.site.register(DataProvider, DataProviderAdmin)
+admin.site.register(DataProviderMappings, DataProviderMappingsAdmin)
 admin.site.register(HazardSet, HazardSetAdmin)
 admin.site.register(EavAttribute, EavAttributeAdmin)
 admin.site.register(Event, EventAdmin)
+admin.site.register(FurtherResource, FurtherResourceAdmin)
 admin.site.register(Hazard, HazardAdmin)
 admin.site.register(Location, LocationAdmin)
 admin.site.register(Owner, OwnerAdmin)

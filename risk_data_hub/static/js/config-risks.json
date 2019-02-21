@@ -33,6 +33,23 @@
             "fillOpacity": 0
           },
         "features" : []
+      },
+
+      {
+        "type": "vector",
+        "queryable": false,
+        "visibility": true,
+        "group": "Default",
+        "name": "event_geometry",
+        "hideLoading": true,
+        "id": "event_geometry",
+        "style": {
+            "color": "black",
+            "weight": 1,
+            "opacity": 1,
+            "fillOpacity": 1
+          },
+        "features" : []
       }
 
     ]

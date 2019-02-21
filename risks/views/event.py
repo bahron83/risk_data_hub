@@ -1,16 +1,20 @@
 import re
 import json
+import copy
+from dateutil.parser import parse as parse_date
 from django.conf import settings
 from django.db.models import Sum, Count, F, IntegerField, FloatField, Value
 from django.db.models.functions import Cast
 from django.contrib.postgres.aggregates import ArrayAgg
 from geonode.utils import json_response
 from risks.views.base import FeaturesSource
+from risks.views.auth import UserAuth
 from risks.views.hazard_type import HazardTypeView
 from risks.views.data_extraction import DataExtractionView
 from risks.models import (Event, DamageAssessment, DamageAssessmentEntry, AnalysisType, AdministrativeDivision, 
-                            AdministrativeData, AdministrativeDataValue)
+                            AdministrativeData, AdministrativeDataValue, DataProviderMappings)
 from risks.models.location import levels
+from risks.helpers.event import EventHelper
 from risks.overrides.postgres_jsonb import KeyTextTransform, KeyTransform
 
 
@@ -36,15 +40,23 @@ class EventView(FeaturesSource, HazardTypeView):
         except DamageAssessment.DoesNotExist:
             return json_response(errors=['Invalid analysis specified in the request'], status=404)
         region = da.region
+
+        # Check user permissions
+        user_auth = UserAuth()
+        available_datasets, dataset_rule_association = user_auth.resolve_available_datasets(request, region)        
+        if da not in available_datasets:
+            return json_response(errors=['Data not available for current user'], status=403)
+
+        # Apply visibility rules
+        values_after_visibility_rules = user_auth.filter_dataset_values(da, dataset_rule_association)
+
         current_adm_level = int(data['lvl'])
 
         events = Event.objects.filter(pk__in=data['evt'])
         related_layers_events = [(l.id, l.typename, l.title, ) for l in events.first().related_layers.all()] if events.count() == 1 else []
 
-        event_entries = DamageAssessmentEntry.objects.filter(
-            entry__region=region.name,
-            entry__damage_assessment=da.name,
-            entry__administrative_division__level__gt=current_adm_level,
+        event_entries = values_after_visibility_rules.filter(            
+            entry__administrative_division__level__gte=current_adm_level,
             entry__event__id__in=data['evt']
         )
 
@@ -67,16 +79,18 @@ class EventView(FeaturesSource, HazardTypeView):
         
         event_locations = {}        
         for e in event_locations_count:
-            if e['level'] > current_adm_level + 1:
-                loc = AdministrativeDivision.objects.get(code=e['code'])
-                for p in loc.get_parents_chain():
-                    if p.level == current_adm_level + 1:
-                        if p.code in event_locations:
-                            event_locations[p.code]['occurrences'] += 1
-                        else:
-                            event_locations[p.code] = {'code': p.code, 'level': p.level, 'occurrences': e['occurrences']}
-            else:
-                event_locations[e['code']] = e
+            #e['skip'] = False if e['level'] > current_adm_level else True
+            event_locations[e['code']] = e
+            #if e['level'] > current_adm_level + 1:
+            loc = AdministrativeDivision.objects.get(code=e['code'])
+            for p in loc.get_parents_chain():
+                #if p.level == current_adm_level + 1:
+                if p.code in event_locations:
+                    event_locations[p.code]['occurrences'] += 1
+                else:
+                    event_locations[p.code] = {'code': p.code, 'level': p.level, 'occurrences': e['occurrences']}
+            #else:
+            #   event_locations[e['code']] = e
 
         out = {
             'eventLocations': event_locations,
@@ -92,25 +106,25 @@ class EventDetailsView(DataExtractionView):
         except DamageAssessment.DoesNotExist:
             pass
 
-    def get_damage_assessment_group(self, damage_assessment):        
-        analysis_types = AnalysisType.objects.filter(scope=damage_assessment.analysis_type.scope)
+    def get_damage_assessment_group(self, damage_assessment):                
         return DamageAssessment.objects.filter(
             region=damage_assessment.region,
-            hazard=damage_assessment.hazard, analysis_type__in=analysis_types)
+            hazard=damage_assessment.hazard,
+            scope=damage_assessment.scope)
 
     def get_event(self, **kwargs):
         try:
-            return Event.objects.get(id=kwargs['evt'])
+            return Event.objects.get(pk=kwargs['evt'])
         except Event.DoesNotExist:
             pass
 
-    def get_related_ra(self, hazard_type, damage_type_values, analysis_type, event):                
+    def get_related_ra(self, hazard_type, dim1, analysis_type, event):                
         ra = DamageAssessment.objects.filter(
             region=event.region,
             hazard=hazard_type,
-            damagetype_association__value__upper__in=damage_type_values,
+            tags__icontains=dim1,
             analysis_type=analysis_type)
-        if 'event_type' in event.details:
+        if event.details and 'event_type' in event.details:
             event_type = event.details['event_type']
             if event_type:
                 ra = ra.filter(tags__icontains=event_type)
@@ -135,15 +149,38 @@ class EventDetailsView(DataExtractionView):
                 return            
     
     def get(self, request, *args, **kwargs):        
-        event = self.get_event(**kwargs)                
+        event = self.get_event(**kwargs)
+        if not event:
+            return json_response(errors=['Invalid Event ID'], status=404)
+        eh = EventHelper()
+
+        # Check user permissions
+        user_auth = UserAuth()
+        available_datasets, dataset_rule_association = user_auth.resolve_available_datasets(request, event.region)
+
+        if not available_datasets.exists():
+            return json_response(errors=['Data not available for current user'], status=403)
+
+        # Check if event is published by one of available datasets
+        event_entries = DamageAssessmentEntry.objects.filter(
+            phenomenon__isnull=False,
+            damage_assessment__pk__in=available_datasets.values_list('pk', flat=True),
+            entry__event__id=event.id
+        )
+        if not event_entries.exists():
+            return json_response(errors=['Data not available for current user'], status=403)
+
+        # Default data sources
+        ordered_data_sources = DataProviderMappings.objects.filter(hazard=event.hazard_type).order_by('order')
+
         #retrieve data about nuts2 which are not in AdministrativeDivision models 
         '''nuts3_adm_divs = AdministrativeDivision.objects.filter(level=2, code__in=event.nuts3.split(';'))
         nuts3_ids = nuts3_adm_divs.values_list('id', flat=True)                   
         nuts2_codes = AdministrativeDivisionMappings.objects.filter(child__pk__in=nuts3_ids).order_by('code').values_list('code', flat=True).distinct()
         nuts3_in_nuts2 = list(AdministrativeDivisionMappings.objects.filter(code__in=nuts2_codes).values_list('child__code', flat=True))        
         locations = self.get_location_range(nuts3_in_nuts2 + [event.iso2])'''
-        locations = list(set([p.administrative_division for p in event.get_phenomena()]))
-        extended_locations = locations 
+        locations = list(set([p.administrative_division for p in event.phenomena.all()]))
+        extended_locations = copy.deepcopy(locations) 
         for l in locations:
             extended_locations += l.get_parents_chain()
         extended_locations = set(extended_locations)
@@ -153,7 +190,7 @@ class EventDetailsView(DataExtractionView):
         da_group = self.get_damage_assessment_group(damage_assessment)        
         data = {}  
         overview = {}      
-        if da_group and event:
+        if da_group:
             
             #administrative data
             administrative_data = {}            
@@ -204,59 +241,75 @@ class EventDetailsView(DataExtractionView):
                 'event': event.custom_export(),
                 'administrativeData': administrative_data,
                 'damageAssessmentMapping': damage_assessment_mapping,
-                'isEligibleForEUSF': False,
+                'isEligibleForEUSF': {},
                 'threshold': EUSF_GDP_THRESHOLD * 100
             }
+            
+            for da_event in da_group:
+                event_entries_da = event_entries.filter(damage_assessment=da_event)                
+                entry = eh.prepare_event_entries(event_entries_da).first()
+                if entry:
+                    dim1 = entry['dim1']['value']
+                    dim2 = entry['dim2']['value']
+                    damage_type_values = [dim1, dim2]
 
-            event_entries_for_group = DamageAssessmentEntry.objects.filter(
-                entry__event__id=event.id,
-                entry__damage_assessment__contained_by=list(da_group.values_list('name', flat=True))
-            )
-            for da_event in da_group:                
-                event_entries = [row.entry for row in event_entries_for_group if row.entry['damage_assessment'] == da_event.name]
-                da_event_values = [event_entries[0]['dim1']['value'], event_entries[0]['dim2']['value'], float(event_entries[0]['value'])]
-                damage_type_values = [event_entries[0]['dim1']['value'], event_entries[0]['dim2']['value']]
+                    analysis_type_name = da_event.analysis_type.name
+                    data[analysis_type_name] = {}
+                    data[analysis_type_name]['dimensions'] = damage_type_values
+                    data[analysis_type_name]['eventAnalysis'] = da_event.get_risk_details()
+                    data[analysis_type_name]['values'] = entry
 
-                analysis_type_name = da_event.analysis_type.name
-                data[analysis_type_name] = {}
-                data[analysis_type_name]['dimensions'] = damage_type_values
-                data[analysis_type_name]['eventAnalysis'] = da_event.get_risk_details()
-                data[analysis_type_name]['values'] = [da_event_values]
+                    values_raw = entry['values'][0]
+                    data_sources = {}
+                    for row in values_raw:                        
+                        if row['data_source'] not in data_sources:
+                            data_sources[row['data_source']] = row
+                        else:
+                            current_data_source = data_sources[row['data_source']]
+                            is_value_more_recent = parse_date(row['insert_date']) > parse_date(current_data_source['insert_date'])
+                            if is_value_more_recent:
+                                data_sources[row['data_source']] = row
 
-                #set event ratios to administrative units
-                adm_data_name = damage_assessment_mapping.keys()[damage_assessment_mapping.values().index(analysis_type_name)]
-                for adm_unit in ['country', 'nuts2', 'nuts3']:                    
-                    value_sum = overview['administrativeData'][adm_data_name]['sum'][adm_unit]
-                    overview['administrativeData'][adm_data_name]['ratios'][adm_unit] = da_event_values[2] / value_sum if value_sum > 0 else None               
+                    #set event ratios to administrative units
+                    adm_data_name = damage_assessment_mapping.keys()[damage_assessment_mapping.values().index(analysis_type_name)]
+                    for adm_unit in ['country', 'nuts2', 'nuts3']:                    
+                        value_sum = float(overview['administrativeData'][adm_data_name]['sum'][adm_unit])
+                        
+                        overview['administrativeData'][adm_data_name]['ratios'][adm_unit] = {}
+                        for key,val in data_sources.iteritems():
+                            value = float(val['value_event'])
+                            overview['administrativeData'][adm_data_name]['ratios'][adm_unit][key] = value / value_sum if value_sum > 0 else None
+                            #check eligibility for EUSF                
+                            if 'economic' in analysis_type_name.lower():                                            
+                                overview['isEligibleForEUSF'][key] = value >= gdp_nuts2_affected * EUSF_GDP_THRESHOLD                    
+                    
+                    #for every analysis bound to current event, find matching risk analysis (based on analysis type)
+                    matching_ra = self.get_related_ra(hazard_type, dim1, self.get_related_analysis_type(da_event), event)                                        
+                    
+                    data[analysis_type_name]['relatedRiskAnalysis'] = []
+                    #for every match, retrieve sum of values of administrative divisions affected                
+                    for an_risk in matching_ra: 
+                        # for scope RISK, there is a single value per row, hence the key 'value' exists in entry                                       
+                        an_risk_values = DamageAssessmentEntry.objects \
+                            .filter(                                
+                                damage_assessment=an_risk,
+                                entry__administrative_division__code__in=[l.code for l in locations]
+                            ) \
+                            .annotate(
+                                dim1=KeyTextTransform('value', KeyTransform('dim1', 'entry')),
+                                dim2=Cast(KeyTextTransform('value', KeyTransform('dim2', 'entry')), IntegerField())
+                            ) \
+                            .order_by('dim1', 'dim2') \
+                            .values('dim1', 'dim2') \
+                            .annotate(value=Sum(Cast(KeyTextTransform('value', 'entry'), FloatField())))
 
-                event_value = event_entries[0]['value']
-                #check eligibility for EUSF                
-                if 'economic' in analysis_type_name.lower():                    
-                    overview['isEligibleForEUSF'] = event_value >= gdp_nuts2_affected * EUSF_GDP_THRESHOLD 
-                
-                #for every analysis bound to current event, find matching risk analysis (based on analysis type)
-                matching_ra = self.get_related_ra(hazard_type, damage_type_values, self.get_related_analysis_type(da_event), event)                                        
-                
-                data[analysis_type_name]['relatedRiskAnalysis'] = []
-                #for every match, retrieve sum of values of administrative divisions affected                
-                for an_risk in matching_ra:                                        
-                    an_risk_values = DamageAssessmentEntry.objects \
-                        .filter(
-                            entry__region=an_risk.region.name,
-                            entry__damage_assessment=an_risk.name,
-                            entry__administrative_division__code__in=locations.values_list('code', flat=True
-                        ) \
-                        .annotate(
-                            dim1=KeyTextTransform('value', KeyTransform('dim1', 'entry')),
-                            dim2=KeyTextTransform('value', KeyTransform('dim2', 'entry'))
-                        ) \
-                        .values('dim1', 'dim2') \
-                        .annotate(sum_value=Sum(Cast(KeyTextTransform('value', 'entry')), FloatField()))
-                    )                    
-
-                    data[analysis_type_name]['relatedRiskAnalysis'].append({
-                        'riskAnalysis': an_risk.get_risk_details(),
-                        'values': an_risk_values
-                    })
+                        data[analysis_type_name]['relatedRiskAnalysis'].append({
+                            'riskAnalysis': an_risk.get_risk_details(),
+                            'values': list(an_risk_values)
+                        })
                    
-        return json_response({ 'data': data, 'overview': overview })
+        return json_response({ 
+            'data': data,
+            'dataSources': [ds.data_provider.name for ds in ordered_data_sources],
+            'overview': overview
+        })

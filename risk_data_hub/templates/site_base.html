@@ -2,11 +2,227 @@
 {% block extra_head %}
       <link href="{{ STATIC_URL }}css/site_base.css" rel="stylesheet"/>
 {% endblock %}
-{% block extra_tab %}
-{% comment %}
-Add Tab for Third Party Apps
-<li>
- <a href="{{ PROJECT_ROOT }}app">App</a>
-</li>
-{% endcomment %}
-{% endblock %}
+{% load i18n avatar_tags %}
+
+{% block header %}
+<!--HEADER-->
+<div id="header-wrap">
+        <div class="row">
+                        <div class="lang-en col-md-12 col-xs-12 col-sm-12 col-lg-12" id="header">
+                                <div class="row">
+
+                                        <div class="banner-flag">
+                                                <img alt="European Commission logo" id="banner-flag" src="{{ STATIC_URL }}img/logo_en.gif">
+                                        </div>
+                                        <div id="banner-title-text">European Commission<br>
+                                                        <span>Disaster Risk Management Knowledge Centre</span>
+                                        </div>
+                                        <div id="header-color-bar"></div>
+                                </div>
+
+                                        <span id="banner-image-right"></span><span class="title-en" id="banner-image-title"></span>
+                                        <p class="off-screen">Accessibility tools</p>
+                                        <ul class="reset-list" id="accessibility-menu" style="display: none">
+                                                        <li class="m-hide hidden-lg">
+                                                                        <a href="{% url 'home' %}">Home</a>
+                                                        </li>
+                                                        <li class="m-hide  hidden-lg">
+                                                                        <a href="#menu">Menu</a>
+                                                        </li>
+                                                        <li>
+                                                                        <a accesskey="1" href="#content" class="hidden-lg">Go to content</a>
+                                                        </li>
+                                        </ul>
+                                        <p class="off-screen">Service tools</p>
+                                        <ul class="reset-list" id="services">
+                                                        <li><a class="first" href="http://ec.europa.eu/geninfo/legal_notices_en.htm" accesskey="2">Legal notice</a></li>
+                                                        <li><a href="https://drmkc.jrc.ec.europa.eu/PRIVACY_STATEMENT/Privacy_Statement_DRMKC_Website.pdf" accesskey="6">Privacy Statement</a></li>
+                                                        <li><a href="http://ec.europa.eu/cookies/index_en.htm" accesskey="3">Cookies</a></li>
+                                                        <li><a href="http://drmkc.jrc.ec.europa.eu/overview/Contacts" accesskey="4">Contact</a></li>
+                                                        <li><a href="http://ec.europa.eu/geninfo/query/search_en.html" accesskey="5">Search</a></li>
+
+
+                                                        {% if not user.is_authenticated and REGISTRATION_OPEN %}
+                                                        <li class="last"><a href="{% url 'account_signup' %}">{% trans "Register" %}</a></li>
+                                                        {% endif %}
+                                                        {% if user.is_authenticated %}
+                                                        <li class="last">
+                                                                <a href="#" data-toggle="modal" data-target="#UserModal" role="button" aria-expanded="false">
+                                                                        {% autoescape off %}{% avatar user 42 %}{% endautoescape %}{{ user.username }}
+                                                                </a>
+                                                        </li>
+                                                        {% else %}
+                                                        <li class="last">
+                                                                <a href="#" id="user-login-link" data-toggle="modal" data-target="#SigninModal" role="button" >
+                                                                        {% trans "Sign in" %}
+                                                                </a>
+                                                        </li>
+                                                        {% endif %}
+                                        </ul>
+                        </div>
+</div>
+        <div class="row">
+                        <div id="path" class="col-md-12 col-xs-12 col-sm-12 col-lg-12">
+                                        <p class="off-screen">Navigation path</p>
+                                        <ul class="reset-list">
+                                                        <li class="first"><a href="http://ec.europa.eu/index_en.htm">European Commission</a></li>
+                                                        <li ><a href="https://ec.europa.eu/jrc/">JRC Science Hub</a> </li>
+                                                        <li><a href="http://drmkc.jrc.ec.europa.eu">DRMKC</a></li>
+                                                        <li><a href="http://drmkc.jrc.ec.europa.eu/innovation">Innovation</a></li>
+                                                        <li><a href="{% url 'home' %}">Risk Data Hub</a></li>
+                                                        {% block extrapath %}{% endblock %}
+                                        </ul>
+                        </div>
+        </div>
+        <div class="row">
+                        <nav class="navbar" role="navigation">
+                                <div class="container-fluid">
+                                        <div class="navbar-header">
+                                                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+                                                        <span class="sr-only">Toggle navigation</span>
+                                                        <span class="icon-bar"></span>
+                                                        <span class="icon-bar"></span>
+                                                        <span class="icon-bar"></span>
+                                                </button>
+                                                <a class="navbar-brand" href="{% url 'home' %}"><span class="drmkc-icon drmkc-icon-knowledge"></span><span class="navbar-brand-text">DRMKC Risk Data Hub</span></a>
+                                        </div>
+                                        <div id="navbar" class="navbar-collapse collapse">
+                                                <ul class="nav navbar-nav">
+                                                        {% block tabs %}
+                                                        {%comment %}
+                                                        <li id="nav_layers">
+                                                                <a href="{% url 'layer_browse' %}">{% trans "Layers" %}</a>
+                                                        </li>
+                                                        <li id="nav_maps">
+                                                                <a href="{% url 'maps_browse' %}">{% trans "Maps" %}</a>
+                                                        </li>
+                                                        <li id="nav_documents">
+                                                                <a href="{% url 'document_browse' %}">{% trans "Documents" %}</a>
+                                                        </li>
+                                                        {%endcomment %}
+                                                        <li id="nav_about">
+                                                                <a href="{% url 'about' %}">{% trans "About" %}</a>
+                                                        </li>
+                                                        <li id="nav_risks">
+                                                                <a href="{% url 'risks:data_extraction:index' %}">{% trans "Analysis Tool" %}</a>
+                                                        </li>
+                                                        <li id="nav_archives">
+                                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans 'Archives' %}<i class="fa fa-angle-down fa-lg"></i></a>
+                                                                        <ul class="dropdown-menu">
+                                                                                <li><a href="{% url 'layer_browse' %}">{% trans "Layers" %}</a></li>
+                                                                                <li><a href="{% url 'maps_browse' %}">{% trans "Maps" %}</a></li>
+                                                                                <li><a href="{% url 'document_browse' %}">{% trans "Documents" %}</a></li>
+                                                                        </ul>
+                                                        </li>
+                                                        {%comment %}
+                                                        {% block extra_tab %}
+                                                        <li id="nav_risktools">
+                                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{% trans 'Risk Management Tools' %}<i class="fa fa-angle-down fa-lg"></i></a>
+                                                                        <ul class="dropdown-menu">
+                                                                                <li><a href="{% url 'risks:test:index' %}">{% trans "Intro Risk Tool" %}</a></li>
+                                                                                <li><a href="{% url 'risks:cost_benefit_analysis:index' %}">{% trans "Cost/Benefit Analysis & Decision Tool" %}</a></li>
+                                                                                <li><a href="{% url 'risks:data_extraction:index' %}">{% trans "Risk Data Extraction & Visualization" %}</a></li>
+                                                                        </ul>
+                                                        </li>
+                                                        {% endblock %}
+                                                        {%endcomment %}
+                                                 {% comment %}
+                                                        <li id="nav_people">
+                                                                <a href="{% url 'profile_browse' %}">{% trans "People" %}</a>
+                                                        </li>
+                                                        <li id="nav_groups">
+                                                                <a href="{% url 'group_list' %}">{% trans "Groups" %}</a>
+                                                        </li>
+                                                        {% endcomment %}
+                                                        {% endblock %}
+                                                </ul>
+                                                <!--<form class="navbar-form" id="search" action="{% url 'search' %}" >
+                                                        <div class="search-wrapper">
+                                                                <div class="input-group">
+                                                                        {% if HAYSTACK_SEARCH %}
+                                                                        <input id="search_input" type="text" placeholder="Search" class="form-control" name="q">
+                                                                        {% else %}
+                                                                        <input id="search_input" type="text" placeholder="Search" class="form-control" name="title__icontains">
+                                                                        {% endif %}
+                                                                        <span class="input-group-btn">
+                                                                                <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i></button>
+                                                                        </span>
+                                                                </div>
+                                                        </div>
+                                                </form>-->
+                                                <!--<ul class="nav navbar-nav navbar-right hidden-md hidden-lg">
+                                                        {% if not user.is_authenticated and REGISTRATION_OPEN %}
+                                                        <li><a href="{% url "account_signup" %}">{% trans "Register" %}</a></li>
+                                                        {% endif %}
+                                                        {% if user.is_authenticated %}
+							<li>
+                                                                <a href="#" data-toggle="modal" data-target="#UserModal" role="button" aria-expanded="false">
+                                                                        {% avatar user 30 %} {{ user.username }}
+                                                                </a>
+                                                        </li>
+                                                        {% else %}
+                                                        <li>
+                                                                <a href="#" data-toggle="modal" data-target="#SigninModal" role="button" >
+                                                                        {% trans "Sign in" %}
+                                                                </a>
+                                                        </li>
+                                                        {% endif %}
+                                                </ul>-->
+                                        </div><!--/.nav-collapse -->
+                                </div>
+                        </nav>
+        </div>
+</div>
+{% endblock header %}
+
+
+
+{% block footer %}
+      {{ block.super }}
+      
+      {% if user.is_authenticated %}
+      <div class="modal fade" id="UserModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+            <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title" id="myModalLabel">{% trans "Menu" %}</h4>
+            </div>
+            <div class="modal-body">
+            <ul class="list-unstyled">
+            <li><a href="{% url "layer_upload" %}"><i class="fa fa-cloud-upload"></i> {% trans "Upload Layers" %}</a></li>
+            <li class="modal-divider"></li>
+            <li><a href="{{ user.get_absolute_url }}"><i class="fa fa-user"></i> {% trans "Profile" %}</a></li>
+            <li><a href="{% url "recent-activity" %}"><i class="fa fa-fire"></i> {% trans "Recent Activity" %}</a></li>
+            <li><a href="{% url "messages_inbox" %}"><i class="fa fa-inbox"></i> {% trans "Inbox" %}</a></li>
+	    {% if USE_NOTIFICATIONS %}
+                                                <li><a href="{% url "notification_notice_settings" %}"><i class="fa fa-bell"></i> {% trans "Notifications" %}</a></li>
+                                                {% endif %}
+            {% if perms.announcements.can_manage %}
+            <li><a href="{% url "announcements_list" %}"><i class="fa fa-bullhorn"></i> {% trans "Announcements" %}</a></li>
+            {% endif %}
+            {% if user.is_superuser %}
+            <li><a href="{% url "services" %}"><i class="fa fa-globe"></i> {% trans "Remote Services" %}</a></li>            
+            <li class="modal-divider"></li>
+            <li><a href="{{ GEOSERVER_BASE_URL }}"><i class="fa fa-gears"></i> {% trans "GeoServer" %}</a></li>
+            {% endif %}
+            {% if user.is_staff %}
+            <li><a href="{% url "admin:index" %}"><i class="fa fa-cog"></i> {% trans "Admin" %}</a></li>
+            {% endif %}
+            {% block extra_user_menu %}
+            {% endblock %}
+            <li class="modal-divider"></li>
+            <li><a title="Help" rel="tooltip" href="/help/"><i class="fa fa-question-circle"></i> {% trans "Help" %}</a></li>
+            </ul>
+            </div>
+            <div class="modal-footer">
+            <form action="{% url "account_logout" %}" id="logout_form" method="post">
+            {% csrf_token %}
+            <a class="btn btn-warning btn-block" href="javascript:{}" onclick="document.getElementById('logout_form').submit();">{% trans "Log out" %}</a>
+            </form>
+            </div>
+      </div>
+      </div>
+      </div>
+      {% endif %}
+{%endblock footer %}

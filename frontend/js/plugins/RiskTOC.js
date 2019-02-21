@@ -140,7 +140,7 @@ class LayerTree extends React.Component{
         );
     }
     render() {   
-        console.log('riskTOC props', this.props);
+        //console.log('riskTOC props', this.props);
         if (!this.props.groups || !this.props.enabled) {
             return null;
         }

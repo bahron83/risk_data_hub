@@ -3,7 +3,7 @@
 	"geoStoreUrl": "/mapstore/rest/geostore",
 	"printUrl": "https://demo.geo-solutions.it/geoserver/pdf/info.json",
   "themePrefix": "RiskDataHubClient",
-	"translationsPath": "./MapStore2/web/client/translations",
+	"translationsPath": ["./MapStore2/web/client/translations", "/static/riskdatahub/translations"],
 	"plugins": {
 			"desktop": ["Map", "Home"]
 	}

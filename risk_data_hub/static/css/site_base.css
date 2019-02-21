@@ -5,7 +5,11 @@
 ----------------------- */
 /* Basics
 ----------------------- */
-html {
+html,
+body,
+#container,
+#container .fill,
+#container > .fill > div {
   height: 100%;
 }
 body {
@@ -13,16 +17,10 @@ body {
   font-family: Verdana, Geneva, sans-serif;
   font-size: 14px;
   padding-top: 0;
-  height: 100%;
 }
 .risktools #wrap {
-  height: calc(100% - 113px);
-}
-/*#container {
-  height: calc(100% - 113px);
-}*/
-#container, #container .fill {
-  height: 100%;
+  padding-bottom: 0;
+  height: calc(100% - 160px);
 }
 a {
   /*color: #028baf;*/
@@ -119,7 +117,7 @@ article.tab-pane {
 }
 #banner-title-text {
   position: relative;
-  float:left;
+  float: left;
   top: 45px;
   font-size: 2.5rem;
   z-index: 100;
@@ -157,7 +155,6 @@ article.tab-pane {
 .navbar-nav > li > a {
   text-transform: uppercase;
 }
-
 /*DRMKC FONT*/
 @font-face {
   font-family: 'drmkc-font';
@@ -186,31 +183,21 @@ article.tab-pane {
   margin-right: .2em;
   text-align: center;
   /* opacity: .8; */
-
   /* For safety - reset parent styles, that can break glyph codes*/
-
   font-variant: normal;
   text-transform: none;
   /* fix buttons height, for twitter bootstrap */
-
   line-height: 1em;
   /* Animation center compensation - margins should be symmetric */
-
   /* remove if not needed */
-
   margin-left: .2em;
   /* you can be more comfortable with increased icons size */
-
   /* font-size: 120%; */
-
   /* Font smoothing. That was taken from TWBS */
-
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Uncomment for 3D effect */
-
   /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
-
 }
 [class^="drmkc-icon-"]::before,
 [class*=" drmkc-icon-"]::before {
@@ -223,31 +210,21 @@ article.tab-pane {
   margin-right: .2em;
   text-align: center;
   /* opacity: .8; */
-
   /* For safety - reset parent styles, that can break glyph codes*/
-
   font-variant: normal;
   text-transform: none;
   /* fix buttons height, for twitter bootstrap */
-
   line-height: 1em;
   /* Animation center compensation - margins should be symmetric */
-
   /* remove if not needed */
-
   margin-left: .2em;
   /* you can be more comfortable with increased icons size */
-
   font-size: 180%;
-
   /* Font smoothing. That was taken from TWBS */
-
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Uncomment for 3D effect */
-
   /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
-
 }
 .drmkc-icon-innovation:before {
   content: '\e800';
@@ -273,7 +250,191 @@ article.tab-pane {
   content: '\e803';
 }
 /*END OF DRMKC FONT*/
-
+/*RDH FONT*/
+@font-face {
+  font-family: 'rdh';
+  src: url('../fonts/rdh.eot?x61cmb');
+  src: url('../fonts/rdh.eot?x61cmb#iefix') format('embedded-opentype'), url('../fonts/rdh.ttf?x61cmb') format('truetype'), url('../fonts/rdh.woff?x61cmb') format('woff'), url('../fonts/rdh.svg?x61cmb#rdh') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+[class^="icon-"],
+[class*=" icon-"] {
+  top: 1px;
+  position: relative;
+  display: inline-block;
+  font-family: 'rdh';
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.icon-dowload-arrow:before {
+  content: "\e900";
+}
+.icon-drought:before {
+  content: "\e901";
+}
+.icon-earthquake:before {
+  content: "\e902";
+}
+.icon-extreme-heat:before {
+  content: "\e903";
+}
+.icon-flash-flood:before {
+  content: "\e904";
+}
+.icon-flood:before {
+  content: "\e905";
+}
+.icon-house:before {
+  content: "\e906";
+}
+.icon-landslide:before {
+  content: "\e907";
+}
+.icon-list-arrow:before {
+  content: "\e908";
+}
+.icon-magnifying-glass:before {
+  content: "\e909";
+}
+.icon-nuclear:before {
+  content: "\e90a";
+}
+.icon-oil-spill:before {
+  content: "\e90b";
+}
+.icon-overview:before {
+  content: "\e90c";
+}
+.icon-pin:before {
+  content: "\e90d";
+}
+.icon-Pollution2c:before {
+  content: "\e90e";
+}
+.icon-selector-arrow:before {
+  content: "\e90f";
+}
+.icon-separator:before {
+  content: "\e910";
+}
+.icon-storm-surge:before {
+  content: "\e911";
+}
+.icon-subsidence:before {
+  content: "\e912";
+}
+.icon-tsunami:before {
+  content: "\e913";
+}
+.icon-urban-flood:before {
+  content: "\e914";
+}
+.icon-volcano:before {
+  content: "\e915";
+}
+.icon-water-scarcity:before {
+  content: "\e916";
+}
+.icon-wildfire:before {
+  content: "\e917";
+}
+.icon-cyclone:before {
+  content: "\e918";
+}
+.icon-home3:before {
+  content: "\e919";
+}
+.icon-spinner6:before {
+  content: "\e97f";
+}
+.icon-search:before {
+  content: "\e986";
+}
+.icon-zoom-in:before {
+  content: "\e987";
+}
+.icon-zoom-out:before {
+  content: "\e988";
+}
+/*END OF RDH FONT*/
+#site-intro {
+  background: black;
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+}
+#site-intro .heading {
+  padding: 0 5rem;
+}
+#site-intro img {
+  max-width: 85%;
+}
+#hazard-links {
+  background: white;
+  padding: 1rem 0.7rem;
+  color: #666;
+  margin-top: 0;
+}
+#hazard-links i {
+  font-size: 4.7rem;
+  border: 2px solid #aaa;
+  border-radius: 4.7rem;
+  padding: 1.3rem;
+  display: table;
+  margin: 0 auto;
+}
+#hazard-links .hazard-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  display: table;
+  margin: 0 auto;
+  padding-top: 5px;
+}
+.home .jumbotron .hazard-link {
+  display: inline-block;
+  margin-right: 1.4rem;
+  color: #555;
+}
+.home .jumbotron .last {
+  margin: 0;
+}
+.home .jumbotron .inactive {
+  color: #999;
+}
+.home .jumbotron .hazard-link:hover {
+  text-decoration: none;
+  color: #2c689c;
+  cursor: pointer;
+}
+.home .jumbotron .inactive:hover {
+  text-decoration: none;
+  color: #999;
+  cursor: default;
+}
+.box-risk {
+  background: #2c689c;
+}
+.box-event {
+  background: #c4362e;
+}
+.box-country-corner {
+  background: #666;
+}
+.box-home div {
+  min-height: 300px;
+  padding: 15px;
+  text-align: center;
+  font-size: 130%;
+  color: #eee;
+}
 .navbar-right > li > a {
   padding: 8px 15px;
 }
@@ -333,7 +494,7 @@ body.groups li#nav_groups a {
   .risktools footer {
     position: relative;
     /*top: -70px;*/
-  }  
+  }
 }
 #header-wrap {
   padding-top: 8px;
@@ -347,6 +508,15 @@ body.groups li#nav_groups a {
   right: 0;
   text-align: right;
   padding: 0 20px;
+}
+#services li.last {
+  font-weight: bold;
+}
+#services li:after {
+  content: ' |';
+}
+#services li.last:after {
+  content: none;
 }
 #path {
   background: #074a8b;
@@ -382,12 +552,15 @@ body.groups li#nav_groups a {
 /* Home
 ----------------------- */
 .home .jumbotron {
-  background: #2c689c;
+  /*background: #2c689c;*/
+  background: url('../img/basemap_fires.jpg');
+  background-position-y: center;
   color: white;
-  padding: 40px 0 60px;
+  /*padding: 40px 0 60px;*/
+  padding: 0 0 40px;
   /*text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.4);*/
   text-shadow: none;
-  margin-top: 50px;
+  margin-top: 30px;
 }
 .home .jumbotron a {
   /*color: white;*/
@@ -409,7 +582,8 @@ body.groups li#nav_groups a {
   color: #028baf;
   text-decoration: none;
 }
-.home .row {
+.home .row,
+.about .row {
   margin-top: 40px;
 }
 .home .list-group-item {
@@ -1108,7 +1282,7 @@ footer {
   }
   .home .navbar-nav > li > a {
     padding-top: 10px;
-    padding-bottom: 10px;    
+    padding-bottom: 10px;
   }
   /* since 3.1.0 */
   .home .navbar-collapse.collapse.in {
@@ -1125,34 +1299,33 @@ footer {
   font-weight: bold;
 }
 .risktools .page-header {
-  display: none
+  display: none;
 }
-.slick-prev:before, .slick-next:before {
+.slick-prev:before,
+.slick-next:before {
   color: #2c689c !important;
 }
 .slick-slide {
   margin: 0 10px;
-  border: 2px solid #2c689c;
+  /*border: 2px solid #2c689c;*/
 }
 .section {
-  margin-top:20px;
+  margin-top: 20px;
   margin-bottom: 20px;
 }
 .modal-dialog label {
   margin-right: 5px;
 }
 .align-right {
-  text-align:right;
+  text-align: right;
 }
-
-
 .right {
   float: right;
 }
 .blue {
   color: blue;
 }
-.red { 
+.red {
   color: red;
 }
 .bigtext {
@@ -1166,10 +1339,10 @@ footer {
   color: blue;
 }
 .outset {
-  position:relative;
-  z-index:1000;
+  position: relative;
+  z-index: 1000;
   padding: 20px 15px;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
   white-space: normal;
 }
 li.eligible {
@@ -1180,12 +1353,11 @@ li.not-eligible {
   border: 1px solid blue;
   color: inherit;
 }
-
 /*SEARCH BOX*/
 .lookup-res li {
   color: #333;
   box-shadow: none !important;
-  -webkit-box-shadow: none !important;  
+  -webkit-box-shadow: none !important;
 }
 .lookup-res-main li {
   border: none;
@@ -1207,10 +1379,10 @@ li.not-eligible {
   cursor: pointer;
 }
 .lookup-reset-item {
-  position: relative;
-  float: right;
-  top: -30px;
-  right: 10px;
+  position: relative !important;
+  /*float: right;*/
+  top: 7px;
+  right: 15px !important;
   color: #333;
 }
 .lookup-reset-item:hover {
@@ -1220,13 +1392,13 @@ li.not-eligible {
 #main-search-widget {
   float: left;
   width: 500px;
-  margin-top: 15px;
+  /*margin-top: 15px;*/
   margin-right: 15px;
 }
 .autocomplete-box {
   position: absolute;
   z-index: 1001;
-  min-width: 500px;  
+  min-width: 500px;
   background: white;
   overflow-y: scroll;
 }
@@ -1237,3 +1409,6 @@ li.not-eligible {
   border: none;
   margin-bottom: 15px;
 }*/
+.disaster {
+  padding: 0 15px;
+}

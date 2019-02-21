@@ -25,6 +25,7 @@ from geonode.urls import urlpatterns
 
 proj_patterns = [
     url(r'^/?$', TemplateView.as_view(template_name='rdh_index.html'), name='home'),
+    url(r'^about/', TemplateView.as_view(template_name='about.html'), name='about'),
     url(r'^jet/', include('jet.urls', 'jet')),        
     url(r'^nested_admin/', include('nested_admin.urls')),
     url(r'^risks/', include('risks.urls', namespace='risks')),    

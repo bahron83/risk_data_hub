@@ -88,4 +88,26 @@ INSTALLED_APPS += (
     'django_json_widget',    
 )
 
+# ######################################################################### #
+# account registration settings
+ACCOUNT_OPEN_SIGNUP = True
+ACCOUNT_APPROVAL_REQUIRED = False
+ACCOUNT_EMAIL_CONFIRMATION_EMAIL = False
+ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = False
+
+# notification settings
+NOTIFICATION_ENABLED = False
+NOTIFICATION_LANGUAGE_MODULE = "account.Account"
+
+# Queue non-blocking notifications.
+NOTIFICATION_QUEUE_ALL = False
+
+# pinax.notifications
+# or notification
+NOTIFICATIONS_MODULE = 'pinax.notifications'
+
+if NOTIFICATION_ENABLED:
+    INSTALLED_APPS += (NOTIFICATIONS_MODULE, )
+
+
 AUTH_USER_MODEL = os.getenv('AUTH_USER_MODEL', 'risks.RdhUser')

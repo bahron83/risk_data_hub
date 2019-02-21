@@ -8,6 +8,7 @@
 
 //data from Home Page
 const disasterRisk = JSON.parse(localStorage.getItem("disasterRisk"));
+//console.log('appconfig dr', disasterRisk);
 const defaultUrlPrefix = '';
 const contextUrlPrefix = disasterRisk && disasterRisk.contextUrl || defaultUrlPrefix;
 
@@ -24,6 +25,7 @@ module.exports = {
     themeCfg: {
         path: `${contextUrlPrefix}/static/js`
     },
+    contextUrlPrefix: contextUrlPrefix,
     initialState: {
         defaultState: {
             //mousePosition: {enabled: false},

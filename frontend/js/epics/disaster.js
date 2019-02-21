@@ -72,13 +72,15 @@ const createBaseVectorLayer = name => ({
     visibility: true,
     hideLoading: true,
     group: "Default",
-    queryable: false
+    queryable: false,
+    zIndex: 1 
 });
 
 const initDataLayerEpic = (action$, store) =>
     action$.ofType(MAP_CONFIG_LOADED)
-        .switchMap(() => {   
-            const { disasterRisk, contextUrl } = (store.getState()).disaster;         
+        .switchMap(() => { 
+            //console.log('epics map conf loaded', action$);
+            const { disasterRisk, contextUrl } = (store.getState()).disaster;               
             const loc = disasterRisk && disasterRisk.app && disasterRisk.app.region || 'EU';
             const reg = disasterRisk && disasterRisk.app && disasterRisk.app.regionName || 'Europe';
             const dataPath = disasterRisk && disasterRisk.app && `${disasterRisk.app.href}/reg/${reg}/loc/${loc}/` || `${contextUrl}/risks/data_extraction/reg/Europe/loc/EU/`;
@@ -90,7 +92,8 @@ const initDataLayerEpic = (action$, store) =>
                         ...createBaseVectorLayer('adminunits'),
                         features: [],
                         style: getMainViewStyle()
-                    }
+                    },
+                    false
                 ),
                 /*addLayer(
                     {
@@ -128,14 +131,18 @@ const getRiskDataEpic = (action$, store) =>
 const getRiskMapConfig = action$ =>
     action$.ofType(LOAD_RISK_MAP_CONFIG).switchMap(action =>
             Rx.Observable.fromPromise(Api.getData(action.configName))
-                .map(val => [configureMap(val), getFeatures(action.featuresUrl)])
+                .map(val => {
+                    //console.log('epics load map config', action);
+                    return [configureMap(val)]
+                })
                 .mergeAll()
                 .catch(e => Rx.Observable.of(configureError(e)))
         );
 const getRiskFeatures = (action$, store) =>
     action$.ofType(GET_RISK_FEATURES)
-    .audit(() => {
+    .audit(() => {        
         const isMapConfigured = (store.getState()).mapInitialConfig && true;
+        //console.log('epic getrisk features - is map configured:', isMapConfigured);
         return isMapConfigured && Rx.Observable.of(isMapConfigured) || action$.ofType('MAP_CONFIG_LOADED');
     })
     .switchMap(action =>
@@ -143,7 +150,7 @@ const getRiskFeatures = (action$, store) =>
         .retry(1)
         .map(val => [zoomToExtent(bbox(val.features[0]), "EPSG:4326"),
                 changeLayerProperties("adminunits", {features: val.features.map((f, idx) => (assign({}, f, {id: idx}))) || []}),
-                featuresLoaded(val.features)])
+                featuresLoaded(val)])
         .mergeAll()
         .startWith(featuresLoading())
         .catch(e => Rx.Observable.of(featuresError(e)))
@@ -195,21 +202,10 @@ const getAnalysisEpic = (action$, store) =>
                     anLayers.map((arr, index) => { if(arr[1] == layerName) anLayerDim.push(arr) });                
                 }
                 
-                const hasGis = find(layers.groups, g => g.id === 'Gis Overlays');
-                //const hasAnalysisLayer = find(layers.flat, l => l.id === '_riskAn_') || false;                 
-                //data adjustment for event grouped_values
-                let adjustedVal = val;                
-                if(val.riskAnalysisData.data.grouped_values !== undefined) {
-                    if(val.riskAnalysisData.data.grouped_values.length == 0) {
-                        const {riskAnalysis} = (store.getState()).disaster;
-                        adjustedVal.riskAnalysisData.data.grouped_values = riskAnalysis.riskAnalysisData.data.grouped_values
-                    }
-                }  
-                
-                //const layerStyle = val.riskAnalysisData && val.riskAnalysisData.style || getRiskAnStyle();
+                const hasGis = find(layers.groups, g => g.id === 'Gis Overlays');                
                 
                 const actions = [                    
-                    analysisDataLoaded(adjustedVal),
+                    analysisDataLoaded(val),
                     hasGis && removeNode("Gis Overlays", "groups"),
                     /*!hasAnalysisLayer && addLayer(
                         {...createBaseVectorLayer('_riskAn_'), features: [], style: layerStyle},
@@ -227,20 +223,21 @@ const getEventEpic = (action$, store) =>
     action$.ofType(GET_EVENT_DATA).switchMap(action => 
         Rx.Observable.defer(() => Api.postData(action.url, action.values))
             .retry(1)
-            .map(val => {
-                const baseUrl = val.wms && val.wms.baseurl;
-                const anLayers = val.relatedLayers || [];                
-                const layers = (store.getState()).layers;
-                const {app} = (store.getState()).disaster;                
-                const hasGis = find(layers.groups, g => g.id === 'Gis Overlays');
-                //const hasEventLayer = find(layers.flat, l => l.id === '_eventAn_');                                                
-                const actions = [                                        
-                    eventDataLoaded(val),
-                    hasGis && removeNode("Gis Overlays", "groups"),
-                    //!hasEventLayer && addLayer(configLayer(baseUrl, "", '_eventAn_', getLayerTitleEvents({eventAnalysis: val, app}), true, "Default"), false)                    
-                ].concat(anLayers.map((l) => addLayer(configLayer(baseUrl, l[1], `ral_${l[0]}`, l[2] || l[1].split(':').pop(), true, 'Gis Overlays')))).filter(a => a);
-
-                return actions;
+            .map(val => {                 
+                const eventPolygons = val && val.eventData && val.eventData.reduce((filtered, v) => {
+                    const geometry = v && v.entry && v.entry.geometry && v.entry.geometry.features || null;                    
+                    if(geometry)
+                        filtered.push(...v.entry.geometry.features)
+                    return filtered;
+                }, []);                
+                const hasEventPolygons = eventPolygons.length > 0;                                                                
+                return [eventDataLoaded(val)].concat(
+                    hasEventPolygons && addLayer({
+                        ...createBaseVectorLayer('event_geometry'),
+                        features: eventPolygons,
+                        style: getRiskAnStyle()
+                    })
+                ).filter(a => a);                            
             })
             .mergeAll()
             .startWith(dataLoading(true))            
@@ -277,9 +274,11 @@ const zoomInOutEpic = (action$, store) =>
 const selectEventEpic = (action$, store) =>
     action$.ofType(SELECT_EVENT) 
         .map(action => {              
-            const { app, contextUrl, riskAnalysis, selectedEventIds, showEventDetail } = (store.getState()).disaster;             
+            const { app, contextUrl, riskAnalysis, selectedEventIds, showEventDetail } = (store.getState()).disaster;                         
             const urlPrefix = `${contextUrl}/${app}/data_extraction`;
             const fullContext = riskAnalysis && riskAnalysis.fullContext;
+            const layers = (store.getState()).layers;
+            const hasEventLayer = find(layers.flat, f => f.id === 'event_geometry') || false;            
             if(showEventDetail) { 
                 const { events } = action;               
                 if(events.length > 1)
@@ -288,21 +287,22 @@ const selectEventEpic = (action$, store) =>
                 const eventHref = `${urlPrefix}/ht/${fullContext.ht}/an/${fullContext.an}/evt/${event}/`;
                 return [eventDetails(eventHref)];
             }
+            let actions = [hasEventLayer && removeLayer('event_geometry')];
             if(selectedEventIds !== undefined && selectedEventIds.length > 0) {                
                 /*callKey is needed to make url unique for data needed,
                 otherwise no API calls would be made after the first one, until
                 cache expires*/
                 const callKey = selectedEventIds.reduce((a, b) => a + b, 0).toString();
-                const url = `${urlPrefix}/selectevents/${callKey}/`;
+                const url = `${urlPrefix}/selectevents/${callKey}/lvl/${fullContext.adm_level}`;
                 const reqValues = {
                     'ht': fullContext.ht,
                     'an': fullContext.an,
                     'lvl': fullContext.adm_level,
                     'evt': selectedEventIds
                 }        
-                return [getEventData(url, reqValues)];            
+                actions = actions.concat(getEventData(url, reqValues)).filter(a => a);
             }
-            return [];
+            return actions.filter(a => a);
         })
         .mergeAll();
         
@@ -381,4 +381,4 @@ const chartSliderUpdateEpic = action$ =>
 
     );
 
-module.exports = {initDataLayerEpic, getRiskDataEpic, getRiskMapConfig, getRiskFeatures, applyFiltersEpic, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, zoomInOutEpic, initStateEpic, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, switchContextAnalysisEpic};
+module.exports = {initDataLayerEpic, getRiskDataEpic, getRiskMapConfig, getRiskFeatures, applyFiltersEpic, getAnalysisEpic, getEventEpic, getEventDetailsEpic, admLookupEpic, selectEventEpic, setFiltersEpic, zoomInOutEpic, loadingError, getSpecificFurtherResources, chartSliderUpdateEpic, switchContextAnalysisEpic};

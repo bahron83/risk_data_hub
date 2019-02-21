@@ -16,7 +16,7 @@ module.exports = {
     }),
     getRiskAnStyle: rangeValues => ({
         color: 'black',
-        fillColor: 'transparent',
+        fillColor: '#F00',
         weight: 1,
         opacity: 1,
         fillOpacity: 1,

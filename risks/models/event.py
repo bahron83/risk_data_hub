@@ -1,4 +1,5 @@
 import datetime
+import time
 from datetime import timedelta
 import re
 from django.db import models
@@ -32,14 +33,20 @@ class Phenomenon(Exportable, models.Model):
     EXPORT_FIELDS = (
         ('id', 'id'),
         ('begin_date', 'begin_date'),
-        ('end_date', 'end_date'),                
-        ('value', 'pvalue'),
+        ('end_date', 'end_date'),                        
         ('event_id', 'pevent_id'),
     )
 
     id = models.AutoField(primary_key=True)
-    event = models.ForeignKey('Event')
-    administrative_division = models.ForeignKey('AdministrativeDivision', limit_choices_to={'id__in': AdministrativeDivision.objects.filter(level__gte=1)})
+    event = models.ForeignKey(
+        'Event',
+        related_name='phenomena',
+        on_delete=models.CASCADE
+    )
+    administrative_division = models.ForeignKey(
+        'AdministrativeDivision',
+        limit_choices_to={'id__in': AdministrativeDivision.objects.filter(level__gte=1)}
+    )
     begin_date = models.DateField() 
     end_date = models.DateField()          
 
@@ -52,11 +59,7 @@ class Phenomenon(Exportable, models.Model):
     @property
     def padministrative_division(self):
         adm = self.administrative_division
-        return adm.export(adm.EXPORT_FIELDS_ANALYSIS)
-
-    @property
-    def pvalue(self):
-        return None
+        return adm.export(adm.EXPORT_FIELDS_ANALYSIS)    
 
     @property
     def pevent_id(self):
@@ -66,7 +69,9 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
     EXPORT_FIELDS = (
         ('id', 'id'),
         ('code', 'code'),
-        ('year', 'year'),                
+        ('year', 'year'),
+        ('begin_date', 'begin_date'),
+        ('end_date', 'end_date'),
         ('country', 'pcountry'),        
     )
     
@@ -148,12 +153,7 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
         if not nuts2_adm_divs:
             if nuts3_adm_divs:
                 nuts2_adm_divs = list(set([adm.parent for adm in nuts3_adm_divs]))
-
-        '''atts_varchar = EventAttributeValueVarchar.objects.filter(event=self)
-        atts_text = EventAttributeValueText.objects.filter(event=self)
-        atts_int = EventAttributeValueInt.objects.filter(event=self)
-        atts_decimal = EventAttributeValueDecimal.objects.filter(event=self)
-        atts_date = EventAttributeValueDate.objects.filter(event=self)'''
+        timestamp = int(time.mktime(self.begin_date.timetuple())) * 1000 if int(self.year) > 1900 else None
 
         obj = {
             'id': self.id,
@@ -169,24 +169,13 @@ class Event(EntityAbstract, RiskAppAware, LocationAware, HazardTypeAware, Export
             'begin_date': self.begin_date,
             'end_date': self.end_date,
             'year': self.begin_date.year,
-            'phenomena': phenomena_exp
+            'phenomena': phenomena_exp,
+            'timestamp': timestamp
         }
 
-        '''if atts_varchar:
-            for a in atts_varchar:
-                obj[a.code] = a.value
-        if atts_text:
-            for a in atts_text:
-                obj[a.code] = a.value
-        if atts_int:
-            for a in atts_int:
-                obj[a.code] = a.value
-        if atts_decimal:
-            for a in atts_decimal:
-                obj[a.code] = a.value
-        if atts_date:
-            for a in atts_date:
-                obj[a.code] = a.value'''
+        if self.details:
+            for key, value in self.details.iteritems():
+                obj[key] = value
         
         return obj
         

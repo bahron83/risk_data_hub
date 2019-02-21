@@ -2,6 +2,7 @@ import traceback
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
 from risks.models import Region, AdministrativeDivision
 from risks.models import DamageAssessment, DamageAssessmentEntry, RiskApp
@@ -105,61 +106,57 @@ class Command(BaseCommand):
                                 if cell_type_str == 'text' \
                                 else iso_country + '{:05d}'.format(int(cell_obj.value))
                             #print('adm code read from cell: {}'.format(adm_code))                                                            
+                            adm_div = None
                             try:
                                 adm_div = AdministrativeDivision.objects.get(code=adm_code)                                    
                             except AdministrativeDivision.DoesNotExist:
                                 traceback.print_exc()
-                                pass                                    
-                            
-                            parent_adm_div = None
-                            if adm_div.parent is not None:
-                                try:                                            
-                                    parent_adm_div = AdministrativeDivision.objects.get(id=adm_div.parent.id)                                        
-                                except AdministrativeDivision.DoesNotExist:
+                                pass                                                                                            
+
+                            if adm_div:
+                                try:
+                                    da_entry = DamageAssessmentEntry.objects.get(
+                                        entry__damage_assessment=risk.name,
+                                        entry__dim1__id=scenario.pk,
+                                        entry__dim2__id=rp.pk,
+                                        entry__administrative_division__id=adm_div.pk
+                                    )
+                                    da_entry.entry['value'] = value
+                                    da_entry.save()
+                                except DamageAssessmentEntry.DoesNotExist:
+                                    entry = {
+                                        'region': region.name,
+                                        'damage_assessment': risk.name,
+                                        'dim1': scenario.export(scenario.EXPORT_FIELDS_ANALYSIS),
+                                        'dim2': rp.export(rp.EXPORT_FIELDS_ANALYSIS),                                                                                                                                
+                                        'administrative_division': adm_div.export(adm_div.EXPORT_FIELDS_ANALYSIS),
+                                        'value': value                                
+                                    }
+                                    da_entry = DamageAssessmentEntry(damage_assessment=risk, entry=entry)
+                                    insert_rows.append(da_entry)
+
+                                    if len(insert_rows) >= COMMIT_SIZE:
+                                        try:
+                                            with transaction.atomic():
+                                                DamageAssessmentEntry.objects.bulk_create(insert_rows)                                                
+                                        except Exception, e:
+                                            transaction.rollback()
+                                            raise CommandError(e)
+                                        insert_rows[:] = []
+                                except:
                                     traceback.print_exc()
-                                    pass                            
-                            
-                            '''current_row_key = '{}_{}_{}'.format(scenario.id, rp.id, adm_div.id)                                                         
-                            riskvalues[current_row_key] = {
-                                'dim1': scenario.export(scenario.EXPORT_FIELDS_ANALYSIS),
-                                'dim2': rp.export(rp.EXPORT_FIELDS_ANALYSIS),                                                                                                                                
-                                'administrative_division': adm_div.export(adm_div.EXPORT_FIELDS_ANALYSIS),
-                                'value': value                                
-                            }'''
-
-                            try:
-                                da_entry = DamageAssessmentEntry.objects.get(
-                                    entry__damage_assessment=risk.name,
-                                    entry__dim1__id=scenario.pk,
-                                    entry__dim2__id=rp.pk,
-                                    entry__administrative_division__id=adm_div.pk
-                                )
-                                da_entry.entry['value'] = value
-                                da_entry.save()
-                            except DamageAssessmentEntry.DoesNotExist:
-                                entry = {
-                                    'region': region.name,
-                                    'damage_assessment': risk.name,
-                                    'dim1': scenario.export(scenario.EXPORT_FIELDS_ANALYSIS),
-                                    'dim2': rp.export(rp.EXPORT_FIELDS_ANALYSIS),                                                                                                                                
-                                    'administrative_division': adm_div.export(adm_div.EXPORT_FIELDS_ANALYSIS),
-                                    'value': value                                
-                                }
-                                da_entry = DamageAssessmentEntry(entry=entry)
-                                insert_rows.append(da_entry)
-
-                                if len(insert_rows) >= COMMIT_SIZE:
-                                    DamageAssessmentEntry.objects.bulk_create(insert_rows)
-                                    insert_rows[:] = []
-                            except:
-                                traceback.print_exc()
-                            # Insert DamegeAssessment/AdmDivision relation for fast location lookups
-                            if not risk.administrative_divisions.filter(pk=adm_div.pk).exists():
-                                risk.administrative_divisions.add(adm_div)                                                                                                                    
+                                # Insert DamegeAssessment/AdmDivision relation for fast location lookups
+                                if not risk.administrative_divisions.filter(pk=adm_div.pk).exists():
+                                    risk.administrative_divisions.add(adm_div)                                                                                                                    
         
         # Finish bulk insert
         if len(insert_rows) > 0:
-            DamageAssessmentEntry.objects.bulk_create(insert_rows)
+            try:
+                with transaction.atomic():
+                    DamageAssessmentEntry.objects.bulk_create(insert_rows)
+            except Exception, e:
+                transaction.rollback()
+                raise CommandError(e)
         
         # Import or Update Metadata if Metadata File has been specified/found
         if excel_metadata_file:

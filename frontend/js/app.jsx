@@ -5,7 +5,6 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
 const ConfigUtils = require('../MapStore2/web/client/utils/ConfigUtils');
 /**
  * Add custom (overriding) translations with:
@@ -20,7 +19,7 @@ const ConfigUtils = require('../MapStore2/web/client/utils/ConfigUtils');
  *
  * ConfigUtils.setLocalConfigurationFile('localConfig.json');
  */
-ConfigUtils.setLocalConfigurationFile('static/js/risksConfig.json');
+//ConfigUtils.setLocalConfigurationFile('/static/js/risksConfig.json');
 
 /**
  * Use a custom application configuration file with:
@@ -38,6 +37,9 @@ ConfigUtils.setLocalConfigurationFile('static/js/risksConfig.json');
  * });
  */
 const appConfig = require('./appConfig');
+const { contextUrlPrefix } = appConfig;
+const risksConfigPath = `${contextUrlPrefix}/static/js/risksConfig.json`;
+ConfigUtils.setLocalConfigurationFile(risksConfigPath);
 
 /**
  * Define a custom list of plugins with:

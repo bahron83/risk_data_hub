@@ -11,7 +11,7 @@ const Navigation = require('./Navigation');
 const HelpBtn = require('./HelpBtn');
 
 const RiskSelector = require('./RiskSelector');
-import Search from './Search';
+import SearchLocation from './SearchLocation';
 const {shareUrlSelector} = require('../selectors/disaster');
 const SharingLink = connect(shareUrlSelector)(require('./ShareLink'));
 const TopBar = React.createClass({
@@ -34,13 +34,13 @@ const TopBar = React.createClass({
             title: ''
         };
     },
-    render() {
+    render() {        
         const {navItems, context, overviewHref, activeRisk, getData, zoom, toggleTutorial} = this.props;  
         const iconClass = activeRisk.mnemonic ? `icon-${activeRisk.mnemonic.toLowerCase()}` : 'icon-overview';
         return (
             <div className="container-fluid">
                 <div id="main-search-widget" className="search-box">
-                    <Search />
+                    <SearchLocation />
                 </div>
                 <div className="disaster-breadcrumbs">
                     <span className="active-risk"><i className={iconClass}></i>{activeRisk.description || 'Overview'}</span>

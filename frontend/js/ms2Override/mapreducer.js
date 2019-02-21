@@ -19,6 +19,7 @@ var CoordinatesUtils = require('../../MapStore2/web/client//utils/CoordinatesUti
 function mapConfig(state = null, action) {
     switch (action.type) {
         case CHANGE_MAP_VIEW:
+            //console.log('map reducer change map view', action);
             const {type, ...params} = action;
             return assign({}, state, params);
         case CHANGE_MOUSE_POINTER:
@@ -95,6 +96,7 @@ function mapConfig(state = null, action) {
                 } else {
                     let mapBBounds = CoordinatesUtils.reprojectBbox(extent, action.crs, state.projection || "EPSG:4326");
                     // NOTE: STATE should contain size !!!
+                    //console.log('map reducer', state);
                     zoom = MapUtils.getZoomForExtent(mapBBounds, state.size, 0, 21, null) + 1;
                 }
                 let newbounds = {minx: bounds[0], miny: bounds[1], maxx: bounds[2], maxy: bounds[3]};

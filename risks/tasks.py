@@ -56,7 +56,7 @@ def import_risk_data(filepath, risk_app_name, damage_assessment_name, region_nam
                          damage_assessment=damage_assessment_name,   
                          stdout=out)            
         except Exception, e:            
-            da.save()
+            #da.save()
             da.set_error()
             report_processing_error(current_user_id, final_name, region_name, e)    
             return None

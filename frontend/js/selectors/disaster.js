@@ -6,7 +6,6 @@ const riskItemsSel = ({disaster = {}}) => disaster.overview || {};
 const activeFiltersSel = ({disaster = {}}) => disaster.activeFilters || {};
 const hazardTypeSel = ({disaster = {}}) => disaster.hazardType || {};
 const analysisTypeSel = ({disaster = {}}) => disaster.analysisType || {};
-const analysisTypeESel = ({disaster = {}}) => disaster.analysisTypeE || {};
 const sliderSel = ({disaster = {}}) => disaster.sliders || {};
 const notificationsSel = (state) => state.notifications || [];
 const currentAnalysisUrlSel = ({disaster = {}}) => disaster.currentAnalysisUrl || '';
@@ -31,9 +30,10 @@ const showFiltersSel = ({disaster = {}}) => disaster.showFilters !== undefined ?
 const filteredAnalysisSel = ({disaster = {}}) => disaster.filteredAnalysis || null; 
 const showEventDetailSel = ({disaster = {}}) => disaster.showEventDetail || false;
 const visibleEventDetailSel = ({disaster = {}}) => disaster.visibleEventDetail || false;
-const eventDetailsSel = ({disaster = {}}) => disaster.eventDetails || {};
+//const eventDetailsSel = ({disaster = {}}) => disaster.eventDetails || {};
 const contextUrlPrefixSel = ({disaster = {}}) => disaster.contextUrl || '';
-const activeRegionSel = ({disaster = {}}) => disaster.region || '';
+const activeRegionSel = ({disaster = {}}) => disaster.disasterRisk && disaster.disasterRisk.app && disaster.disasterRisk.app.regionName || '';
+const currentAdminUnitsSel = ({disaster = {}}) => disaster.currentAdminUnits || [];
 const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel, contextSel],
      (navItems, riskItems, hazardType, context) => ({
         navItems,
@@ -41,10 +41,122 @@ const topBarSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel,
         overviewHref: (last(navItems) || {href: ''}).href,
         riskItems,
         activeRisk: hazardType,
-        context
+        context,
+        showHazard: hazardType.mnemonic ? true : false,
     }));
-const dataContainerSelector = createSelector([navItemsSel, riskItemsSel, hazardTypeSel, analysisTypeSel, analysisTypeESel, riskAnalysisDataSel, dimSelector, loadingStateSelector, showChartSel, fullContextSel, analysisClassSelector, zoomJustCalledSel, chartValues, selectedEventsSelector, contextUrlPrefixSel, filteredAnalysisSel, activeFiltersSel, showFiltersSel],
-    (navItems, riskItems, hazardType, analysisType, analysisTypeE, riskAnalysisData, dim, loading, showChart, fullContext, analysisClass, zoomJustCalled, cValues, selectedEventIds, contextUrl, filteredAnalysis, activeFilters, showFilters) => ({
+
+const prepareEventData = ({disaster = {}}) => {    
+    const eventAnalysisData = disaster && disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData && disaster.riskAnalysis.riskAnalysisData.events || [];
+    const eventDataSources = disaster && disaster.riskAnalysis && disaster.riskAnalysis.riskAnalysisData && disaster.riskAnalysis.riskAnalysisData.eventDataSources || [];
+    
+    if(eventAnalysisData && eventAnalysisData.length > 0) {
+        return eventAnalysisData.map(e => {                 
+            const dataKey = e && e.dim1 && e.dim1.value;                
+            const values_list = e && e.values && e.values[0]; //TODO: process data for all phenomena instead of considering only event
+            values_list.sort((a,b) => (a.insert_date < b.insert_date) ? 1 : ((b.insert_date < a.insert_date) ? -1 : 0));
+            let value = null;
+            let dataSource = null;
+            for(let ds of eventDataSources) {
+                if(value)
+                    break;
+                for(let val of values_list) {                                    
+                    if(val.data_source == ds.name) {
+                        value = parseFloat(val.value_event);
+                        dataSource = val.data_source;
+                        break;
+                    }                        
+                }
+            }                        
+            const timestamp = e && e.timestamp;
+            const event_source = e && e.event && e.event.event_source || '';
+            const sources = e && e.event && e.event.sources || '';
+            const adm_divisions = e && e.adm_divisions && e.adm_divisions.map(a => { return {code: a.code, name: a.name }}) || [];                        
+            return { ...e.event, dataKey, value, dataSource, timestamp, event_source, sources, adm_divisions }
+        })
+    }
+    return eventAnalysisData;
+}
+
+const eventDetailsSel = ({disaster = {}}) => {
+    const eventDetails = disaster.eventDetails || {};        
+    const { data, dataSources } = eventDetails;
+    if(data !== undefined) {
+        let adjustedData = {};
+        Object.keys(data).map( key => {
+            adjustedData[key] = data[key];            
+            let adjustedValues = [];
+            const { dim1, dim2, values } = data[key] && data[key].values;
+            const { relatedRiskAnalysis } = data[key];
+            if(values !== undefined && values.length > 0) {
+                let value = null;
+                for(let i in dataSources) {
+                    if(!value) {
+                        const matches = values[0].filter(v => v.data_source === dataSources[i])
+                        if(matches.length > 0)
+                            value = matches[0].value_event;
+                    }                        
+                    else
+                        break;
+                }
+                adjustedValues.push([dim1.value, dim2.value, parseFloat(value)]);
+                if(relatedRiskAnalysis.length > 0) {
+                    const { values } = relatedRiskAnalysis[0];
+                    const newValues = values.filter(d => d.dim1 === dim1.value || d.dim1 === 'Total').map(v => [dim1.value, v.dim2, v.value]);
+                    for(let i in newValues)
+                        adjustedValues.push(newValues[i])
+                }                                   
+                adjustedData[key]['values'] = adjustedValues;
+            }
+        });        
+        return { overview: eventDetails.overview, dataSources: eventDetails.dataSources, data: adjustedData}
+    }    
+    return eventDetails;
+}
+
+const dataContainerSelector = createSelector(
+    [
+        navItemsSel,
+        riskItemsSel,
+        hazardTypeSel,
+        analysisTypeSel,
+        riskAnalysisDataSel,
+        dimSelector,
+        loadingStateSelector,
+        showChartSel,
+        fullContextSel,
+        analysisClassSelector,
+        zoomJustCalledSel,
+        chartValues,
+        selectedEventsSelector,
+        contextUrlPrefixSel,
+        filteredAnalysisSel,
+        activeFiltersSel,
+        showFiltersSel,
+        prepareEventData,
+        currentAdminUnitsSel
+    ],
+    (
+        navItems,
+        riskItems,
+        hazardType,
+        analysisType,
+        riskAnalysisData,
+        dim,
+        loading,
+        showChart,
+        fullContext,
+        analysisClass,
+        zoomJustCalled,
+        cValues,
+        selectedEventIds,
+        contextUrl,
+        filteredAnalysis,
+        activeFilters,
+        showFilters,
+        eventAnalysisData,
+        currentAdminUnits
+    ) => 
+    ({
         navItems,
         overviewHref: (last(navItems) || {href: ''}).href,        
         riskItems,        
@@ -52,8 +164,7 @@ const dataContainerSelector = createSelector([navItemsSel, riskItemsSel, hazardT
         showHazard: hazardType.mnemonic ? true : false,
         hazardTitle: hazardType.mnemonic ? head(riskItems['hazardType'].filter((hz) => hz.mnemonic === hazardType.mnemonic)).title || '' : '',
         hazardType,
-        analysisType,
-        analysisTypeE,
+        analysisType,        
         riskAnalysisData,
         dim,
         loading,
@@ -66,7 +177,9 @@ const dataContainerSelector = createSelector([navItemsSel, riskItemsSel, hazardT
         contextUrl,
         filteredAnalysis,
         activeFilters,
-        showFilters
+        showFilters,
+        eventAnalysisData,
+        currentAdminUnits
     }));
 const drillUpSelector = createSelector([navItemsSel],
      (navItems) => ({
@@ -191,5 +304,6 @@ module.exports = {
     additionalChartSelector,
     lookupResultsSelector,
     eventDetailsSelector,
-    contextUrlPrefixSelector
+    contextUrlPrefixSelector,
+    prepareEventData
 };

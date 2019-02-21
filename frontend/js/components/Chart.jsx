@@ -11,8 +11,8 @@ const CustomizedYLable = (props) => {
         );
 };
 
-class Chart extends Component {    
-    shouldComponentUpdate(nextProps, nextState) {        
+class Chart extends Component {     
+    shouldComponentUpdate(nextProps, nextState) {                
         if((this.props.dim.dim1Idx !== nextProps.dim.dim1Idx) || (this.props.dim.dim2Idx !== nextProps.dim.dim2Idx) || (this.props.val !== nextProps.val) || (this.props.values !== nextProps.values))
             return true;
 
@@ -24,9 +24,9 @@ class Chart extends Component {
         return values.filter((d) => d[dim.dim1] === val ).map((v) => {return {"name": v[dim.dim2], "value": parseFloat(v[2], 10)}; });
     }
 
-    render() {        
+    render() {           
         const { dim, dimension, uOm, skipLabel, selectRP } = this.props;        
-        const chartData = this.getChartData();
+        const chartData = this.getChartData();        
         /*const colors = chromaJs.scale('OrRd').colors(chartData.length);*/
         return (
           <ResponsiveContainer width="100%" height={200}>
