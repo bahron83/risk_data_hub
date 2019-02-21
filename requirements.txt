@@ -14,7 +14,7 @@ pyopenssl==18.0.0
 
 #data_harvester
 html5lib==0.999999999
-requests==2.18.4
+requests==2.20.0
 beautifulsoup4==4.6.0
 feedparser
 pathlib2
